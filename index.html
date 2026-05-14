@@ -614,24 +614,64 @@ async function startLearnAuto(){
 }
 
 async function toggleLang(){
-  const lx=state.learn;
-  const current={domId:lx.domId,idx:lx.conceptIdx,subIdx:lx.subIdx,finalReview:lx.finalReview};
-  if(lx.lang==='en'&&!lx.contentEs){
-    state.learn.translating=true;render();
-    try{
-      const translated=await translateContent(lx.content);
-      if(sameModule(current,state.learn)) state.learn.contentEs=translated;
-    }catch{}
-    state.learn.translating=false;
+
+  const lx = state.learn;
+
+  // Switch back to English instantly
+  if (lx.lang === 'es') {
+    state.learn.lang = 'en';
+    render();
+
+    // Clear Spanish memory after 30s
+    setTimeout(() => {
+      if (
+        state.learn.lang === 'en' &&
+        state.learn.contentEs
+      ) {
+        state.learn.contentEs = null;
+      }
+    }, 30000);
+
+    return;
   }
-  state.learn.lang=lx.lang==='en'?'es':'en';
+
+  // No content yet
+  if (!state.learn.content) {
+    alert('Content is not ready yet.');
+    return;
+  }
+
+  state.learn.translating = true;
   render();
-  // Translation doubles memory. If the learner returns to English, clear Spanish copy after 30 seconds.
-  setTimeout(()=>{
-    if(sameModule(current,state.learn) && state.learn.lang==='en' && state.learn.contentEs){
-      state.learn.contentEs=null;
+
+  try {
+
+    // Generate translation only once
+    if (!state.learn.contentEs) {
+      const translated = await translateContent(state.learn.content);
+
+      if (!translated || !translated.questions) {
+        throw new Error('Invalid translation response');
+      }
+
+      state.learn.contentEs = translated;
     }
-  },30000);
+
+    state.learn.lang = 'es';
+
+  } catch (e) {
+
+    console.error('Translation error:', e);
+
+    alert('No se pudo traducir el contenido.');
+
+    state.learn.lang = 'en';
+
+  }
+
+  state.learn.translating = false;
+
+  render();
 }
 
 function handleLearnAnswer(letter){
