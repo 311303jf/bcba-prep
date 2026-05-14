@@ -177,6 +177,26 @@ let mastered={};
 const KEY_K='bcba-apikey';
 
 // ============================================================
+// COMPLEX CONCEPTS — Subconcept Mastery Paths
+// ============================================================
+const COMPLEX_CONCEPTS={
+  'A-1':{
+    title:'Philosophical assumptions',
+    task:'Philosophical assumptions (selectionism, determinism, empiricism, parsimony, pragmatism)',
+    description:'Master each philosophical assumption individually first, then practice mixed discrimination questions for the complete concept.',
+    subconcepts:[
+      {id:'selectionism',label:'Selectionism'},
+      {id:'determinism',label:'Determinism'},
+      {id:'empiricism',label:'Empiricism'},
+      {id:'parsimony',label:'Parsimony'},
+      {id:'pragmatism',label:'Pragmatism'}
+    ]
+  }
+};
+const SUBMASTER_KEY='bcba-subconcept-mastered-2025';
+let subMastered={};
+
+// ============================================================
 // STATE
 // ============================================================
 let state={
@@ -194,6 +214,14 @@ let examTimer=null;
 // ============================================================
 function loadStats(){try{const s=localStorage.getItem(STOR_KEY);if(s)state.stats=JSON.parse(s);}catch{}}
 function loadMastered(){try{const m=localStorage.getItem(MASTER_KEY);if(m)mastered=JSON.parse(m);}catch{}}
+function loadSubMastered(){try{const m=localStorage.getItem(SUBMASTER_KEY);if(m)subMastered=JSON.parse(m);}catch{}}
+function saveSubMastered(){try{localStorage.setItem(SUBMASTER_KEY,JSON.stringify(subMastered));}catch{}}
+function complexId(domId,idx){return domId+'-'+idx;}
+function getComplexConcept(domId,idx){return COMPLEX_CONCEPTS[complexId(domId,idx)]||null;}
+function subMasterKey(domId,idx,subId){return complexId(domId,idx)+'-'+subId;}
+function isSubMastered(domId,idx,subId){return!!subMastered[subMasterKey(domId,idx,subId)];}
+function subMasteredCount(domId,idx){const c=getComplexConcept(domId,idx);return c?c.subconcepts.filter(sc=>isSubMastered(domId,idx,sc.id)).length:0;}
+function allSubMastered(domId,idx){const c=getComplexConcept(domId,idx);return c?subMasteredCount(domId,idx)===c.subconcepts.length:false;}
 function saveMastered(){try{localStorage.setItem(MASTER_KEY,JSON.stringify(mastered));}catch{}}
 function masterKey(domId,idx){return domId+'-'+idx;}
 function isMastered(domId,idx){return!!mastered[masterKey(domId,idx)];}
@@ -369,6 +397,61 @@ Create a complete learning module. Return ONLY valid JSON (no markdown):
   return JSON.parse(txt.replace(/```json|```/g,'').trim());
 }
 
+
+async function genSubconceptContent(domId,conceptIdx,subconcept){
+  const d=D.find(x=>x.id===domId);
+  const parent=getComplexConcept(domId,conceptIdx);
+  const txt=await callAI(`You are an expert BCBA exam instructor (TCO 6th Edition, 2025).
+Domain ${d.id}: ${d.label}.
+Main Concept: ${parent.title}.
+Subconcept to teach: ${subconcept.label}.
+
+Teach ONLY this subconcept first. Do not teach all the other assumptions except when distinguishing it from them.
+
+Create a complete micro-learning module. Return ONLY valid JSON (no markdown):
+{
+  "concept":"${subconcept.label}",
+  "parent_concept":"${parent.title}",
+  "hook_question":"One sharp clinical question that primes the learner to think about ${subconcept.label}.",
+  "hook_answer":"The correct answer to the hook question in 1-2 sentences.",
+  "definition":"Precise 2-3 sentence definition using exact ABA terminology.",
+  "clinical_example":"3-4 sentence realistic clinical scenario showing this subconcept in action.",
+  "key_points":["Exam-critical point 1","Exam-critical point 2","Exam-critical point 3"],
+  "questions":[
+    {"q":"Applied question testing ${subconcept.label}?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","hint":"A brief strategy hint teaching how to recognize ${subconcept.label} without giving away the answer.","explanation":"Why the correct answer is right and why the others are wrong."},
+    {"q":"Discrimination question comparing ${subconcept.label} with a similar philosophical assumption?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"A","hint":"A brief strategy hint that helps distinguish ${subconcept.label} from similar concepts.","explanation":"Why the correct answer is right."}
+  ]
+}`,1800);
+  return JSON.parse(txt.replace(/```json|```/g,'').trim());
+}
+
+async function genMixedConceptContent(domId,conceptIdx){
+  const d=D.find(x=>x.id===domId);
+  const parent=getComplexConcept(domId,conceptIdx);
+  const names=parent.subconcepts.map(s=>s.label).join(', ');
+  const txt=await callAI(`You are an expert BCBA exam instructor (TCO 6th Edition, 2025).
+Domain ${d.id}: ${d.label}.
+Main Concept: ${parent.title}.
+Subconcepts: ${names}.
+
+Now the learner already studied each subconcept. Create a final mixed-discrimination module that requires telling these assumptions apart.
+
+Return ONLY valid JSON (no markdown):
+{
+  "concept":"${parent.title} — Mixed Discrimination",
+  "hook_question":"A clinical question requiring discrimination among ${names}.",
+  "hook_answer":"The correct discrimination in 1-2 sentences.",
+  "definition":"Brief synthesis of the full concept and why these assumptions matter for behavior analysis.",
+  "clinical_example":"3-4 sentence clinical scenario where more than one assumption could seem plausible.",
+  "key_points":["How to identify selectionism","How to identify determinism/empiricism","How to distinguish parsimony from pragmatism"],
+  "questions":[
+    {"q":"Mixed question requiring selection among the philosophical assumptions?","options":{"A":"Selectionism","B":"Determinism","C":"Empiricism","D":"Parsimony"},"correct":"A","hint":"Identify what the scenario emphasizes: consequences across time, lawful causes, direct observation/data, simplest explanation, or practical usefulness.","explanation":"Explain why the correct assumption fits and why the other assumptions do not."},
+    {"q":"Second mixed discrimination question involving all assumptions?","options":{"A":"Selectionism","B":"Empiricism","C":"Parsimony","D":"Pragmatism"},"correct":"D","hint":"Ask what the BCBA is prioritizing: observed data, simple explanation, historical selection by consequences, or practical effect.","explanation":"Explain why the correct assumption fits and why the other assumptions do not."}
+  ]
+}`,1800);
+  return JSON.parse(txt.replace(/```json|```/g,'').trim());
+}
+
 async function translateContent(content){
   const txt=await callAI(`Translate this BCBA study content to Spanish. Keep all ABA technical terms in English (e.g. reinforcement, extinction, MO, SD, FBA, VB-MAPP, DTT, etc.) but translate all other text. Return ONLY valid JSON with the same structure:
 ${JSON.stringify(content)}`,1800);
@@ -376,7 +459,14 @@ ${JSON.stringify(content)}`,1800);
 }
 
 async function startLearnConcept(domId,idx){
-  state.learn={phase:'hook',domId,conceptIdx:idx,content:null,contentEs:null,lang:'en',flipped:false,currentQ:0,qAnswered:false,selectedAnswer:null,answers:[],showHint:false,loading:true,translating:false,err:null};
+  const complex=getComplexConcept(domId,idx);
+  if(complex){
+    state.learn={phase:'subOverview',mode:'complex',domId,conceptIdx:idx,content:null,contentEs:null,lang:'en',flipped:false,currentQ:0,qAnswered:false,selectedAnswer:null,answers:[],showHint:false,loading:false,translating:false,err:null};
+    state.view='learn';
+    render();
+    return;
+  }
+  state.learn={phase:'hook',mode:'standard',domId,conceptIdx:idx,content:null,contentEs:null,lang:'en',flipped:false,currentQ:0,qAnswered:false,selectedAnswer:null,answers:[],showHint:false,loading:true,translating:false,err:null};
   state.view='learn';
   render();
   try{
@@ -387,6 +477,52 @@ async function startLearnConcept(domId,idx){
     state.learn.loading=false;
     state.learn.err='Error generando contenido. Verifica tu API key e intenta de nuevo.';
   }
+  render();
+}
+
+async function startSubconcept(domId,idx,subId){
+  const parent=getComplexConcept(domId,idx);
+  const sub=parent.subconcepts.find(s=>s.id===subId);
+  state.learn={phase:'hook',mode:'subconcept',domId,conceptIdx:idx,subId,content:null,contentEs:null,lang:'en',flipped:false,currentQ:0,qAnswered:false,selectedAnswer:null,answers:[],showHint:false,loading:true,translating:false,err:null};
+  state.view='learn';
+  render();
+  try{
+    const content=await genSubconceptContent(domId,idx,sub);
+    state.learn.content=content;
+    state.learn.loading=false;
+  }catch(e){
+    state.learn.loading=false;
+    state.learn.err='Error generando subconcepto. Verifica tu API key e intenta de nuevo.';
+  }
+  render();
+}
+
+async function startNextSubconcept(domId,idx){
+  const parent=getComplexConcept(domId,idx);
+  const next=parent.subconcepts.find(sc=>!isSubMastered(domId,idx,sc.id))||parent.subconcepts[0];
+  startSubconcept(domId,idx,next.id);
+}
+
+async function startMixedReview(domId,idx){
+  state.learn={phase:'hook',mode:'mixed',domId,conceptIdx:idx,content:null,contentEs:null,lang:'en',flipped:false,currentQ:0,qAnswered:false,selectedAnswer:null,answers:[],showHint:false,loading:true,translating:false,err:null};
+  state.view='learn';
+  render();
+  try{
+    const content=await genMixedConceptContent(domId,idx);
+    state.learn.content=content;
+    state.learn.loading=false;
+  }catch(e){
+    state.learn.loading=false;
+    state.learn.err='Error generando repaso mixto. Verifica tu API key e intenta de nuevo.';
+  }
+  render();
+}
+
+function markSubAndContinue(){
+  const lx=state.learn;
+  subMastered[subMasterKey(lx.domId,lx.conceptIdx,lx.subId)]=true;
+  saveSubMastered();
+  state.learn={phase:'subOverview',mode:'complex',domId:lx.domId,conceptIdx:lx.conceptIdx,content:null,contentEs:null,lang:lx.lang||'en',loading:false,err:null};
   render();
 }
 
@@ -455,7 +591,9 @@ function markMastered(domId,idx){
 }
 
 function retryLearn(){
-  startLearnConcept(state.learn.domId,state.learn.conceptIdx);
+  if(state.learn.mode==='subconcept') startSubconcept(state.learn.domId,state.learn.conceptIdx,state.learn.subId);
+  else if(state.learn.mode==='mixed') startMixedReview(state.learn.domId,state.learn.conceptIdx);
+  else startLearnConcept(state.learn.domId,state.learn.conceptIdx);
 }
 
 function renderLearnHeader(d,lx,totalMastered,totalConcepts){
@@ -520,6 +658,47 @@ function renderLearn(el){
       <p style="color:#888;margin-bottom:1.5rem;">Has completado los 104 conceptos del TCO 6ª Edición.</p>
       <button class="btn-primary" onclick="setView('practice')"><i class="ti ti-brain"></i>Ir a Practicar</button></div>`;
     return;
+  }
+
+
+  // SUBCONCEPT OVERVIEW — for complex concepts like Philosophical Assumptions
+  if(lx.phase==='subOverview'){
+    const d=D.find(x=>x.id===lx.domId);
+    const parent=getComplexConcept(lx.domId,lx.conceptIdx);
+    const done=subMasteredCount(lx.domId,lx.conceptIdx);
+    const total=parent.subconcepts.length;
+    const pct=Math.round((done/total)*100);
+    let html=renderLearnHeader(d,lx,totalMastered,totalConcepts);
+    html+=`<div style="max-width:720px;">
+      <div style="background:#fff;border:1px solid #e5e5e3;border-radius:12px;padding:1.25rem;margin-bottom:1rem;border-left:4px solid ${d.border};">
+        <div style="font-size:10px;font-weight:700;color:${d.color};letter-spacing:.09em;text-transform:uppercase;margin-bottom:5px;">Subconcept Mastery Path</div>
+        <h2 style="font-size:21px;font-weight:700;margin-bottom:6px;">${parent.title}</h2>
+        <p style="font-size:13px;color:#666;line-height:1.7;margin-bottom:1rem;">${parent.description}</p>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;">
+          <div style="flex:1;height:8px;background:#f5f5f4;border-radius:4px;"><div style="height:100%;width:${pct}%;background:#0F6E56;border-radius:4px;"></div></div>
+          <div style="font-size:12px;font-weight:700;color:#0F6E56;">${done}/${total}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-bottom:1rem;">`;
+    parent.subconcepts.forEach((sc,i)=>{
+      const ok=isSubMastered(lx.domId,lx.conceptIdx,sc.id);
+      html+=`<div style="background:#fff;border:1px solid ${ok?'#97C459':'#e5e5e3'};border-radius:10px;padding:.875rem;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${ok?'#EAF3DE':'#f5f5f4'};color:${ok?'#3B6D11':'#888'};font-size:13px;font-weight:700;">${ok?'✓':i+1}</div>
+          <div style="font-size:13px;font-weight:700;">${sc.label}</div>
+        </div>
+        <button onclick="startSubconcept('${lx.domId}',${lx.conceptIdx},'${sc.id}')" style="width:100%;padding:7px;background:${ok?'#EAF3DE':d.bg};color:${ok?'#3B6D11':d.color};border:1px solid ${ok?'#97C459':d.border};border-radius:7px;cursor:pointer;font-size:11px;font-weight:700;">${ok?'Review':'Study & Master'} →</button>
+      </div>`;
+    });
+    html+=`</div>`;
+    if(done<total){
+      html+=`<button class="btn-primary" onclick="startNextSubconcept('${lx.domId}',${lx.conceptIdx})"><i class="ti ti-player-play"></i>Continue next subconcept</button>`;
+    }else{
+      html+=`<div style="background:#E6F1FB;border:1px solid #85B7EB;border-radius:10px;padding:1rem;margin-bottom:1rem;font-size:13px;color:#185FA5;line-height:1.7;"><strong>Ready for closure:</strong> Now practice mixed questions that require discriminating among all philosophical assumptions.</div>
+      <button class="btn-primary" style="background:#185FA5;" onclick="startMixedReview('${lx.domId}',${lx.conceptIdx})"><i class="ti ti-arrows-shuffle"></i>Final mixed review</button>`;
+    }
+    html+=`</div>`;
+    el.innerHTML=html;return;
   }
 
   const d=D.find(x=>x.id===lx.domId);
@@ -700,11 +879,12 @@ function renderLearn(el){
       <div style="font-size:12px;color:#888;">${c?c.concept:''}</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      ${passed?`<button onclick="markMastered('${lx.domId}',${lx.conceptIdx})" class="btn-primary" style="font-size:13px;padding:11px 20px;">
-        <i class="ti ti-circle-check"></i>${allCorrect?'¡Dominado! Siguiente →':'Continuar — Siguiente →'}
+      ${passed?`<button onclick="${lx.mode==='subconcept'?'markSubAndContinue()':lx.mode==='mixed'?`markMastered('${lx.domId}',${lx.conceptIdx})`:`markMastered('${lx.domId}',${lx.conceptIdx})`}" class="btn-primary" style="font-size:13px;padding:11px 20px;">
+        <i class="ti ti-circle-check"></i>${lx.mode==='subconcept'?'Subconcept mastered →':lx.mode==='mixed'?'Complete concept mastered →':(allCorrect?'¡Dominado! Siguiente →':'Continuar — Siguiente →')}
       </button>`:''}
       <button onclick="retryLearn()" class="btn-secondary" style="${passed?'':'background:#185FA5;color:#fff;border:none;'}">
         <i class="ti ti-refresh"></i>Repasar este concepto</button>
+      ${lx.mode==='subconcept'?`<button onclick="state.learn.phase='subOverview';state.learn.mode='complex';render();" class="btn-secondary"><i class="ti ti-list"></i>Back to subconcepts</button>`:''}
     </div>
     </div>`;
     el.innerHTML=html;return;
@@ -1222,6 +1402,7 @@ function renderAnalytics(el){
 function init(){
   loadStats();
   loadMastered();
+  loadSubMastered();
   state.view='dash';
   render();
 }
