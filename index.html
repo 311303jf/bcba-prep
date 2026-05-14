@@ -156,6 +156,8 @@ const D=[
 
 const EXAM_PLAN=['B','G','C','E','F','B','G','H','I','B','E','F','C','G','D','H','B','I','E','G','F','H','C','I','A'];
 const STOR_KEY='bcba-hub-2025';
+const MASTER_KEY='bcba-mastered-2025';
+let mastered={};
 const KEY_K='bcba-apikey';
 
 // ============================================================
@@ -167,6 +169,7 @@ let state={
  practice:{domId:null,q:null,loading:false,selAns:null,showExp:false,err:null,sc:{c:0,t:0}},
  exam:{active:false,plan:null,curr:0,q:null,loading:false,answers:[],timer:2100,done:false,results:null},
  notes:{domId:'B',taskIdx:0,notes:null,loading:false,err:null},
+ learn:{phase:'domains',domId:null,conceptIdx:0,content:null,loading:false,currentQ:0,answers:[],err:null},
 };
 let examTimer=null;
 
@@ -174,6 +177,11 @@ let examTimer=null;
 // STORAGE
 // ============================================================
 function loadStats(){try{const s=localStorage.getItem(STOR_KEY);if(s)state.stats=JSON.parse(s);}catch{}}
+function loadMastered(){try{const m=localStorage.getItem(MASTER_KEY);if(m)mastered=JSON.parse(m);}catch{}}
+function saveMastered(){try{localStorage.setItem(MASTER_KEY,JSON.stringify(mastered));}catch{}}
+function masterKey(domId,idx){return domId+'-'+idx;}
+function isMastered(domId,idx){return!!mastered[masterKey(domId,idx)];}
+function masteredCount(domId){return D.find(d=>d.id===domId).tasks.filter((_,i)=>isMastered(domId,i)).length;}
 function saveStats(){try{localStorage.setItem(STOR_KEY,JSON.stringify(state.stats));}catch{}}
 
 // ============================================================
@@ -261,7 +269,7 @@ function render(){
   updateNav();
   updateSidebar();
   const main=document.getElementById('main-content');
-  const views={dash:renderDash,practice:renderPractice,exam:renderExam,notes:renderNotes,analytics:renderAnalytics};
+  const views={dash:renderDash,learn:renderLearn,practice:renderPractice,exam:renderExam,notes:renderNotes,analytics:renderAnalytics};
   main.innerHTML='';
   (views[state.view]||renderDash)(main);
 }
@@ -270,6 +278,7 @@ function updateNav(){
   const nav=document.getElementById('sidebar-nav');
   const items=[
     {id:'dash',label:'Dashboard',icon:'ti-layout-dashboard'},
+    {id:'learn',label:'Aprender',icon:'ti-school'},
     {id:'practice',label:'Practicar',icon:'ti-brain'},
     {id:'exam',label:'Examen Simulado',icon:'ti-clock'},
     {id:'notes',label:'Notas con IA',icon:'ti-book'},
@@ -307,6 +316,300 @@ function weakDomains(){
 function fmtTime(s){return`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
 function pctColor(p){return p>=70?'#3B6D11':p>=50?'#854F0B':'#A32D2D';}
 function pctBg(p){return p>=70?'#EAF3DE':p>=50?'#FAEEDA':'#FCEBEB';}
+
+
+// ============================================================
+// LEARN MODE
+// ============================================================
+async function genLearnContent(domId,conceptIdx){
+  const d=D.find(x=>x.id===domId);
+  const task=d.tasks[conceptIdx];
+  const txt=await callAI(`You are an expert BCBA instructor. Create a complete learning module for the BCBA exam (TCO 6th Edition, 2025).
+Domain ${d.id}: ${d.label}
+Concept: "${task}"
+
+Return ONLY valid JSON (no markdown):
+{"concept":"${task}","definition":"Clear precise 2-3 sentence definition using exact ABA terminology. Include what it IS and what distinguishes it from similar concepts.","clinical_example":"A 3-4 sentence realistic clinical scenario showing this exact concept in action with a specific client.","key_points":["Critical point 1 for the exam","Critical point 2 for the exam","Critical point 3 for the exam"],"questions":[{"q":"Applied question about this concept in a clinical scenario?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","explanation":"Why B is correct and why others are wrong."},{"q":"Second applied question testing deeper understanding?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"A","explanation":"Why A is correct."},{"q":"Third question testing discrimination from similar concepts?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"C","explanation":"Why C is correct."}]}`,1800);
+  return JSON.parse(txt.replace(/\`\`\`json|\`\`\`/g,'').trim());
+}
+
+async function startLearnConcept(domId,idx){
+  state.learn={phase:'learning',domId,conceptIdx:idx,content:null,loading:true,currentQ:0,answers:[],err:null};
+  state.view='learn';
+  render();
+  try{
+    const content=await genLearnContent(domId,idx);
+    state.learn.content=content;
+    state.learn.loading=false;
+  }catch(e){
+    state.learn.loading=false;
+    state.learn.err='Error generando contenido. Intenta de nuevo.';
+  }
+  render();
+}
+
+function handleLearnAnswer(letter){
+  const q=state.learn.content.questions[state.learn.currentQ];
+  const ok=letter===q.correct;
+  state.learn.answers=[...state.learn.answers,{letter,ok,explanation:q.explanation,correct:q.correct}];
+  if(state.learn.currentQ<2){
+    state.learn.currentQ++;
+  } else {
+    state.learn.phase='result';
+  }
+  render();
+}
+
+function markMastered(domId,idx){
+  mastered[masterKey(domId,idx)]=true;
+  saveMastered();
+  // Auto-advance to next concept
+  const d=D.find(x=>x.id===domId);
+  const nextIdx=idx+1;
+  if(nextIdx<d.tasks.length){
+    startLearnConcept(domId,nextIdx);
+  } else {
+    // Domain complete — go back to domain list
+    state.learn={phase:'domains',domId:null,conceptIdx:0,content:null,loading:false,currentQ:0,answers:[],err:null};
+    render();
+  }
+}
+
+function renderLearn(el){
+  const lx=state.learn;
+  
+  // PHASE: Domain selection
+  if(lx.phase==='domains'){
+    let html=`
+    <h2 style="font-size:21px;font-weight:600;margin-bottom:.25rem;">Aprender</h2>
+    <p style="font-size:12px;color:#888;margin-bottom:1.25rem;">Estudia cada concepto del TCO paso a paso — definición, ejemplo clínico y verificación con preguntas</p>`;
+    
+    // Overall progress
+    const totalConcepts=D.reduce((s,d)=>s+d.tasks.length,0);
+    const totalMastered=D.reduce((s,d)=>s+masteredCount(d.id),0);
+    const overallPct=totalConcepts>0?Math.round((totalMastered/totalConcepts)*100):0;
+    
+    html+=`<div style="background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem;">
+      <div style="flex:1;">
+        <div style="font-size:12px;color:#888;margin-bottom:4px;">Progreso total — ${totalMastered} de ${totalConcepts} conceptos dominados</div>
+        <div style="height:8px;background:#f5f5f4;border-radius:4px;"><div style="height:100%;width:${overallPct}%;background:#0F6E56;border-radius:4px;transition:width .4s;"></div></div>
+      </div>
+      <div style="font-size:24px;font-weight:600;color:#0F6E56;flex-shrink:0;">${overallPct}%</div>
+    </div>`;
+    
+    html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">`;
+    D.forEach(d=>{
+      const mc=masteredCount(d.id);
+      const total=d.tasks.length;
+      const pct=Math.round((mc/total)*100);
+      const nextIdx=d.tasks.findIndex((_,i)=>!isMastered(d.id,i));
+      const allDone=nextIdx===-1;
+      html+=`<div style="background:#fff;border-radius:12px;border:1px solid ${allDone?'#97C459':'#e5e5e3'};padding:.875rem;border-left:3px solid ${d.border};">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="background:${d.bg};border-radius:6px;padding:5px;display:flex;">
+            <i class="ti ${d.icon}" style="font-size:14px;color:${d.color};"></i></div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:9px;font-weight:600;color:${d.color};letter-spacing:.06em;">DOM. ${d.id}</div>
+            <div style="font-size:12px;font-weight:500;line-height:1.3;">${d.short||d.label}</div>
+          </div>
+          ${allDone?'<i class="ti ti-circle-check" style="color:#3B6D11;font-size:18px;flex-shrink:0;"></i>':''}
+        </div>
+        <div style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#888;margin-bottom:3px;">
+            <span>${mc}/${total} dominados</span>
+            <span style="color:${pct>=70?'#3B6D11':pct>=30?'#854F0B':'#888'};font-weight:600;">${pct}%</span>
+          </div>
+          <div style="height:4px;background:#f5f5f4;border-radius:2px;"><div style="height:100%;width:${pct}%;background:${pct>=70?'#639922':pct>=30?'#EF9F27':'#d1d5db'};border-radius:2px;"></div></div>
+        </div>
+        <button onclick="state.learn.phase='concepts';state.learn.domId='${d.id}';render();"
+          style="width:100%;padding:7px;background:${d.bg};color:${d.color};border:1px solid ${d.border};border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;">
+          ${allDone?'✅ Completado — Repasar':'Continuar →'}</button>
+      </div>`;
+    });
+    html+=`</div>`;
+    el.innerHTML=html;
+    return;
+  }
+  
+  // PHASE: Concept list
+  if(lx.phase==='concepts'){
+    const d=D.find(x=>x.id===lx.domId);
+    let html=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;">
+      <button class="btn-secondary" style="padding:5px 10px;font-size:12px;" onclick="state.learn.phase='domains';render();">
+        <i class="ti ti-arrow-left"></i> Dominios</button>
+      <span style="font-size:13px;font-weight:600;">Dom. ${d.id}: ${d.label}</span>
+      <span style="font-size:12px;color:#888;margin-left:auto;">${masteredCount(d.id)}/${d.tasks.length} dominados</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;">`;
+    
+    d.tasks.forEach((task,i)=>{
+      const done=isMastered(d.id,i);
+      html+=`<div style="background:#fff;border-radius:10px;border:1px solid ${done?'#97C459':'#e5e5e3'};padding:.875rem 1rem;display:flex;align-items:center;gap:12px;">
+        <div style="width:28px;height:28px;border-radius:50%;background:${done?'#EAF3DE':'#f5f5f4'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          ${done?'<i class="ti ti-check" style="color:#3B6D11;font-size:14px;"></i>':`<span style="font-size:11px;font-weight:600;color:#888;">${i+1}</span>`}
+        </div>
+        <div style="flex:1;font-size:13px;${done?'color:#3B6D11;':''}font-weight:${done?500:400};">${task}</div>
+        <button onclick="startLearnConcept('${d.id}',${i})"
+          style="padding:6px 12px;background:${done?'#EAF3DE':'#0F6E56'};color:${done?'#3B6D11':'white'};border:${done?'1px solid #97C459':'none'};border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;flex-shrink:0;">
+          ${done?'Repasar':'Estudiar →'}</button>
+      </div>`;
+    });
+    html+=`</div>`;
+    el.innerHTML=html;
+    return;
+  }
+  
+  // PHASE: Learning content
+  if(lx.phase==='learning'){
+    const d=D.find(x=>x.id===lx.domId);
+    let html=`<div style="max-width:680px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap;">
+      <button class="btn-secondary" style="padding:5px 10px;font-size:12px;" onclick="state.learn.phase='concepts';render();">
+        <i class="ti ti-arrow-left"></i> Conceptos</button>
+      <span style="font-size:11px;font-weight:500;background:${d.bg};color:${d.color};padding:3px 10px;border-radius:20px;">Dom. ${d.id}</span>
+      <span style="font-size:11px;color:#888;">Concepto ${lx.conceptIdx+1} de ${d.tasks.length}</span>
+    </div>`;
+    
+    if(lx.loading){
+      html+=`<div class="loading"><i class="ti ti-brain"></i><div style="font-size:14px;">Generando módulo de aprendizaje...</div></div>`;
+    } else if(lx.err){
+      html+=`<div style="background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:1rem;color:#A32D2D;font-size:13px;">${lx.err}
+        <button onclick="startLearnConcept('${lx.domId}',${lx.conceptIdx})" style="margin-left:10px;color:#A32D2D;text-decoration:underline;background:none;border:none;cursor:pointer;">Reintentar</button></div>`;
+    } else if(lx.content){
+      const c=lx.content;
+      html+=`
+      <div style="background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:1.25rem;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:600;color:#0F6E56;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;">Concepto</div>
+        <div style="font-size:17px;font-weight:600;margin-bottom:1rem;color:#1a1a18;">${c.concept}</div>
+        
+        <div style="font-size:10px;font-weight:600;color:#185FA5;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;">Definición</div>
+        <p style="font-size:14px;line-height:1.75;margin-bottom:1rem;color:#1a1a18;">${c.definition}</p>
+        
+        <div style="background:#E6F1FB;border-radius:8px;padding:.875rem 1rem;margin-bottom:1rem;border-left:3px solid #85B7EB;">
+          <div style="font-size:10px;font-weight:600;color:#185FA5;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;">Ejemplo clínico</div>
+          <p style="font-size:13px;line-height:1.75;margin:0;color:#1a1a18;">${c.clinical_example}</p>
+        </div>
+        
+        <div style="font-size:10px;font-weight:600;color:#534AB7;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;">Puntos clave para el examen</div>
+        <ul style="padding-left:1.25rem;margin:0;">
+          ${c.key_points.map(p=>`<li style="font-size:13px;line-height:1.75;color:#1a1a18;">${p}</li>`).join('')}
+        </ul>
+      </div>
+      
+      <button class="btn-primary" style="font-size:14px;padding:11px 22px;" onclick="state.learn.phase='testing';state.learn.currentQ=0;state.learn.answers=[];render();">
+        <i class="ti ti-player-play"></i>Verificar comprensión →
+      </button>`;
+    }
+    html+=`</div>`;
+    el.innerHTML=html;
+    return;
+  }
+  
+  // PHASE: Testing (questions one by one)
+  if(lx.phase==='testing'){
+    const d=D.find(x=>x.id===lx.domId);
+    const c=lx.content;
+    const q=c.questions[lx.currentQ];
+    const answered=lx.answers[lx.currentQ];
+    
+    let html=`<div style="max-width:680px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;">
+      <span style="font-size:11px;font-weight:500;background:${d.bg};color:${d.color};padding:3px 10px;border-radius:20px;">Dom. ${d.id}</span>
+      <span style="font-size:12px;color:#888;">Pregunta ${lx.currentQ+1} de 3</span>
+      <div style="margin-left:auto;display:flex;gap:6px;">
+        ${[0,1,2].map(i=>`<div style="width:24px;height:24px;border-radius:50%;background:${i<lx.answers.length?(lx.answers[i].ok?'#EAF3DE':'#FCEBEB'):'#f5f5f4'};border:1px solid ${i<lx.answers.length?(lx.answers[i].ok?'#97C459':'#F09595'):'#e5e5e3'};display:flex;align-items:center;justify-content:center;">
+          ${i<lx.answers.length?`<i class="ti ti-${lx.answers[i].ok?'check':'x'}" style="font-size:12px;color:${lx.answers[i].ok?'#3B6D11':'#A32D2D'};"></i>`:`<span style="font-size:10px;font-weight:600;color:#aaa;">${i+1}</span>`}
+        </div>`).join('')}
+      </div>
+    </div>
+    
+    <div style="background:#f9f9f8;border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;border-left:3px solid ${d.border};">
+      <div style="font-size:9px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;">Pregunta de verificación</div>
+      <p style="margin:0;font-size:14px;font-weight:500;line-height:1.6;">${q.q}</p>
+    </div>
+    
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:.875rem;">`;
+    
+    Object.entries(q.options).forEach(([letter,text])=>{
+      let bg='#fff',border='#d1d5db',tc='#1a1a18';
+      if(answered){
+        if(letter===q.correct){bg='#EAF3DE';border='#639922';tc='#3B6D11';}
+        else if(letter===answered.letter){bg='#FCEBEB';border='#E24B4A';tc='#A32D2D';}
+        else{tc='#888';}
+      }
+      html+=`<button onclick="handleLearnAnswer('${letter}')" ${answered?'disabled':''} 
+        style="display:flex;align-items:flex-start;gap:12px;padding:11px 14px;background:${bg};border:1px solid ${border};border-radius:8px;cursor:${answered?'default':'pointer'};text-align:left;width:100%;color:${tc};">
+        <span style="font-weight:600;min-width:18px;font-size:14px;flex-shrink:0;">${letter}.</span>
+        <span style="font-size:13px;line-height:1.65;flex:1;">${text}</span>
+        ${answered&&letter===q.correct?'<i class="ti ti-check" style="color:#3B6D11;margin-left:auto;flex-shrink:0;"></i>':''}
+        ${answered&&letter===answered.letter&&letter!==q.correct?'<i class="ti ti-x" style="color:#A32D2D;margin-left:auto;flex-shrink:0;"></i>':''}
+      </button>`;
+    });
+    html+=`</div>`;
+    
+    if(answered){
+      html+=`<div style="background:${answered.ok?'#EAF3DE':'#FAECE7'};border:1px solid ${answered.ok?'#97C459':'#F0997B'};border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;">
+        <div style="font-size:12px;font-weight:600;color:${answered.ok?'#3B6D11':'#993C1D'};margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+          <i class="ti ti-${answered.ok?'check':'x'}"></i>${answered.ok?'¡Correcto!':'Incorrecto — Respuesta: '+q.correct}
+        </div>
+        <p style="margin:0;font-size:13px;line-height:1.75;">${answered.explanation}</p>
+      </div>`;
+      
+      if(lx.currentQ<2){
+        html+=`<button class="btn-primary" onclick="state.learn.currentQ++;render();">
+          <i class="ti ti-arrow-right"></i>Siguiente pregunta</button>`;
+      } else {
+        html+=`<button class="btn-primary" onclick="state.learn.phase='result';render();">
+          <i class="ti ti-chart-bar"></i>Ver resultados</button>`;
+      }
+    }
+    html+=`</div>`;
+    el.innerHTML=html;
+    return;
+  }
+  
+  // PHASE: Result
+  if(lx.phase==='result'){
+    const d=D.find(x=>x.id===lx.domId);
+    const correct=lx.answers.filter(a=>a.ok).length;
+    const pct=Math.round((correct/3)*100);
+    const passed=correct>=2;
+    
+    let html=`<div style="max-width:500px;">
+    <div style="text-align:center;background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:2rem;margin-bottom:1.25rem;">
+      <div style="font-size:48px;font-weight:700;color:${passed?'#3B6D11':'#A32D2D'};margin-bottom:8px;">${pct}%</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:4px;">${passed?'¡Concepto dominado! 🎉':'Necesitas repasar 📖'}</div>
+      <div style="font-size:13px;color:#888;">${correct} de 3 preguntas correctas</div>
+    </div>
+    
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1.25rem;">
+      ${lx.answers.map((a,i)=>`
+      <div style="background:#fff;border-radius:8px;border:1px solid ${a.ok?'#97C459':'#F09595'};padding:.875rem;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <i class="ti ti-${a.ok?'check':'x'}" style="color:${a.ok?'#3B6D11':'#A32D2D'};"></i>
+          <span style="font-size:12px;font-weight:600;">Pregunta ${i+1} — ${a.ok?'Correcta':'Incorrecta — Resp: '+a.correct}</span>
+        </div>
+        <p style="margin:0;font-size:12px;color:#666;line-height:1.6;">${a.explanation}</p>
+      </div>`).join('')}
+    </div>
+    
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${passed?`
+      <button onclick="markMastered('${lx.domId}',${lx.conceptIdx})" class="btn-primary" style="font-size:14px;padding:11px 22px;">
+        <i class="ti ti-circle-check"></i>Dominado — Siguiente concepto →
+      </button>`:
+      `<button onclick="startLearnConcept('${lx.domId}',${lx.conceptIdx})" class="btn-primary" style="background:#185FA5;font-size:13px;">
+        <i class="ti ti-refresh"></i>Repasar este concepto
+      </button>`}
+      <button onclick="state.learn.phase='concepts';render();" class="btn-secondary">
+        Ver todos los conceptos</button>
+    </div>
+    </div>`;
+    el.innerHTML=html;
+    return;
+  }
+}
 
 // ============================================================
 // DASHBOARD
@@ -810,6 +1113,7 @@ function renderAnalytics(el){
 // ============================================================
 function init(){
   loadStats();
+  loadMastered();
   state.view='dash';
   render();
 }
