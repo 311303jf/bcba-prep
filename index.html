@@ -177,26 +177,6 @@ let mastered={};
 const KEY_K='bcba-apikey';
 
 // ============================================================
-// COMPLEX CONCEPTS — Subconcept Mastery Paths
-// ============================================================
-const COMPLEX_CONCEPTS={
-  'A-1':{
-    title:'Philosophical assumptions',
-    task:'Philosophical assumptions (selectionism, determinism, empiricism, parsimony, pragmatism)',
-    description:'Master each philosophical assumption individually first, then practice mixed discrimination questions for the complete concept.',
-    subconcepts:[
-      {id:'selectionism',label:'Selectionism'},
-      {id:'determinism',label:'Determinism'},
-      {id:'empiricism',label:'Empiricism'},
-      {id:'parsimony',label:'Parsimony'},
-      {id:'pragmatism',label:'Pragmatism'}
-    ]
-  }
-};
-const SUBMASTER_KEY='bcba-subconcept-mastered-2025';
-let subMastered={};
-
-// ============================================================
 // STATE
 // ============================================================
 let state={
@@ -214,14 +194,6 @@ let examTimer=null;
 // ============================================================
 function loadStats(){try{const s=localStorage.getItem(STOR_KEY);if(s)state.stats=JSON.parse(s);}catch{}}
 function loadMastered(){try{const m=localStorage.getItem(MASTER_KEY);if(m)mastered=JSON.parse(m);}catch{}}
-function loadSubMastered(){try{const m=localStorage.getItem(SUBMASTER_KEY);if(m)subMastered=JSON.parse(m);}catch{}}
-function saveSubMastered(){try{localStorage.setItem(SUBMASTER_KEY,JSON.stringify(subMastered));}catch{}}
-function complexId(domId,idx){return domId+'-'+idx;}
-function getComplexConcept(domId,idx){return COMPLEX_CONCEPTS[complexId(domId,idx)]||null;}
-function subMasterKey(domId,idx,subId){return complexId(domId,idx)+'-'+subId;}
-function isSubMastered(domId,idx,subId){return!!subMastered[subMasterKey(domId,idx,subId)];}
-function subMasteredCount(domId,idx){const c=getComplexConcept(domId,idx);return c?c.subconcepts.filter(sc=>isSubMastered(domId,idx,sc.id)).length:0;}
-function allSubMastered(domId,idx){const c=getComplexConcept(domId,idx);return c?subMasteredCount(domId,idx)===c.subconcepts.length:false;}
 function saveMastered(){try{localStorage.setItem(MASTER_KEY,JSON.stringify(mastered));}catch{}}
 function masterKey(domId,idx){return domId+'-'+idx;}
 function isMastered(domId,idx){return!!mastered[masterKey(domId,idx)];}
@@ -291,7 +263,7 @@ Create ONE applied clinical-level question:
 - Match actual BCBA exam difficulty
 
 Return ONLY valid JSON, no markdown:
-{"domain":"${d.id}","task":"${task}","scenario":"...","question":"...","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","hint":"A short strategy hint that teaches how to analyze this question without giving away the answer. Focus on what to identify first, keywords, what to eliminate, and the ABA principle being tested.","explanation":"Why correct is right. Why A wrong. Why C wrong. Why D wrong."}`);
+{"domain":"${d.id}","task":"${task}","scenario":"...","question":"...","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","explanation":"Why correct is right. Why A wrong. Why C wrong. Why D wrong."}`);
   return JSON.parse(txt.replace(/```json|```/g,'').trim());
 }
 
@@ -363,92 +335,146 @@ function pctBg(p){return p>=70?'#EAF3DE':p>=50?'#FAEEDA':'#FCEBEB';}
 
 
 // ============================================================
-// LEARN MODE — Sequential flip cards with translation
+// LEARN MODE — Concept → Subconcept Mastery + Translation + Hints
 // ============================================================
 
+const COMPLEX_CONCEPTS={
+  "Philosophical assumptions (selectionism, determinism, empiricism, parsimony, pragmatism)":["Selectionism","Determinism","Empiricism","Parsimony","Pragmatism"],
+  "Goals of behavior analysis (description, prediction, control)":["Description","Prediction","Control"],
+  "Dimensions of applied behavior analysis":["Applied","Behavioral","Analytic","Technological","Conceptually Systematic","Effective","Generality"],
+  "Positive and negative reinforcement contingencies":["Positive Reinforcement","Negative Reinforcement","Escape","Avoidance"],
+  "Positive and negative punishment contingencies":["Positive Punishment","Negative Punishment","Response Cost","Time-Out"],
+  "Automatic vs socially mediated contingencies":["Automatic Reinforcement","Automatic Punishment","Socially Mediated Reinforcement","Socially Mediated Punishment"],
+  "Unconditioned, conditioned, and generalized reinforcers":["Unconditioned Reinforcers","Conditioned Reinforcers","Generalized Conditioned Reinforcers"],
+  "Unconditioned, conditioned, and generalized punishers":["Unconditioned Punishers","Conditioned Punishers","Generalized Conditioned Punishers"],
+  "Simple schedules of reinforcement":["Fixed Ratio","Variable Ratio","Fixed Interval","Variable Interval"],
+  "Concurrent, multiple, mixed, and chained schedules":["Concurrent Schedules","Multiple Schedules","Mixed Schedules","Chained Schedules"],
+  "Operant and respondent extinction":["Operant Extinction","Respondent Extinction","Extinction Burst","Spontaneous Recovery"],
+  "Stimulus control and stimulus discrimination":["Stimulus Control","Discriminative Stimulus (SD)","Stimulus Delta (SΔ)","Stimulus Discrimination"],
+  "Stimulus and response generalization":["Stimulus Generalization","Response Generalization","Generalization Gradient"],
+  "Motivating operations (EO and AO)":["Establishing Operations (EO)","Abolishing Operations (AO)","Value-Altering Effect","Behavior-Altering Effect"],
+  "Motivating operations vs stimulus control":["Motivating Operations","Stimulus Control","MO vs SD Discrimination"],
+  "Rule-governed vs contingency-shaped behavior":["Rule-Governed Behavior","Contingency-Shaped Behavior","Pliance","Tracking"],
+  "Verbal operants (mand, tact, intraverbal, echoic, textual)":["Mand","Tact","Intraverbal","Echoic","Textual","Transcription"],
+  "Multiple control in verbal behavior":["Convergent Multiple Control","Divergent Multiple Control","Joint Control"],
+  "Emergent relations and generative performance":["Reflexivity","Symmetry","Transitivity","Equivalence Classes","Generative Performance"],
+  "Behavioral momentum and response persistence":["Behavioral Momentum","Response Persistence","High-P Request Sequence"],
+  "Matching law and response allocation":["Matching Law","Response Allocation","Relative Rates of Reinforcement"],
+  "Imitation vs observational learning":["Imitation","Observational Learning","Modeling"],
+  "Direct, indirect, and product measures":["Direct Measures","Indirect Measures","Permanent Product Measures"],
+  "Measuring occurrence (frequency, rate, count)":["Count","Frequency","Rate","Celeration"],
+  "Temporal dimensions (duration, latency, IRT)":["Duration","Latency","Interresponse Time (IRT)"],
+  "Continuous vs discontinuous measurement":["Continuous Measurement","Discontinuous Measurement","Whole Interval","Partial Interval","Momentary Time Sampling"],
+  "Interval recording and time sampling procedures":["Whole-Interval Recording","Partial-Interval Recording","Momentary Time Sampling","Planned Activity Check"],
+  "Measuring efficiency (trials to criterion, cost-benefit)":["Trials to Criterion","Cost-Benefit Analysis","Efficiency Measures"],
+  "Validity and reliability of measurement procedures":["Validity","Accuracy","Reliability","IOA"],
+  "Graphing data (equal-interval, bar, cumulative records)":["Equal-Interval Line Graphs","Bar Graphs","Cumulative Records","Scatterplots"],
+  "Interpreting graphed data (level, trend, variability)":["Level","Trend","Variability","Immediacy of Effect","Overlap"],
+  "Dependent vs independent variables":["Dependent Variable","Independent Variable","Extraneous Variables"],
+  "Internal vs external validity":["Internal Validity","External Validity","Experimental Control"],
+  "Threats to internal validity (history, maturation, testing)":["History","Maturation","Testing","Instrumentation","Attrition"],
+  "Single-case design features (repeated measures, prediction, verification)":["Repeated Measurement","Prediction","Verification","Replication"],
+  "Reversal (ABAB) design":["Baseline","Intervention","Reversal","Replication"],
+  "Multiple baseline design":["Across Behaviors","Across Settings","Across Participants","Staggered Implementation"],
+  "Multielement (alternating treatments) design":["Alternating Treatments","Rapid Alternation","Sequence Effects"],
+  "Changing criterion design":["Criterion Changes","Stepwise Behavior Change","Experimental Control"],
+  "Comparative, component, and parametric analyses":["Comparative Analysis","Component Analysis","Parametric Analysis"],
+  "Core ethics principles (benefit others, compassion, dignity, integrity)":["Benefit Others","Treat Others with Compassion","Respect Dignity","Behave with Integrity","Ensure Competence"],
+  "Public statements, social media, and credential misrepresentation":["Public Statements","Social Media","Credential Misrepresentation","Testimonials"],
+  "Cultural humility in service delivery":["Cultural Humility","Culturally Responsive Practice","Self-Reflection"],
+  "Culturally responsive and inclusive services":["Cultural Responsiveness","Inclusion","Client Values","Contextual Fit"],
+  "Preference assessments (single stimulus, paired stimulus, MSWO)":["Single-Stimulus Preference Assessment","Paired-Stimulus Preference Assessment","MSWO","Free-Operant Preference Assessment"],
+  "Descriptive assessments (ABC narrative, scatterplot)":["ABC Narrative Recording","Scatterplot","Descriptive Assessment Limits"],
+  "Designing and evaluating functional analyses":["Attention Condition","Escape Condition","Alone Condition","Play/Control Condition","Tangible Condition"],
+  "Positive and negative reinforcement procedures":["Positive Reinforcement Procedures","Negative Reinforcement Procedures","Schedule Thinning"],
+  "Differential reinforcement (DRA, DRO, DRL, DRH) with/without extinction":["DRA","DRI","DRO","DRL","DRH","Extinction with Differential Reinforcement"],
+  "Time-based reinforcement (FT schedules)":["Fixed-Time Schedules","Noncontingent Reinforcement","NCR Schedule Thinning"],
+  "Token economies and conditioned reinforcers":["Tokens","Backup Reinforcers","Exchange Schedule","Generalized Conditioned Reinforcers"],
+  "MOs and SDs in behavior-change procedures":["MO Manipulation","SD Arrangement","Contriving Motivation","Capturing Motivation"],
+  "Simple and conditional discrimination training":["Simple Discrimination","Conditional Discrimination","Matching-to-Sample"],
+  "Prompting procedures (errorless, most-to-least, least-to-most)":["Errorless Teaching","Most-to-Least Prompting","Least-to-Most Prompting","Prompt Hierarchy"],
+  "Prompt fading (prompt delay, stimulus fading)":["Prompt Fading","Progressive Time Delay","Constant Time Delay","Stimulus Fading"],
+  "Shaping dimensions of behavior":["Successive Approximations","Differential Reinforcement","Terminal Behavior"],
+  "Chaining (forward, backward, total task)":["Forward Chaining","Backward Chaining","Total-Task Chaining","Task Analysis"],
+  "Trial-based vs free-operant teaching procedures":["Discrete Trial Teaching","Free-Operant Teaching","Natural Environment Teaching"],
+  "Group contingencies":["Independent Group Contingency","Dependent Group Contingency","Interdependent Group Contingency"],
+  "Generalization procedures (stimulus and response)":["Stimulus Generalization Procedures","Response Generalization Procedures","Multiple Exemplars","Programming Common Stimuli"],
+  "Maintenance procedures (schedule thinning, natural reinforcers)":["Schedule Thinning","Natural Reinforcers","Delayed Reinforcement","Intermittent Schedules"],
+  "Positive and negative punishment (time-out, response cost, overcorrection)":["Positive Punishment","Negative Punishment","Time-Out","Response Cost","Overcorrection"],
+  "Emotional and elicited effects of behavior-change procedures":["Emotional Effects","Elicited Effects","Side Effects of Punishment","Extinction-Induced Behavior"],
+  "Planning for and mitigating behavioral relapse":["Resurgence","Renewal","Reinstatement","Spontaneous Recovery"],
+  "Data-based decisions about procedural integrity":["Procedural Integrity Data","Treatment Fidelity","Implementation Feedback"],
+  "Data-based decisions about intervention effectiveness":["Visual Analysis","Decision Rules","Modify/Maintain/Terminate Intervention"],
+  "Empirically validated performance management procedures":["Performance Feedback","Goal Setting","Self-Monitoring","Reinforcement Systems"],
+  "Behavioral skills training (BST) for supervisees":["Instruction","Modeling","Rehearsal","Feedback"],
+  "Evaluating supervisee performance data":["Performance Data","Treatment Integrity Data","Outcome Data"],
+};
+
+function normalizeConceptId(txt){return String(txt||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
+function getTask(domId,idx){const d=D.find(x=>x.id===domId);return d?.tasks?.[idx]||'';}
+function getSubconceptsForTask(task){
+  if(COMPLEX_CONCEPTS[task]) return COMPLEX_CONCEPTS[task];
+  const inside=(task.match(/\(([^)]+)\)/)||[])[1];
+  if(inside && /,|\band\b|\bor\b|\bvs\b|\//i.test(inside)){
+    return inside.replace(/\betc\.?/gi,'').split(/,|\band\b|\bor\b|\bvs\b|\//i).map(x=>x.trim()).filter(x=>x.length>2).map(x=>x.replace(/^and\s+/i,''));
+  }
+  if(/\bvs\b/i.test(task)) return task.split(/\bvs\b/i).map(x=>x.trim()).filter(Boolean);
+  return [];
+}
+function getConceptTitle(task){return task.replace(/\s*\([^)]*\)\s*/g,'').trim();}
+function hasSubconcepts(domId,idx){return getSubconceptsForTask(getTask(domId,idx)).length>1;}
+function subKey(domId,idx,subIdx){return `${domId}-${idx}-sub-${subIdx}`;}
+function finalKey(domId,idx){return `${domId}-${idx}-final`;}
+function isConceptComplete(domId,idx){
+  const subs=getSubconceptsForTask(getTask(domId,idx));
+  if(subs.length>1) return subs.every((_,i)=>isMastered(domId,idx,i,false)) && isMastered(domId,idx,null,true);
+  return isMastered(domId,idx);
+}
 function getNextConcept(){
   for(const d of D){
     for(let i=0;i<d.tasks.length;i++){
-      if(!isMastered(d.id,i))return{domId:d.id,idx:i};
+      const subs=getSubconceptsForTask(d.tasks[i]);
+      if(subs.length>1){
+        for(let si=0;si<subs.length;si++) if(!isMastered(d.id,i,si,false)) return{domId:d.id,idx:i,subIdx:si,finalReview:false};
+        if(!isMastered(d.id,i,null,true)) return{domId:d.id,idx:i,subIdx:null,finalReview:true};
+      }else if(!isMastered(d.id,i)) return{domId:d.id,idx:i,subIdx:null,finalReview:false};
     }
   }
   return null;
 }
 
-async function genLearnContent(domId,conceptIdx){
+async function genLearnContent(domId,conceptIdx,subIdx=null,finalReview=false){
   const d=D.find(x=>x.id===domId);
   const task=d.tasks[conceptIdx];
+  const subs=getSubconceptsForTask(task);
+  const conceptTitle=getConceptTitle(task);
+  const subName=subIdx!==null?subs[subIdx]:null;
+  const focus=finalReview
+    ? `FINAL MIXED REVIEW. Teach and test the full concept "${conceptTitle}" by comparing these subconcepts: ${subs.join(', ')}.`
+    : subName
+      ? `SUBCONCEPT MASTERY. Teach ONLY the subconcept "${subName}" inside the larger concept "${conceptTitle}". Include discrimination from the other subconcepts: ${subs.filter((_,i)=>i!==subIdx).join(', ')}.`
+      : `CONCEPT MASTERY. Teach the full concept "${task}".`;
   const txt=await callAI(`You are an expert BCBA exam instructor (TCO 6th Edition, 2025).
-Domain ${d.id}: ${d.label}. Concept: "${task}"
+Domain ${d.id}: ${d.label}.
+Main Concept: "${task}".
+${focus}
 
 Create a complete learning module. Return ONLY valid JSON (no markdown):
 {
-  "concept":"${task}",
-  "hook_question":"One sharp clinical question that PRIMES the learner to think about this concept before seeing the definition. Should feel like an exam question.",
-  "hook_answer":"The correct answer to the hook question in 1-2 sentences.",
-  "definition":"Precise 2-3 sentence definition using exact ABA terminology. Include what distinguishes it from similar concepts.",
-  "clinical_example":"3-4 sentence realistic clinical scenario showing this concept in action.",
-  "key_points":["Exam-critical point 1","Exam-critical point 2","Exam-critical point 3"],
-  "questions":[
-    {"q":"Applied clinical question testing this concept?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","hint":"A brief strategy hint that teaches how to analyze the question step by step without revealing the answer.","explanation":"Why B is correct and why the others are wrong."},
-    {"q":"Second question testing discrimination from similar concepts?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"A","hint":"A brief strategy hint that helps distinguish this concept from similar concepts without giving away the answer.","explanation":"Why A is correct."}
-  ]
-}`,1800);
-  return JSON.parse(txt.replace(/```json|```/g,'').trim());
-}
-
-
-async function genSubconceptContent(domId,conceptIdx,subconcept){
-  const d=D.find(x=>x.id===domId);
-  const parent=getComplexConcept(domId,conceptIdx);
-  const txt=await callAI(`You are an expert BCBA exam instructor (TCO 6th Edition, 2025).
-Domain ${d.id}: ${d.label}.
-Main Concept: ${parent.title}.
-Subconcept to teach: ${subconcept.label}.
-
-Teach ONLY this subconcept first. Do not teach all the other assumptions except when distinguishing it from them.
-
-Create a complete micro-learning module. Return ONLY valid JSON (no markdown):
-{
-  "concept":"${subconcept.label}",
-  "parent_concept":"${parent.title}",
-  "hook_question":"One sharp clinical question that primes the learner to think about ${subconcept.label}.",
+  "concept":"${finalReview?conceptTitle:(subName||task)}",
+  "main_concept":"${conceptTitle}",
+  "subconcept":"${subName||''}",
+  "hook_question":"One sharp clinical question that primes the learner to think before seeing the definition.",
   "hook_answer":"The correct answer to the hook question in 1-2 sentences.",
   "definition":"Precise 2-3 sentence definition using exact ABA terminology.",
-  "clinical_example":"3-4 sentence realistic clinical scenario showing this subconcept in action.",
+  "clinical_example":"3-4 sentence realistic clinical scenario showing this concept in action.",
   "key_points":["Exam-critical point 1","Exam-critical point 2","Exam-critical point 3"],
+  "strategy":"A short strategy for how to identify this concept on BCBA exam questions.",
   "questions":[
-    {"q":"Applied question testing ${subconcept.label}?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","hint":"A brief strategy hint teaching how to recognize ${subconcept.label} without giving away the answer.","explanation":"Why the correct answer is right and why the others are wrong."},
-    {"q":"Discrimination question comparing ${subconcept.label} with a similar philosophical assumption?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"A","hint":"A brief strategy hint that helps distinguish ${subconcept.label} from similar concepts.","explanation":"Why the correct answer is right."}
+    {"q":"Applied clinical question?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","hint":"Teach the strategy to analyze the question without giving away the answer.","explanation":"Why correct is right and why the others are wrong."},
+    {"q":"Second applied question testing discrimination?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"A","hint":"Teach the strategy to analyze the question without giving away the answer.","explanation":"Why correct is right and why the others are wrong."}
   ]
-}`,1800);
-  return JSON.parse(txt.replace(/```json|```/g,'').trim());
-}
-
-async function genMixedConceptContent(domId,conceptIdx){
-  const d=D.find(x=>x.id===domId);
-  const parent=getComplexConcept(domId,conceptIdx);
-  const names=parent.subconcepts.map(s=>s.label).join(', ');
-  const txt=await callAI(`You are an expert BCBA exam instructor (TCO 6th Edition, 2025).
-Domain ${d.id}: ${d.label}.
-Main Concept: ${parent.title}.
-Subconcepts: ${names}.
-
-Now the learner already studied each subconcept. Create a final mixed-discrimination module that requires telling these assumptions apart.
-
-Return ONLY valid JSON (no markdown):
-{
-  "concept":"${parent.title} — Mixed Discrimination",
-  "hook_question":"A clinical question requiring discrimination among ${names}.",
-  "hook_answer":"The correct discrimination in 1-2 sentences.",
-  "definition":"Brief synthesis of the full concept and why these assumptions matter for behavior analysis.",
-  "clinical_example":"3-4 sentence clinical scenario where more than one assumption could seem plausible.",
-  "key_points":["How to identify selectionism","How to identify determinism/empiricism","How to distinguish parsimony from pragmatism"],
-  "questions":[
-    {"q":"Mixed question requiring selection among the philosophical assumptions?","options":{"A":"Selectionism","B":"Determinism","C":"Empiricism","D":"Parsimony"},"correct":"A","hint":"Identify what the scenario emphasizes: consequences across time, lawful causes, direct observation/data, simplest explanation, or practical usefulness.","explanation":"Explain why the correct assumption fits and why the other assumptions do not."},
-    {"q":"Second mixed discrimination question involving all assumptions?","options":{"A":"Selectionism","B":"Empiricism","C":"Parsimony","D":"Pragmatism"},"correct":"D","hint":"Ask what the BCBA is prioritizing: observed data, simple explanation, historical selection by consequences, or practical effect.","explanation":"Explain why the correct assumption fits and why the other assumptions do not."}
-  ]
-}`,1800);
+}`,2200);
   return JSON.parse(txt.replace(/```json|```/g,'').trim());
 }
 
@@ -458,19 +484,12 @@ ${JSON.stringify(content)}`,1800);
   return JSON.parse(txt.replace(/```json|```/g,'').trim());
 }
 
-async function startLearnConcept(domId,idx){
-  const complex=getComplexConcept(domId,idx);
-  if(complex){
-    state.learn={phase:'subOverview',mode:'complex',domId,conceptIdx:idx,content:null,contentEs:null,lang:'en',flipped:false,currentQ:0,qAnswered:false,selectedAnswer:null,answers:[],showHint:false,loading:false,translating:false,err:null};
-    state.view='learn';
-    render();
-    return;
-  }
-  state.learn={phase:'hook',mode:'standard',domId,conceptIdx:idx,content:null,contentEs:null,lang:'en',flipped:false,currentQ:0,qAnswered:false,selectedAnswer:null,answers:[],showHint:false,loading:true,translating:false,err:null};
+async function startLearnConcept(domId,idx,subIdx=null,finalReview=false){
+  state.learn={phase:'hook',domId,conceptIdx:idx,subIdx,finalReview,content:null,contentEs:null,lang:'en',flipped:false,currentQ:0,qAnswered:false,selectedAnswer:null,answers:[],loading:true,translating:false,showHint:false,err:null};
   state.view='learn';
   render();
   try{
-    const content=await genLearnContent(domId,idx);
+    const content=await genLearnContent(domId,idx,subIdx,finalReview);
     state.learn.content=content;
     state.learn.loading=false;
   }catch(e){
@@ -480,55 +499,9 @@ async function startLearnConcept(domId,idx){
   render();
 }
 
-async function startSubconcept(domId,idx,subId){
-  const parent=getComplexConcept(domId,idx);
-  const sub=parent.subconcepts.find(s=>s.id===subId);
-  state.learn={phase:'hook',mode:'subconcept',domId,conceptIdx:idx,subId,content:null,contentEs:null,lang:'en',flipped:false,currentQ:0,qAnswered:false,selectedAnswer:null,answers:[],showHint:false,loading:true,translating:false,err:null};
-  state.view='learn';
-  render();
-  try{
-    const content=await genSubconceptContent(domId,idx,sub);
-    state.learn.content=content;
-    state.learn.loading=false;
-  }catch(e){
-    state.learn.loading=false;
-    state.learn.err='Error generando subconcepto. Verifica tu API key e intenta de nuevo.';
-  }
-  render();
-}
-
-async function startNextSubconcept(domId,idx){
-  const parent=getComplexConcept(domId,idx);
-  const next=parent.subconcepts.find(sc=>!isSubMastered(domId,idx,sc.id))||parent.subconcepts[0];
-  startSubconcept(domId,idx,next.id);
-}
-
-async function startMixedReview(domId,idx){
-  state.learn={phase:'hook',mode:'mixed',domId,conceptIdx:idx,content:null,contentEs:null,lang:'en',flipped:false,currentQ:0,qAnswered:false,selectedAnswer:null,answers:[],showHint:false,loading:true,translating:false,err:null};
-  state.view='learn';
-  render();
-  try{
-    const content=await genMixedConceptContent(domId,idx);
-    state.learn.content=content;
-    state.learn.loading=false;
-  }catch(e){
-    state.learn.loading=false;
-    state.learn.err='Error generando repaso mixto. Verifica tu API key e intenta de nuevo.';
-  }
-  render();
-}
-
-function markSubAndContinue(){
-  const lx=state.learn;
-  subMastered[subMasterKey(lx.domId,lx.conceptIdx,lx.subId)]=true;
-  saveSubMastered();
-  state.learn={phase:'subOverview',mode:'complex',domId:lx.domId,conceptIdx:lx.conceptIdx,content:null,contentEs:null,lang:lx.lang||'en',loading:false,err:null};
-  render();
-}
-
 async function startLearnAuto(){
   const next=getNextConcept();
-  if(next) startLearnConcept(next.domId,next.idx);
+  if(next) startLearnConcept(next.domId,next.idx,next.subIdx,next.finalReview);
   else{state.learn.phase='complete';render();}
 }
 
@@ -536,10 +509,7 @@ async function toggleLang(){
   const lx=state.learn;
   if(lx.lang==='en'&&!lx.contentEs){
     state.learn.translating=true;render();
-    try{
-      const es=await translateContent(lx.content);
-      state.learn.contentEs=es;
-    }catch{}
+    try{state.learn.contentEs=await translateContent(lx.content);}catch{}
     state.learn.translating=false;
   }
   state.learn.lang=lx.lang==='en'?'es':'en';
@@ -549,62 +519,50 @@ async function toggleLang(){
 function handleLearnAnswer(letter){
   const lx=state.learn;
   if(lx.qAnswered) return;
-
   const c=lx.lang==='es'&&lx.contentEs?lx.contentEs:lx.content;
   const q=c.questions[lx.currentQ];
   const ok=letter===q.correct;
-
   state.learn.selectedAnswer=letter;
   state.learn.qAnswered=true;
-  state.learn.answers=[
-    ...lx.answers,
-    {
-      question:q.q,
-      options:q.options,
-      letter,
-      ok,
-      correct:q.correct,
-      hint:q.hint,
-      explanation:q.explanation
-    }
-  ];
+  state.learn.answers=[...lx.answers,{question:q.q,options:q.options,letter,ok,correct:q.correct,hint:q.hint||'',explanation:q.explanation}];
   render();
 }
 
-function nextQuestion(){
-  state.learn.currentQ++;
-  state.learn.qAnswered=false;
-  state.learn.selectedAnswer=null;
-  state.learn.showHint=false;
-  render();
-}
+function nextQuestion(){state.learn.currentQ++;state.learn.qAnswered=false;state.learn.selectedAnswer=null;state.learn.showHint=false;render();}
+function finishLearn(){state.learn.phase='result';render();}
 
-function finishLearn(){
-  state.learn.phase='result';
-  render();
-}
-
-function markMastered(domId,idx){
-  mastered[masterKey(domId,idx)]=true;
+function markMastered(domId,idx,subIdx=null,finalReview=false){
+  mastered[masterKey(domId,idx,subIdx,finalReview)]=true;
   saveMastered();
+  const subs=getSubconceptsForTask(getTask(domId,idx));
+  if(subIdx!==null && subs.length>1){
+    const nextSub=subs.findIndex((_,i)=>!isMastered(domId,idx,i,false));
+    if(nextSub>=0) startLearnConcept(domId,idx,nextSub,false);
+    else startLearnConcept(domId,idx,null,true);
+    return;
+  }
   startLearnAuto();
 }
 
-function retryLearn(){
-  if(state.learn.mode==='subconcept') startSubconcept(state.learn.domId,state.learn.conceptIdx,state.learn.subId);
-  else if(state.learn.mode==='mixed') startMixedReview(state.learn.domId,state.learn.conceptIdx);
-  else startLearnConcept(state.learn.domId,state.learn.conceptIdx);
-}
+function retryLearn(){startLearnConcept(state.learn.domId,state.learn.conceptIdx,state.learn.subIdx,state.learn.finalReview);}
+
+function renderLangButtons(lx){return `<div style="display:flex;gap:6px;align-items:center;">
+  ${lx.translating?`<span style="font-size:11px;color:#888;">Traduciendo...</span>`:''}
+  <button class="lang-btn ${lx.lang==='en'?'active':''}" onclick="if(state.learn.lang!=='en'){state.learn.lang='en';render();}">English</button>
+  <button class="lang-btn ${lx.lang==='es'?'active':''}" onclick="toggleLang()">Español</button>
+</div>`;}
 
 function renderLearnHeader(d,lx,totalMastered,totalConcepts){
   const pct=totalConcepts>0?Math.round((totalMastered/totalConcepts)*100):0;
+  const subs=lx.domId?getSubconceptsForTask(getTask(lx.domId,lx.conceptIdx)):[];
+  const subText=lx.finalReview?'Final mixed review':(lx.subIdx!==null&&subs[lx.subIdx]?`Subconcepto ${lx.subIdx+1}/${subs.length}: ${subs[lx.subIdx]}`:`Concepto ${lx.conceptIdx+1}/${d?.tasks?.length||0}`);
   return `
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap;">
     <button class="btn-secondary" style="padding:5px 10px;font-size:12px;" onclick="state.learn.phase='overview';render();">
       <i class="ti ti-layout-grid"></i> Resumen</button>
-    ${d?`<span style="font-size:11px;font-weight:500;background:${d.bg};color:${d.color};padding:3px 10px;border-radius:20px;">Dom. ${d.id} · Concepto ${lx.conceptIdx+1}/${d.tasks.length}</span>`:''}
+    ${d?`<span style="font-size:11px;font-weight:500;background:${d.bg};color:${d.color};padding:3px 10px;border-radius:20px;">Dom. ${d.id} · ${subText}</span>`:''}
     <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-      <div style="font-size:11px;color:#888;">${totalMastered}/${totalConcepts} dominados</div>
+      <div style="font-size:11px;color:#888;">${totalMastered}/${totalConcepts} conceptos dominados</div>
       <div style="height:6px;width:80px;background:#e5e5e3;border-radius:3px;"><div style="height:100%;width:${pct}%;background:#0F6E56;border-radius:3px;"></div></div>
     </div>
   </div>`;
@@ -615,282 +573,137 @@ function renderLearn(el){
   const totalConcepts=D.reduce((s,d)=>s+d.tasks.length,0);
   const totalMastered=D.reduce((s,d)=>s+masteredCount(d.id),0);
 
-  // OVERVIEW — domain grid
   if(lx.phase==='overview'||lx.phase==='domains'){
     const next=getNextConcept();
     let html=`
     <h2 style="font-size:21px;font-weight:600;margin-bottom:.25rem;">Aprender</h2>
-    <p style="font-size:12px;color:#888;margin-bottom:1rem;">Un concepto a la vez — pregunta, flip para ver la explicación, verifica</p>
+    <p style="font-size:12px;color:#888;margin-bottom:1rem;">Mastery por concepto y subconcepto — estudia, practica y cierra con mixed review.</p>
     <div style="background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
       <div style="flex:1;min-width:200px;">
         <div style="font-size:12px;color:#888;margin-bottom:4px;">${totalMastered} de ${totalConcepts} conceptos dominados</div>
         <div style="height:8px;background:#f5f5f4;border-radius:4px;"><div style="height:100%;width:${totalConcepts>0?Math.round((totalMastered/totalConcepts)*100):0}%;background:#0F6E56;border-radius:4px;"></div></div>
       </div>
-      ${next?`<button class="btn-primary" style="font-size:14px;padding:11px 20px;" onclick="startLearnAuto()">
-        <i class="ti ti-player-play"></i>Continuar estudiando →</button>`
-      :`<div style="color:#3B6D11;font-weight:600;font-size:14px;">✅ ¡Todos los conceptos dominados!</div>`}
+      ${next?`<button class="btn-primary" style="font-size:14px;padding:11px 20px;" onclick="startLearnAuto()"><i class="ti ti-player-play"></i>Continuar estudiando →</button>`:`<div style="color:#3B6D11;font-weight:600;font-size:14px;">✅ ¡Todos los conceptos dominados!</div>`}
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">`;
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;">`;
     D.forEach(d=>{
       const mc=masteredCount(d.id);const total=d.tasks.length;const pct=Math.round((mc/total)*100);
-      const nextIdx=d.tasks.findIndex((_,i)=>!isMastered(d.id,i));
+      const nextIdx=d.tasks.findIndex((_,i)=>!isConceptComplete(d.id,i));
+      const complexCount=d.tasks.filter((_,i)=>hasSubconcepts(d.id,i)).length;
       html+=`<div style="background:#fff;border-radius:10px;border:1px solid #e5e5e3;padding:.875rem;border-left:3px solid ${d.border};">
         <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;">
           <div style="background:${d.bg};border-radius:5px;padding:4px;display:flex;"><i class="ti ${d.icon}" style="font-size:13px;color:${d.color};"></i></div>
-          <div style="flex:1;min-width:0;"><div style="font-size:9px;font-weight:600;color:${d.color};">DOM. ${d.id}</div><div style="font-size:11px;font-weight:500;line-height:1.3;">${d.short}</div></div>
+          <div style="flex:1;min-width:0;"><div style="font-size:9px;font-weight:600;color:${d.color};">DOM. ${d.id}</div><div style="font-size:12px;font-weight:600;line-height:1.3;">${d.short}</div></div>
           <div style="font-size:11px;font-weight:600;color:${pct>=70?'#3B6D11':pct>=30?'#854F0B':'#888'}">${pct}%</div>
         </div>
         <div style="height:3px;background:#f5f5f4;border-radius:2px;margin-bottom:8px;"><div style="height:100%;width:${pct}%;background:${pct>=70?'#639922':pct>=30?'#EF9F27':'#d1d5db'};border-radius:2px;"></div></div>
-        <div style="font-size:10px;color:#888;margin-bottom:7px;">${mc}/${total} dominados</div>
-        <button onclick="${nextIdx>=0?`startLearnConcept('${d.id}',${nextIdx})`:`startLearnConcept('${d.id}',0)`}"
-          style="width:100%;padding:6px;background:${d.bg};color:${d.color};border:1px solid ${d.border};border-radius:6px;cursor:pointer;font-size:10px;font-weight:600;">
-          ${nextIdx>=0?'Continuar →':'Repasar →'}</button>
-      </div>`;
+        <div style="font-size:10px;color:#888;margin-bottom:7px;">${mc}/${total} conceptos dominados · ${complexCount} con sub-sesiones</div>
+        <button onclick="${nextIdx>=0?`startLearnConcept('${d.id}',${nextIdx},${getSubconceptsForTask(d.tasks[nextIdx]).length>1?0:'null'},false)`:`startLearnConcept('${d.id}',0,${getSubconceptsForTask(d.tasks[0]).length>1?0:'null'},false)`}"
+          style="width:100%;padding:7px;background:${d.bg};color:${d.color};border:1px solid ${d.border};border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">${nextIdx>=0?'Continuar →':'Repasar →'}</button>`;
+      if(nextIdx>=0){
+        const task=d.tasks[nextIdx]; const subs=getSubconceptsForTask(task);
+        if(subs.length>1){
+          html+=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid #f1f1f1;"><div style="font-size:10px;font-weight:600;color:#666;margin-bottom:5px;">Próximo: ${getConceptTitle(task)}</div>`;
+          subs.slice(0,5).forEach((sname,si)=>{html+=`<div style="font-size:10px;color:${isMastered(d.id,nextIdx,si,false)?'#3B6D11':'#888'};line-height:1.6;">${isMastered(d.id,nextIdx,si,false)?'✔':'○'} ${sname}</div>`;});
+          if(subs.length>5) html+=`<div style="font-size:10px;color:#aaa;">+${subs.length-5} más</div>`;
+          html+=`</div>`;
+        }
+      }
+      html+=`</div>`;
     });
     html+=`</div>`;
     el.innerHTML=html;return;
   }
 
-  // ALL MASTERED
   if(lx.phase==='complete'){
     el.innerHTML=`<div style="text-align:center;padding:4rem;"><div style="font-size:48px;margin-bottom:1rem;">🎓</div>
       <h2 style="font-size:21px;font-weight:600;margin-bottom:.5rem;">¡Todos los conceptos dominados!</h2>
-      <p style="color:#888;margin-bottom:1.5rem;">Has completado los 104 conceptos del TCO 6ª Edición.</p>
-      <button class="btn-primary" onclick="setView('practice')"><i class="ti ti-brain"></i>Ir a Practicar</button></div>`;
-    return;
-  }
-
-
-  // SUBCONCEPT OVERVIEW — for complex concepts like Philosophical Assumptions
-  if(lx.phase==='subOverview'){
-    const d=D.find(x=>x.id===lx.domId);
-    const parent=getComplexConcept(lx.domId,lx.conceptIdx);
-    const done=subMasteredCount(lx.domId,lx.conceptIdx);
-    const total=parent.subconcepts.length;
-    const pct=Math.round((done/total)*100);
-    let html=renderLearnHeader(d,lx,totalMastered,totalConcepts);
-    html+=`<div style="max-width:720px;">
-      <div style="background:#fff;border:1px solid #e5e5e3;border-radius:12px;padding:1.25rem;margin-bottom:1rem;border-left:4px solid ${d.border};">
-        <div style="font-size:10px;font-weight:700;color:${d.color};letter-spacing:.09em;text-transform:uppercase;margin-bottom:5px;">Subconcept Mastery Path</div>
-        <h2 style="font-size:21px;font-weight:700;margin-bottom:6px;">${parent.title}</h2>
-        <p style="font-size:13px;color:#666;line-height:1.7;margin-bottom:1rem;">${parent.description}</p>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;">
-          <div style="flex:1;height:8px;background:#f5f5f4;border-radius:4px;"><div style="height:100%;width:${pct}%;background:#0F6E56;border-radius:4px;"></div></div>
-          <div style="font-size:12px;font-weight:700;color:#0F6E56;">${done}/${total}</div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-bottom:1rem;">`;
-    parent.subconcepts.forEach((sc,i)=>{
-      const ok=isSubMastered(lx.domId,lx.conceptIdx,sc.id);
-      html+=`<div style="background:#fff;border:1px solid ${ok?'#97C459':'#e5e5e3'};border-radius:10px;padding:.875rem;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <div style="width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${ok?'#EAF3DE':'#f5f5f4'};color:${ok?'#3B6D11':'#888'};font-size:13px;font-weight:700;">${ok?'✓':i+1}</div>
-          <div style="font-size:13px;font-weight:700;">${sc.label}</div>
-        </div>
-        <button onclick="startSubconcept('${lx.domId}',${lx.conceptIdx},'${sc.id}')" style="width:100%;padding:7px;background:${ok?'#EAF3DE':d.bg};color:${ok?'#3B6D11':d.color};border:1px solid ${ok?'#97C459':d.border};border-radius:7px;cursor:pointer;font-size:11px;font-weight:700;">${ok?'Review':'Study & Master'} →</button>
-      </div>`;
-    });
-    html+=`</div>`;
-    if(done<total){
-      html+=`<button class="btn-primary" onclick="startNextSubconcept('${lx.domId}',${lx.conceptIdx})"><i class="ti ti-player-play"></i>Continue next subconcept</button>`;
-    }else{
-      html+=`<div style="background:#E6F1FB;border:1px solid #85B7EB;border-radius:10px;padding:1rem;margin-bottom:1rem;font-size:13px;color:#185FA5;line-height:1.7;"><strong>Ready for closure:</strong> Now practice mixed questions that require discriminating among all philosophical assumptions.</div>
-      <button class="btn-primary" style="background:#185FA5;" onclick="startMixedReview('${lx.domId}',${lx.conceptIdx})"><i class="ti ti-arrows-shuffle"></i>Final mixed review</button>`;
-    }
-    html+=`</div>`;
-    el.innerHTML=html;return;
+      <p style="color:#888;margin-bottom:1.5rem;">Has completado los conceptos del TCO 6ª Edición.</p>
+      <button class="btn-primary" onclick="setView('practice')"><i class="ti ti-brain"></i>Ir a Practicar</button></div>`;return;
   }
 
   const d=D.find(x=>x.id===lx.domId);
   const c=lx.lang==='es'&&lx.contentEs?lx.contentEs:lx.content;
+  const subs=getSubconceptsForTask(getTask(lx.domId,lx.conceptIdx));
 
-  // HOOK PHASE — flip card: question front / explanation back
   if(lx.phase==='hook'){
     let html=renderLearnHeader(d,lx,totalMastered,totalConcepts);
-    html+=`<div style="max-width:640px;">`;
-
-    if(lx.loading){
-      html+=`<div class="loading"><i class="ti ti-brain"></i><div>Generando módulo de aprendizaje...</div></div>`;
-    } else if(lx.err){
-      html+=`<div style="background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:1rem;color:#A32D2D;font-size:13px;">${lx.err}
-        <button onclick="startLearnConcept('${lx.domId}',${lx.conceptIdx})" style="margin-left:8px;color:#A32D2D;text-decoration:underline;background:none;border:none;cursor:pointer;">Reintentar</button></div>`;
-    } else if(c){
-      // Lang toggle + concept label
+    html+=`<div style="max-width:700px;">`;
+    if(lx.loading){html+=`<div class="loading"><i class="ti ti-brain"></i><div>Generando módulo de aprendizaje...</div></div>`;}
+    else if(lx.err){html+=`<div style="background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:1rem;color:#A32D2D;font-size:13px;">${lx.err}<button onclick="retryLearn()" style="margin-left:8px;color:#A32D2D;text-decoration:underline;background:none;border:none;cursor:pointer;">Reintentar</button></div>`;}
+    else if(c){
       html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:8px;">
-        <div style="font-size:13px;font-weight:600;color:#1a1a18;">${c.concept}</div>
-        <div style="display:flex;gap:6px;align-items:center;">
-          ${lx.translating?`<span style="font-size:11px;color:#888;">Traduciendo...</span>`:''}
-          <button class="lang-btn ${lx.lang==='en'?'active':''}" onclick="state.learn.lang='en';render();">English</button>
-          <button class="lang-btn ${lx.lang==='es'?'active':''}" onclick="toggleLang()">Español</button>
-        </div>
+        <div><div style="font-size:14px;font-weight:700;color:#1a1a18;">${c.concept}</div>${lx.subIdx!==null?`<div style="font-size:11px;color:#888;">Sub-session de: ${getConceptTitle(getTask(lx.domId,lx.conceptIdx))}</div>`:''}${lx.finalReview?`<div style="font-size:11px;color:#888;">Cierre del concepto completo · mixed discrimination</div>`:''}</div>
+        ${renderLangButtons(lx)}
       </div>`;
-
+      if(subs.length>1){
+        html+=`<div style="background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:.75rem;margin-bottom:.875rem;">
+          <div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Subconcept mastery path</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">${subs.map((sname,si)=>`<span style="font-size:10px;padding:4px 8px;border-radius:20px;border:1px solid ${lx.subIdx===si?'#0F6E56':'#e5e5e3'};background:${isMastered(lx.domId,lx.conceptIdx,si,false)?'#EAF3DE':lx.subIdx===si?'#E1F5EE':'#fff'};color:${isMastered(lx.domId,lx.conceptIdx,si,false)?'#3B6D11':lx.subIdx===si?'#0F6E56':'#666'};">${isMastered(lx.domId,lx.conceptIdx,si,false)?'✔':'○'} ${sname}</span>`).join('')}${isMastered(lx.domId,lx.conceptIdx,null,true)?`<span style="font-size:10px;padding:4px 8px;border-radius:20px;background:#EAF3DE;color:#3B6D11;">✔ Final review</span>`:`<span style="font-size:10px;padding:4px 8px;border-radius:20px;background:${lx.finalReview?'#E6F1FB':'#fff'};color:${lx.finalReview?'#185FA5':'#888'};border:1px solid #e5e5e3;">${lx.finalReview?'●':'○'} Final review</span>`}</div>
+        </div>`;
+      }
       if(!lx.flipped){
-        // FRONT: Hook question
         html+=`<div class="flip-side visible" style="background:linear-gradient(135deg,${d.bg} 0%,#fff 100%);border-color:${d.border};text-align:center;padding:2rem 1.5rem;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
           <div style="font-size:10px;font-weight:600;color:${d.color};text-transform:uppercase;letter-spacing:.1em;margin-bottom:.875rem;">💭 Piensa antes de responder</div>
           <p style="font-size:16px;font-weight:500;line-height:1.65;color:#1a1a18;margin:0 0 1.5rem;">${c.hook_question}</p>
-          <button onclick="state.learn.flipped=true;render();" style="padding:10px 24px;background:${d.color};color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;">
-            <i class="ti ti-rotate-clockwise"></i>Ver respuesta y explicación</button>
-        </div>
-        <div style="text-align:center;margin-top:.75rem;font-size:11px;color:#aaa;">Clic para voltear la tarjeta</div>`;
-      } else {
-        // BACK: Answer + full explanation
+          <button onclick="state.learn.flipped=true;render();" style="padding:10px 24px;background:${d.color};color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;"><i class="ti ti-rotate-clockwise"></i>Ver respuesta y explicación</button>
+        </div>`;
+      }else{
         html+=`<div class="flip-side visible" style="border-color:${d.border};border-left:4px solid ${d.color};">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
-            <div style="font-size:10px;font-weight:600;color:${d.color};text-transform:uppercase;letter-spacing:.1em;">✅ Respuesta</div>
-            <button onclick="state.learn.flipped=false;render();" style="font-size:11px;padding:3px 10px;color:#888;border:1px solid #d1d5db;border-radius:20px;background:#fff;cursor:pointer;">
-              <i class="ti ti-rotate-2"></i> Ver pregunta</button>
-          </div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:8px;"><div style="font-size:10px;font-weight:600;color:${d.color};text-transform:uppercase;letter-spacing:.1em;">✅ Respuesta</div><button onclick="state.learn.flipped=false;render();" style="font-size:11px;padding:3px 10px;color:#888;border:1px solid #d1d5db;border-radius:20px;background:#fff;cursor:pointer;"><i class="ti ti-rotate-2"></i> Ver pregunta</button></div>
           <p style="font-size:15px;font-weight:500;color:#1a1a18;margin:0 0 1rem;line-height:1.65;border-bottom:1px solid #f5f5f4;padding-bottom:1rem;">${c.hook_answer}</p>
-          
-          <div style="font-size:10px;font-weight:600;color:#185FA5;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;">Definición</div>
-          <p style="font-size:13px;line-height:1.75;color:#1a1a18;margin:0 0 .875rem;">${c.definition}</p>
-          
-          <div style="background:#f9f9f8;border-radius:8px;padding:.875rem;margin-bottom:.875rem;border-left:3px solid ${d.border};">
-            <div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;">Ejemplo clínico</div>
-            <p style="font-size:13px;line-height:1.75;margin:0;color:#1a1a18;">${c.clinical_example}</p>
-          </div>
-          
-          <div style="font-size:10px;font-weight:600;color:#534AB7;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;">Puntos clave para el examen</div>
-          <ul style="padding-left:1.25rem;margin:0 0 1.25rem;">${c.key_points.map(p=>`<li style="font-size:12px;line-height:1.75;color:#1a1a18;">${p}</li>`).join('')}</ul>
-          
-          <button class="btn-primary" onclick="state.learn.phase='questions';state.learn.currentQ=0;state.learn.qAnswered=false;state.learn.selectedAnswer=null;state.learn.answers=[];state.learn.showHint=false;render();">
-            <i class="ti ti-player-play"></i>Verificar comprensión →</button>
+          <div style="font-size:10px;font-weight:600;color:#185FA5;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;">Definición</div><p style="font-size:13px;line-height:1.75;color:#1a1a18;margin:0 0 .875rem;">${c.definition}</p>
+          <div style="background:#f9f9f8;border-radius:8px;padding:.875rem;margin-bottom:.875rem;border-left:3px solid ${d.border};"><div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;">Ejemplo clínico</div><p style="font-size:13px;line-height:1.75;margin:0;color:#1a1a18;">${c.clinical_example}</p></div>
+          ${c.strategy?`<div style="background:#E6F1FB;border:1px solid #85B7EB;border-radius:8px;padding:.875rem;margin-bottom:.875rem;"><div style="font-size:11px;font-weight:700;color:#185FA5;margin-bottom:5px;">💡 Exam Strategy</div><p style="font-size:13px;line-height:1.7;margin:0;">${c.strategy}</p></div>`:''}
+          <div style="font-size:10px;font-weight:600;color:#534AB7;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;">Puntos clave para el examen</div><ul style="padding-left:1.25rem;margin:0 0 1.25rem;">${(c.key_points||[]).map(p=>`<li style="font-size:12px;line-height:1.75;color:#1a1a18;">${p}</li>`).join('')}</ul>
+          <button class="btn-primary" onclick="state.learn.phase='questions';state.learn.currentQ=0;state.learn.qAnswered=false;state.learn.selectedAnswer=null;state.learn.answers=[];state.learn.showHint=false;render();"><i class="ti ti-player-play"></i>Verificar comprensión →</button>
         </div>`;
       }
     }
-    html+=`</div>`;
-    el.innerHTML=html;return;
+    html+=`</div>`;el.innerHTML=html;return;
   }
 
-  // QUESTIONS PHASE
   if(lx.phase==='questions'){
-    const q=c?c.questions[lx.currentQ]:null;
+    const qs=c?.questions||[]; const q=qs[lx.currentQ]; const qCount=qs.length||2;
     let html=renderLearnHeader(d,lx,totalMastered,totalConcepts);
-    html+=`<div style="max-width:640px;">`;
-
-    // Progress dots
-    html+=`<div class="progress-dots">
-      ${[0,1].map(i=>`<div class="dot ${i<lx.answers.length?(lx.answers[i].ok?'done':'wrong'):(i===lx.currentQ?'active':'')}"></div>`).join('')}
-    </div>`;
-
-    // Lang toggle
-    html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:8px;">
-      <span style="font-size:12px;color:#888;">Pregunta ${lx.currentQ+1} de 2</span>
-      <div style="display:flex;gap:6px;">
-        ${lx.translating?`<span style="font-size:11px;color:#888;">Traduciendo...</span>`:''}
-        <button class="lang-btn ${lx.lang==='en'?'active':''}" onclick="if(state.learn.lang!=='en'){state.learn.lang='en';render();}">EN</button>
-        <button class="lang-btn ${lx.lang==='es'?'active':''}" onclick="toggleLang()">ES</button>
-      </div>
-    </div>`;
-
+    html+=`<div style="max-width:700px;">`;
+    html+=`<div class="progress-dots">${Array.from({length:qCount},(_,i)=>`<div class="dot ${i<lx.answers.length?(lx.answers[i].ok?'done':'wrong'):(i===lx.currentQ?'active':'')}"></div>`).join('')}</div>`;
+    html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:8px;"><span style="font-size:12px;color:#888;">Pregunta ${lx.currentQ+1} de ${qCount}</span>${renderLangButtons(lx)}</div>`;
     if(q){
-      // Question card
-      html+=`<div style="background:#f9f9f8;border-radius:10px;padding:1rem 1.25rem;margin-bottom:.875rem;border-left:3px solid ${d.border};">
-        <div style="font-size:9px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;">Pregunta de verificación</div>
-        <p style="font-size:14px;font-weight:500;line-height:1.65;margin:0;">${q.q}</p>
-      </div>`;
-
-      const hintText = q.hint || (lx.lang==='es'
-        ? 'Primero identifica qué concepto ABA está evaluando la pregunta. Luego busca las palabras clave del escenario, elimina opciones que no correspondan a la función o al contexto, y selecciona la respuesta más consistente con los principios de ABA.'
-        : 'First identify the ABA concept being tested. Then look for keywords in the scenario, eliminate options that do not match the function or context, and choose the answer most consistent with ABA principles.');
-      const hintLabel = lx.lang==='es'?'Pista / Estrategia':'Hint / Strategy';
-      const hideHintLabel = lx.lang==='es'?'Ocultar pista':'Hide hint';
-
-      html+=`<button class="btn-secondary" style="margin-bottom:.875rem;color:#185FA5;border-color:#85B7EB;" onclick="state.learn.showHint=!state.learn.showHint;render();">
-        <i class="ti ti-bulb"></i>${state.learn.showHint?hideHintLabel:hintLabel}
-      </button>`;
-
-      if(state.learn.showHint){
-        html+=`<div style="background:#E6F1FB;border:1px solid #85B7EB;border-radius:10px;padding:.875rem 1rem;margin-bottom:.875rem;">
-          <div style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:6px;display:flex;align-items:center;gap:6px;"><i class="ti ti-bulb"></i>${hintLabel}</div>
-          <p style="font-size:13px;line-height:1.75;margin:0;color:#1a1a18;">${hintText}</p>
-        </div>`;
-      }
-
-      // Options
+      html+=`<div style="background:#f9f9f8;border-radius:10px;padding:1rem 1.25rem;margin-bottom:.875rem;border-left:3px solid ${d.border};"><div style="font-size:9px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;">Pregunta de verificación</div><p style="font-size:14px;font-weight:500;line-height:1.65;margin:0;">${q.q}</p></div>`;
+      html+=`<div style="display:flex;gap:8px;margin-bottom:.875rem;flex-wrap:wrap;"><button class="btn-secondary" onclick="state.learn.showHint=!state.learn.showHint;render();"><i class="ti ti-bulb"></i> Hint / Strategy</button></div>`;
+      if(lx.showHint){html+=`<div style="background:#E6F1FB;border:1px solid #85B7EB;border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;"><div style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:6px;">💡 Hint / Strategy</div><p style="font-size:13px;line-height:1.7;margin:0;">${q.hint||'Identify what the question is really asking, eliminate distractors, and choose the answer most consistent with ABA principles.'}</p></div>`;}
       html+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:.875rem;">`;
       Object.entries(q.options).forEach(([letter,text])=>{
         let bg='#fff',border='#d1d5db',tc='#1a1a18';
-        if(lx.qAnswered){
-          if(letter===q.correct){bg='#EAF3DE';border='#639922';tc='#3B6D11';}
-          else if(letter===lx.selectedAnswer){bg='#FCEBEB';border='#E24B4A';tc='#A32D2D';}
-          else{tc='#aaa';}
-        }
-        html+=`<button onclick="handleLearnAnswer('${letter}')" ${lx.qAnswered?'disabled':''}
-          style="display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:${bg};border:1px solid ${border};border-radius:8px;cursor:${lx.qAnswered?'default':'pointer'};text-align:left;width:100%;color:${tc};">
-          <span style="font-weight:600;min-width:18px;font-size:13px;flex-shrink:0;">${letter}.</span>
-          <span style="font-size:13px;line-height:1.6;flex:1;">${text}</span>
-          ${lx.qAnswered&&letter===q.correct?'<i class="ti ti-check" style="color:#3B6D11;margin-left:auto;flex-shrink:0;"></i>':''}
-          ${lx.qAnswered&&letter===lx.selectedAnswer&&letter!==q.correct?'<i class="ti ti-x" style="color:#A32D2D;margin-left:auto;flex-shrink:0;"></i>':''}
-        </button>`;
+        if(lx.qAnswered){if(letter===q.correct){bg='#EAF3DE';border='#639922';tc='#3B6D11';}else if(letter===lx.selectedAnswer){bg='#FCEBEB';border='#E24B4A';tc='#A32D2D';}else{tc='#aaa';}}
+        html+=`<button onclick="handleLearnAnswer('${letter}')" ${lx.qAnswered?'disabled':''} style="display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:${bg};border:1px solid ${border};border-radius:8px;cursor:${lx.qAnswered?'default':'pointer'};text-align:left;width:100%;color:${tc};"><span style="font-weight:600;min-width:18px;font-size:13px;flex-shrink:0;">${letter}.</span><span style="font-size:13px;line-height:1.6;flex:1;">${text}</span>${lx.qAnswered&&letter===q.correct?'<i class="ti ti-check" style="color:#3B6D11;margin-left:auto;flex-shrink:0;"></i>':''}${lx.qAnswered&&letter===lx.selectedAnswer&&letter!==q.correct?'<i class="ti ti-x" style="color:#A32D2D;margin-left:auto;flex-shrink:0;"></i>':''}</button>`;
       });
       html+=`</div>`;
-
-      // Immediate feedback (after answering)
       if(lx.qAnswered){
         const ans=lx.answers[lx.answers.length-1];
-        const feedbackTitle = lx.lang==='es'
-          ? (ans.ok?'¡Correcto!':'Incorrecto')
-          : (ans.ok?'Correct!':'Incorrect');
-        const questionLabel = lx.lang==='es'?'Pregunta':'Question';
-        const yourAnswerLabel = lx.lang==='es'?'Tu respuesta':'Your answer';
-        const correctAnswerLabel = lx.lang==='es'?'Respuesta correcta':'Correct answer';
-
-        html+=`<div style="background:${ans.ok?'#EAF3DE':'#FCEBEB'};border:1px solid ${ans.ok?'#97C459':'#F09595'};border-radius:10px;padding:1rem;margin-bottom:.875rem;">
-          <div style="font-size:13px;font-weight:700;color:${ans.ok?'#3B6D11':'#A32D2D'};margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-            <i class="ti ti-${ans.ok?'check':'x'}"></i>${feedbackTitle}
-          </div>
-
-          <div style="background:#fff;border-radius:8px;padding:.875rem;margin-bottom:.875rem;border:1px solid #e5e5e3;">
-            <div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">${questionLabel}</div>
-            <p style="font-size:13px;line-height:1.7;margin:0;">${q.q}</p>
-          </div>
-
-          <div style="font-size:12px;margin-bottom:8px;line-height:1.6;">
-            <strong>${yourAnswerLabel}:</strong> ${ans.letter} · <strong>${correctAnswerLabel}:</strong> ${q.correct}
-          </div>
-
-          <p style="margin:0;font-size:13px;line-height:1.75;">${q.explanation}</p>
-        </div>`;
-
-        if(lx.currentQ<1){
-          html+=`<button class="btn-primary" onclick="nextQuestion()"><i class="ti ti-arrow-right"></i>Siguiente pregunta</button>`;
-        } else {
-          html+=`<button class="btn-primary" onclick="finishLearn()"><i class="ti ti-chart-bar"></i>Ver resultado final</button>`;
-        }
+        const feedbackTitle=lx.lang==='es'?(ans.ok?'¡Correcto!':'Incorrecto'):(ans.ok?'Correct!':'Incorrect');
+        const questionLabel=lx.lang==='es'?'Pregunta':'Question';
+        const yourAnswerLabel=lx.lang==='es'?'Tu respuesta':'Your answer';
+        const correctAnswerLabel=lx.lang==='es'?'Respuesta correcta':'Correct answer';
+        html+=`<div style="background:${ans.ok?'#EAF3DE':'#FCEBEB'};border:1px solid ${ans.ok?'#97C459':'#F09595'};border-radius:10px;padding:1rem;margin-bottom:.875rem;"><div style="font-size:13px;font-weight:700;color:${ans.ok?'#3B6D11':'#A32D2D'};margin-bottom:8px;display:flex;align-items:center;gap:6px;"><i class="ti ti-${ans.ok?'check':'x'}"></i>${feedbackTitle}</div><div style="background:#fff;border-radius:8px;padding:.875rem;margin-bottom:.875rem;border:1px solid #e5e5e3;"><div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">${questionLabel}</div><p style="font-size:13px;line-height:1.7;margin:0;">${q.q}</p></div><div style="font-size:12px;margin-bottom:8px;line-height:1.6;"><strong>${yourAnswerLabel}:</strong> ${ans.letter} · <strong>${correctAnswerLabel}:</strong> ${q.correct}</div><p style="margin:0;font-size:13px;line-height:1.75;">${q.explanation}</p></div>`;
+        if(lx.currentQ<qCount-1) html+=`<button class="btn-primary" onclick="nextQuestion()"><i class="ti ti-arrow-right"></i>Siguiente pregunta</button>`;
+        else html+=`<button class="btn-primary" onclick="finishLearn()"><i class="ti ti-chart-bar"></i>Ver resultado final</button>`;
       }
     }
-    html+=`</div>`;
-    el.innerHTML=html;return;
+    html+=`</div>`;el.innerHTML=html;return;
   }
 
-  // RESULT PHASE
   if(lx.phase==='result'){
     const correct=lx.answers.filter(a=>a.ok).length;
-    const passed=correct>=1; // 1 of 2 minimum
-    const allCorrect=correct===2;
-    let html=`<div style="max-width:500px;">
-    <div style="text-align:center;background:#fff;border-radius:12px;border:1px solid ${allCorrect?'#97C459':passed?'#FAC775':'#F09595'};padding:2rem;margin-bottom:1.25rem;">
-      <div style="font-size:52px;margin-bottom:.5rem;">${allCorrect?'🎯':passed?'👍':'📖'}</div>
-      <div style="font-size:36px;font-weight:700;color:${allCorrect?'#3B6D11':passed?'#854F0B':'#A32D2D'};margin-bottom:6px;">${correct}/2</div>
-      <div style="font-size:15px;font-weight:600;margin-bottom:4px;">${allCorrect?'¡Concepto dominado!':passed?'Bien — puedes continuar':'Necesitas repasar este concepto'}</div>
-      <div style="font-size:12px;color:#888;">${c?c.concept:''}</div>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      ${passed?`<button onclick="${lx.mode==='subconcept'?'markSubAndContinue()':lx.mode==='mixed'?`markMastered('${lx.domId}',${lx.conceptIdx})`:`markMastered('${lx.domId}',${lx.conceptIdx})`}" class="btn-primary" style="font-size:13px;padding:11px 20px;">
-        <i class="ti ti-circle-check"></i>${lx.mode==='subconcept'?'Subconcept mastered →':lx.mode==='mixed'?'Complete concept mastered →':(allCorrect?'¡Dominado! Siguiente →':'Continuar — Siguiente →')}
-      </button>`:''}
-      <button onclick="retryLearn()" class="btn-secondary" style="${passed?'':'background:#185FA5;color:#fff;border:none;'}">
-        <i class="ti ti-refresh"></i>Repasar este concepto</button>
-      ${lx.mode==='subconcept'?`<button onclick="state.learn.phase='subOverview';state.learn.mode='complex';render();" class="btn-secondary"><i class="ti ti-list"></i>Back to subconcepts</button>`:''}
-    </div>
-    </div>`;
+    const total=lx.answers.length||2;
+    const passed=correct>=Math.ceil(total*0.5);
+    const allCorrect=correct===total;
+    const label=lx.finalReview?'Concepto completo dominado':lx.subIdx!==null?'Subconcepto dominado':'Concepto dominado';
+    let html=`<div style="max-width:520px;"><div style="text-align:center;background:#fff;border-radius:12px;border:1px solid ${allCorrect?'#97C459':passed?'#FAC775':'#F09595'};padding:2rem;margin-bottom:1.25rem;"><div style="font-size:52px;margin-bottom:.5rem;">${allCorrect?'🎯':passed?'👍':'📖'}</div><div style="font-size:36px;font-weight:700;color:${allCorrect?'#3B6D11':passed?'#854F0B':'#A32D2D'};margin-bottom:6px;">${correct}/${total}</div><div style="font-size:15px;font-weight:600;margin-bottom:4px;">${passed?label:'Necesitas repasar este punto'}</div><div style="font-size:12px;color:#888;">${c?c.concept:''}</div></div><div style="display:flex;gap:8px;flex-wrap:wrap;">${passed?`<button onclick="markMastered('${lx.domId}',${lx.conceptIdx},${lx.subIdx===null?'null':lx.subIdx},${lx.finalReview?'true':'false'})" class="btn-primary" style="font-size:13px;padding:11px 20px;"><i class="ti ti-circle-check"></i>${allCorrect?'¡Dominado! Siguiente →':'Continuar →'}</button>`:''}<button onclick="retryLearn()" class="btn-secondary" style="${passed?'':'background:#185FA5;color:#fff;border:none;'}"><i class="ti ti-refresh"></i>Repasar este punto</button></div></div>`;
     el.innerHTML=html;return;
   }
 }
-
 
 // ============================================================
 // DASHBOARD
@@ -994,13 +807,6 @@ function renderPractice(el){
       <p style="margin:0;font-size:13px;line-height:1.75;">${q.scenario}</p>
     </div>
     <p style="font-size:14px;font-weight:600;margin-bottom:.875rem;line-height:1.55;">${q.question}</p>
-    <button class="btn-secondary" style="margin-bottom:.875rem;color:#185FA5;border-color:#85B7EB;" onclick="state.practice.showHint=!state.practice.showHint;render();">
-      <i class="ti ti-bulb"></i>${p.showHint?'Hide hint':'Hint / Strategy'}
-    </button>
-    ${p.showHint?`<div style="background:#E6F1FB;border:1px solid #85B7EB;border-radius:10px;padding:.875rem 1rem;margin-bottom:.875rem;">
-      <div style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:6px;display:flex;align-items:center;gap:6px;"><i class="ti ti-bulb"></i>Hint / Strategy</div>
-      <p style="font-size:13px;line-height:1.75;margin:0;color:#1a1a18;">${q.hint || 'First identify what concept the question is testing. Look for keywords, determine the function/context, eliminate distractors, and choose the most behavior-analytic answer.'}</p>
-    </div>`:''}
     <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:.875rem;">`;
 
     Object.entries(q.options).forEach(([letter,text])=>{
@@ -1064,7 +870,7 @@ function renderDomainPicker(el){
 }
 
 async function startPractice(domId,diff){
-  state.practice={...state.practice,domId,q:null,loading:true,selAns:null,showExp:false,showHint:false,err:null};
+  state.practice={...state.practice,domId,q:null,loading:true,selAns:null,showExp:false,err:null};
   state.view='practice';
   render();
   try{const q=await genQuestion(domId,diff||'standard');state.practice.q=q;state.practice.loading=false;}
@@ -1094,7 +900,7 @@ async function nextPractice(){
   const ds=state.stats.byDomain[domId];
   const p=ds?.total>4?Math.round((ds.correct/ds.total)*100):50;
   const diff=p>=70?'hard':'standard';
-  state.practice={...state.practice,q:null,loading:true,selAns:null,showExp:false,showHint:false,err:null};
+  state.practice={...state.practice,q:null,loading:true,selAns:null,showExp:false,err:null};
   render();
   try{const q=await genQuestion(domId,diff);state.practice.q=q;state.practice.loading=false;}
   catch(e){state.practice.loading=false;state.practice.err='Error. Intenta de nuevo.';}
@@ -1402,7 +1208,6 @@ function renderAnalytics(el){
 function init(){
   loadStats();
   loadMastered();
-  loadSubMastered();
   state.view='dash';
   render();
 }
