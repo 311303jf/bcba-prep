@@ -263,7 +263,7 @@ Create ONE applied clinical-level question:
 - Match actual BCBA exam difficulty
 
 Return ONLY valid JSON, no markdown:
-{"domain":"${d.id}","task":"${task}","scenario":"...","question":"...","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","explanation":"Why correct is right. Why A wrong. Why C wrong. Why D wrong."}`);
+{"domain":"${d.id}","task":"${task}","scenario":"...","question":"...","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","hint":"A short strategy hint that teaches how to analyze this question without giving away the answer. Focus on what to identify first, keywords, what to eliminate, and the ABA principle being tested.","explanation":"Why correct is right. Why A wrong. Why C wrong. Why D wrong."}`);
   return JSON.parse(txt.replace(/```json|```/g,'').trim());
 }
 
@@ -362,8 +362,8 @@ Create a complete learning module. Return ONLY valid JSON (no markdown):
   "clinical_example":"3-4 sentence realistic clinical scenario showing this concept in action.",
   "key_points":["Exam-critical point 1","Exam-critical point 2","Exam-critical point 3"],
   "questions":[
-    {"q":"Applied clinical question testing this concept?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","explanation":"Why B is correct and why the others are wrong."},
-    {"q":"Second question testing discrimination from similar concepts?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"A","explanation":"Why A is correct."}
+    {"q":"Applied clinical question testing this concept?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","hint":"A brief strategy hint that teaches how to analyze the question step by step without revealing the answer.","explanation":"Why B is correct and why the others are wrong."},
+    {"q":"Second question testing discrimination from similar concepts?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"A","hint":"A brief strategy hint that helps distinguish this concept from similar concepts without giving away the answer.","explanation":"Why A is correct."}
   ]
 }`,1800);
   return JSON.parse(txt.replace(/```json|```/g,'').trim());
@@ -376,7 +376,7 @@ ${JSON.stringify(content)}`,1800);
 }
 
 async function startLearnConcept(domId,idx){
-  state.learn={phase:'hook',domId,conceptIdx:idx,content:null,contentEs:null,lang:'en',flipped:false,currentQ:0,qAnswered:false,selectedAnswer:null,answers:[],loading:true,translating:false,err:null};
+  state.learn={phase:'hook',domId,conceptIdx:idx,content:null,contentEs:null,lang:'en',flipped:false,currentQ:0,qAnswered:false,selectedAnswer:null,answers:[],showHint:false,loading:true,translating:false,err:null};
   state.view='learn';
   render();
   try{
@@ -412,12 +412,26 @@ async function toggleLang(){
 
 function handleLearnAnswer(letter){
   const lx=state.learn;
+  if(lx.qAnswered) return;
+
   const c=lx.lang==='es'&&lx.contentEs?lx.contentEs:lx.content;
   const q=c.questions[lx.currentQ];
   const ok=letter===q.correct;
+
   state.learn.selectedAnswer=letter;
   state.learn.qAnswered=true;
-  state.learn.answers=[...lx.answers,{letter,ok,correct:q.correct,explanation:q.explanation}];
+  state.learn.answers=[
+    ...lx.answers,
+    {
+      question:q.q,
+      options:q.options,
+      letter,
+      ok,
+      correct:q.correct,
+      hint:q.hint,
+      explanation:q.explanation
+    }
+  ];
   render();
 }
 
@@ -425,6 +439,7 @@ function nextQuestion(){
   state.learn.currentQ++;
   state.learn.qAnswered=false;
   state.learn.selectedAnswer=null;
+  state.learn.showHint=false;
   render();
 }
 
@@ -526,8 +541,8 @@ function renderLearn(el){
         <div style="font-size:13px;font-weight:600;color:#1a1a18;">${c.concept}</div>
         <div style="display:flex;gap:6px;align-items:center;">
           ${lx.translating?`<span style="font-size:11px;color:#888;">Traduciendo...</span>`:''}
-          <button class="lang-btn ${lx.lang==='en'?'active':''}" onclick="if(state.learn.lang!=='en'){state.learn.lang='en';render();}">EN</button>
-          <button class="lang-btn ${lx.lang==='es'?'active':''}" onclick="toggleLang()">ES</button>
+          <button class="lang-btn ${lx.lang==='en'?'active':''}" onclick="state.learn.lang='en';render();">English</button>
+          <button class="lang-btn ${lx.lang==='es'?'active':''}" onclick="toggleLang()">Español</button>
         </div>
       </div>`;
 
@@ -561,7 +576,7 @@ function renderLearn(el){
           <div style="font-size:10px;font-weight:600;color:#534AB7;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;">Puntos clave para el examen</div>
           <ul style="padding-left:1.25rem;margin:0 0 1.25rem;">${c.key_points.map(p=>`<li style="font-size:12px;line-height:1.75;color:#1a1a18;">${p}</li>`).join('')}</ul>
           
-          <button class="btn-primary" onclick="state.learn.phase='questions';state.learn.currentQ=0;state.learn.qAnswered=false;state.learn.selectedAnswer=null;state.learn.answers=[];render();">
+          <button class="btn-primary" onclick="state.learn.phase='questions';state.learn.currentQ=0;state.learn.qAnswered=false;state.learn.selectedAnswer=null;state.learn.answers=[];state.learn.showHint=false;render();">
             <i class="ti ti-player-play"></i>Verificar comprensión →</button>
         </div>`;
       }
@@ -598,6 +613,23 @@ function renderLearn(el){
         <p style="font-size:14px;font-weight:500;line-height:1.65;margin:0;">${q.q}</p>
       </div>`;
 
+      const hintText = q.hint || (lx.lang==='es'
+        ? 'Primero identifica qué concepto ABA está evaluando la pregunta. Luego busca las palabras clave del escenario, elimina opciones que no correspondan a la función o al contexto, y selecciona la respuesta más consistente con los principios de ABA.'
+        : 'First identify the ABA concept being tested. Then look for keywords in the scenario, eliminate options that do not match the function or context, and choose the answer most consistent with ABA principles.');
+      const hintLabel = lx.lang==='es'?'Pista / Estrategia':'Hint / Strategy';
+      const hideHintLabel = lx.lang==='es'?'Ocultar pista':'Hide hint';
+
+      html+=`<button class="btn-secondary" style="margin-bottom:.875rem;color:#185FA5;border-color:#85B7EB;" onclick="state.learn.showHint=!state.learn.showHint;render();">
+        <i class="ti ti-bulb"></i>${state.learn.showHint?hideHintLabel:hintLabel}
+      </button>`;
+
+      if(state.learn.showHint){
+        html+=`<div style="background:#E6F1FB;border:1px solid #85B7EB;border-radius:10px;padding:.875rem 1rem;margin-bottom:.875rem;">
+          <div style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:6px;display:flex;align-items:center;gap:6px;"><i class="ti ti-bulb"></i>${hintLabel}</div>
+          <p style="font-size:13px;line-height:1.75;margin:0;color:#1a1a18;">${hintText}</p>
+        </div>`;
+      }
+
       // Options
       html+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:.875rem;">`;
       Object.entries(q.options).forEach(([letter,text])=>{
@@ -617,13 +649,30 @@ function renderLearn(el){
       });
       html+=`</div>`;
 
-      // Flip explanation (after answering)
+      // Immediate feedback (after answering)
       if(lx.qAnswered){
         const ans=lx.answers[lx.answers.length-1];
-        html+=`<div style="background:${ans.ok?'#EAF3DE':'#FAECE7'};border:1px solid ${ans.ok?'#97C459':'#F0997B'};border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;">
-          <div style="font-size:12px;font-weight:600;color:${ans.ok?'#3B6D11':'#993C1D'};margin-bottom:6px;display:flex;align-items:center;gap:6px;">
-            <i class="ti ti-${ans.ok?'check':'x'}"></i>${ans.ok?'¡Correcto!':'Incorrecto — Respuesta: '+q.correct}
+        const feedbackTitle = lx.lang==='es'
+          ? (ans.ok?'¡Correcto!':'Incorrecto')
+          : (ans.ok?'Correct!':'Incorrect');
+        const questionLabel = lx.lang==='es'?'Pregunta':'Question';
+        const yourAnswerLabel = lx.lang==='es'?'Tu respuesta':'Your answer';
+        const correctAnswerLabel = lx.lang==='es'?'Respuesta correcta':'Correct answer';
+
+        html+=`<div style="background:${ans.ok?'#EAF3DE':'#FCEBEB'};border:1px solid ${ans.ok?'#97C459':'#F09595'};border-radius:10px;padding:1rem;margin-bottom:.875rem;">
+          <div style="font-size:13px;font-weight:700;color:${ans.ok?'#3B6D11':'#A32D2D'};margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+            <i class="ti ti-${ans.ok?'check':'x'}"></i>${feedbackTitle}
           </div>
+
+          <div style="background:#fff;border-radius:8px;padding:.875rem;margin-bottom:.875rem;border:1px solid #e5e5e3;">
+            <div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">${questionLabel}</div>
+            <p style="font-size:13px;line-height:1.7;margin:0;">${q.q}</p>
+          </div>
+
+          <div style="font-size:12px;margin-bottom:8px;line-height:1.6;">
+            <strong>${yourAnswerLabel}:</strong> ${ans.letter} · <strong>${correctAnswerLabel}:</strong> ${q.correct}
+          </div>
+
           <p style="margin:0;font-size:13px;line-height:1.75;">${q.explanation}</p>
         </div>`;
 
@@ -765,6 +814,13 @@ function renderPractice(el){
       <p style="margin:0;font-size:13px;line-height:1.75;">${q.scenario}</p>
     </div>
     <p style="font-size:14px;font-weight:600;margin-bottom:.875rem;line-height:1.55;">${q.question}</p>
+    <button class="btn-secondary" style="margin-bottom:.875rem;color:#185FA5;border-color:#85B7EB;" onclick="state.practice.showHint=!state.practice.showHint;render();">
+      <i class="ti ti-bulb"></i>${p.showHint?'Hide hint':'Hint / Strategy'}
+    </button>
+    ${p.showHint?`<div style="background:#E6F1FB;border:1px solid #85B7EB;border-radius:10px;padding:.875rem 1rem;margin-bottom:.875rem;">
+      <div style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:6px;display:flex;align-items:center;gap:6px;"><i class="ti ti-bulb"></i>Hint / Strategy</div>
+      <p style="font-size:13px;line-height:1.75;margin:0;color:#1a1a18;">${q.hint || 'First identify what concept the question is testing. Look for keywords, determine the function/context, eliminate distractors, and choose the most behavior-analytic answer.'}</p>
+    </div>`:''}
     <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:.875rem;">`;
 
     Object.entries(q.options).forEach(([letter,text])=>{
@@ -828,7 +884,7 @@ function renderDomainPicker(el){
 }
 
 async function startPractice(domId,diff){
-  state.practice={...state.practice,domId,q:null,loading:true,selAns:null,showExp:false,err:null};
+  state.practice={...state.practice,domId,q:null,loading:true,selAns:null,showExp:false,showHint:false,err:null};
   state.view='practice';
   render();
   try{const q=await genQuestion(domId,diff||'standard');state.practice.q=q;state.practice.loading=false;}
@@ -858,7 +914,7 @@ async function nextPractice(){
   const ds=state.stats.byDomain[domId];
   const p=ds?.total>4?Math.round((ds.correct/ds.total)*100):50;
   const diff=p>=70?'hard':'standard';
-  state.practice={...state.practice,q:null,loading:true,selAns:null,showExp:false,err:null};
+  state.practice={...state.practice,q:null,loading:true,selAns:null,showExp:false,showHint:false,err:null};
   render();
   try{const q=await genQuestion(domId,diff);state.practice.q=q;state.practice.loading=false;}
   catch(e){state.practice.loading=false;state.practice.err='Error. Intenta de nuevo.';}
