@@ -99,13 +99,13 @@
         <p style="margin:0;font-size:12px;color:#888;">TCO 6ª Edición · 2025</p>
       </div>
     </div>
-    <p>Esta app usa la IA de Anthropic para generar preguntas clínicas de nivel BCBA. Necesitas una API key gratuita para empezar.</p>
-    <input id="apikey-input" class="setup-input" type="password" placeholder="sk-ant-api03-..." autocomplete="off"/>
+    <p>Esta app usa Google Gemini (IA gratuita) para generar preguntas clínicas de nivel BCBA. Necesitas una API key gratuita de Google — sin tarjeta de crédito.</p>
+    <input id="apikey-input" class="setup-input" type="password" placeholder="AIza..." autocomplete="off"/>
     <button class="setup-btn" onclick="submitKey()"><i class="ti ti-key" style="margin-right:6px;"></i>Guardar y comenzar</button>
     <p class="setup-note">
-      ¿No tienes API key? Crea una gratis en <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a><br/>
-      Tu key se guarda solo en este dispositivo (localStorage). Nunca se envía a ningún servidor excepto Anthropic directamente.<br/><br/>
-      <strong>Nota:</strong> Claude Sonnet cobra ~$0.003 por pregunta. Con $5 de crédito tienes ~1,600 preguntas.
+      ¿No tienes API key? Crea una <strong>gratis</strong> en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a><br/>
+      Sin tarjeta de crédito. Tu key se guarda solo en este dispositivo. Nunca sale de tu navegador.<br/><br/>
+      <strong>✅ 100% gratuito</strong> — Google Gemini Flash tiene capa gratuita generosa.
     </p>
   </div>
 </div>
@@ -182,7 +182,7 @@ function saveStats(){try{localStorage.setItem(STOR_KEY,JSON.stringify(state.stat
 function getKey(){return localStorage.getItem(KEY_K)||'';}
 function submitKey(){
   const k=document.getElementById('apikey-input').value.trim();
-  if(!k.startsWith('sk-ant')){alert('La API key debe empezar con "sk-ant-..."');return;}
+  if(!k.startsWith('AIza')){alert('La API key de Google debe empezar con "AIza..."');return;}
   localStorage.setItem(KEY_K,k);
   document.getElementById('setup').classList.remove('active');
   document.getElementById('app').classList.add('active');
@@ -204,14 +204,17 @@ document.getElementById('apikey-input').addEventListener('keydown',e=>{if(e.key=
 // ============================================================
 async function callAI(prompt,max=1300){
   const key=getKey();
-  const res=await fetch('https://api.anthropic.com/v1/messages',{
+  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-5-20251001',max_tokens:max,messages:[{role:'user',content:prompt}]})
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      contents:[{parts:[{text:prompt}]}],
+      generationConfig:{maxOutputTokens:max,temperature:0.7}
+    })
   });
   const data=await res.json();
   if(data.error)throw new Error(data.error.message);
-  return data.content?.find(b=>b.type==='text')?.text||'';
+  return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
 }
 
 async function genQuestion(domId,diff='standard'){
