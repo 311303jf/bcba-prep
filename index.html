@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BCBA Study Hub — TCO 6ª Edición 2025</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f4;color:#1a1a18;min-height:100vh;}
+  button:focus-visible{outline:2px solid #0F6E56;outline-offset:2px;}
+  select:focus{outline:2px solid #0F6E56;outline-offset:2px;}
+  ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:#f1f1f1;} ::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px;}
+  /* API key setup screen */
+  #setup{display:none;position:fixed;inset:0;background:#f5f5f4;z-index:999;align-items:center;justify-content:center;}
+  #setup.active{display:flex;}
+  .setup-card{background:#fff;border-radius:16px;padding:2rem;max-width:480px;width:90%;border:1px solid #e5e5e3;}
+  .setup-card h1{font-size:22px;font-weight:600;margin-bottom:4px;color:#1a1a18;}
+  .setup-card p{font-size:14px;color:#666;margin-bottom:1.5rem;line-height:1.6;}
+  .setup-input{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:8px;font-family:monospace;}
+  .setup-input:focus{outline:2px solid #0F6E56;border-color:#0F6E56;}
+  .setup-btn{width:100%;padding:11px;background:#0F6E56;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:12px;}
+  .setup-btn:hover{background:#0a5a45;}
+  .setup-note{font-size:12px;color:#888;line-height:1.6;}
+  .setup-note a{color:#0F6E56;}
+  /* App shell */
+  #app{display:none;height:100vh;overflow:hidden;}
+  #app.active{display:flex;}
+  aside{width:190px;background:#fff;border-right:1px solid #e5e5e3;display:flex;flex-direction:column;flex-shrink:0;height:100vh;}
+  .sidebar-logo{padding:1rem;border-bottom:1px solid #e5e5e3;}
+  .sidebar-badge{font-size:10px;font-weight:600;color:#0F6E56;letter-spacing:.1em;margin-bottom:3px;}
+  .sidebar-title{font-size:17px;font-weight:600;color:#1a1a18;}
+  .sidebar-sub{font-size:10px;color:#888;margin-top:2px;}
+  nav{padding:.5rem 0;flex:1;overflow-y:auto;}
+  .nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:9px 1rem;background:transparent;border:none;border-left:2px solid transparent;cursor:pointer;font-size:13px;font-weight:400;color:#666;text-align:left;transition:all .15s;}
+  .nav-btn:hover{background:#f5f5f4;color:#1a1a18;}
+  .nav-btn.active{background:#f0faf5;border-left-color:#0F6E56;color:#1a1a18;font-weight:500;}
+  .nav-btn i{font-size:16px;}
+  .sidebar-stats{padding:.875rem 1rem;border-top:1px solid #e5e5e3;}
+  .sidebar-stats-label{font-size:11px;color:#888;margin-bottom:3px;}
+  .sidebar-stats-pct{font-size:24px;font-weight:600;}
+  .sidebar-stats-count{font-size:11px;color:#888;}
+  .api-reset{font-size:10px;color:#aaa;cursor:pointer;border:none;background:none;padding:4px 1rem;width:100%;text-align:left;}
+  .api-reset:hover{color:#A32D2D;}
+  main{flex:1;overflow-y:auto;padding:1.5rem;background:#f5f5f4;}
+  /* Cards */
+  .card{background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:1.25rem;}
+  .domain-card{background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:.875rem;}
+  /* Buttons */
+  .btn-primary{display:flex;align-items:center;gap:7px;padding:9px 16px;background:#0F6E56;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;}
+  .btn-primary:hover{background:#0a5a45;}
+  .btn-secondary{display:flex;align-items:center;gap:6px;padding:8px 14px;background:transparent;color:#666;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:13px;}
+  .btn-secondary:hover{background:#f5f5f4;}
+  /* Loading */
+  .loading{text-align:center;padding:4rem 0;color:#888;}
+  .loading i{font-size:32px;display:block;margin-bottom:10px;color:#0F6E56;}
+  /* Pill */
+  .pill{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;}
+  /* Progress bar */
+  .prog-track{height:3px;background:#e5e5e3;border-radius:2px;}
+  .prog-fill{height:100%;border-radius:2px;transition:width .4s;}
+  /* Scenario box */
+  .scenario{background:#f9f9f8;border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;}
+  .scenario-label{font-size:9px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;}
+  /* Explanation */
+  .explain{border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;}
+  /* Option buttons */
+  .opt-btn{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;background:#fff;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;text-align:left;width:100%;transition:border-color .1s;}
+  .opt-btn:hover:not(:disabled){border-color:#0F6E56;}
+  .opt-btn:disabled{cursor:default;}
+  /* Metric cards */
+  .metric{background:#f5f5f4;border-radius:8px;padding:.875rem;text-align:center;}
+  .metric-val{font-size:24px;font-weight:600;}
+  .metric-label{font-size:11px;color:#888;margin-top:3px;}
+  /* Notes sections */
+  .note-section{border-radius:8px;padding:.875rem 1rem;margin-bottom:8px;}
+  .note-label{font-size:11px;font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:6px;}
+  /* History row */
+  .history-row{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid #e5e5e3;font-size:12px;}
+  /* Responsive */
+  @media(max-width:640px){
+    aside{width:48px;}
+    .sidebar-logo,.sidebar-stats,.sidebar-badge,.sidebar-title,.sidebar-sub,.nav-btn span,.api-reset{display:none;}
+    .nav-btn{justify-content:center;padding:12px;}
+    .nav-btn i{font-size:18px;}
+    main{padding:1rem;}
+  }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+</head>
+<body>
+
+<!-- Setup Screen -->
+<div id="setup" class="active">
+  <div class="setup-card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">
+      <div style="background:#E1F5EE;border-radius:10px;padding:10px;"><i class="ti ti-brain" style="font-size:24px;color:#0F6E56;"></i></div>
+      <div>
+        <h1>BCBA Study Hub</h1>
+        <p style="margin:0;font-size:12px;color:#888;">TCO 6ª Edición · 2025</p>
+      </div>
+    </div>
+    <p>Esta app usa Google Gemini (IA gratuita) para generar preguntas clínicas de nivel BCBA. Necesitas una API key gratuita de Google — sin tarjeta de crédito.</p>
+    <input id="apikey-input" class="setup-input" type="password" placeholder="AIza..." autocomplete="off"/>
+    <button class="setup-btn" onclick="submitKey()"><i class="ti ti-key" style="margin-right:6px;"></i>Guardar y comenzar</button>
+    <p class="setup-note">
+      ¿No tienes API key? Crea una <strong>gratis</strong> en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a><br/>
+      Sin tarjeta de crédito. Tu key se guarda solo en este dispositivo. Nunca sale de tu navegador.<br/><br/>
+      <strong>✅ 100% gratuito</strong> — Google Gemini Flash tiene capa gratuita generosa.
+    </p>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <aside>
+    <div class="sidebar-logo">
+      <div class="sidebar-badge">BCBA PREP</div>
+      <div class="sidebar-title">Study Hub</div>
+      <div class="sidebar-sub">TCO 6ª Ed. · 2025 · IA</div>
+    </div>
+    <nav id="sidebar-nav"></nav>
+    <div class="sidebar-stats">
+      <div class="sidebar-stats-label">Desempeño global</div>
+      <div class="sidebar-stats-pct" id="global-pct">—</div>
+      <div class="sidebar-stats-count" id="global-count">0/0 correctas</div>
+    </div>
+    <button class="api-reset" onclick="resetKey()">⚙ Cambiar API key</button>
+  </aside>
+  <main id="main-content"></main>
+</div>
+
+<script>
+// ============================================================
+// DATA — TCO 6th Edition, official BACB document
+// ============================================================
+const D=[
+ {id:"A",label:"Behaviorism & Philosophical Foundations",short:"Behaviorism",icon:"ti-book-2",q:8,pct:5,color:"#444441",bg:"#F1EFE8",border:"#B4B2A9",
+  tasks:["Goals of behavior analysis (description, prediction, control)","Philosophical assumptions (selectionism, determinism, empiricism, parsimony, pragmatism)","Radical behaviorism perspective","Distinguishing ABA from EAB and professional practice","Dimensions of applied behavior analysis"]},
+ {id:"B",label:"Concepts and Principles",short:"Concepts",icon:"ti-atom",q:24,pct:14,color:"#185FA5",bg:"#E6F1FB",border:"#85B7EB",
+  tasks:["Positive and negative reinforcement contingencies","Positive and negative punishment contingencies","Automatic vs socially mediated contingencies","Unconditioned, conditioned, and generalized reinforcers","Unconditioned, conditioned, and generalized punishers","Simple schedules of reinforcement","Concurrent, multiple, mixed, and chained schedules","Operant and respondent extinction","Stimulus control and stimulus discrimination","Stimulus and response generalization","Response maintenance","Motivating operations (EO and AO)","Motivating operations vs stimulus control","Rule-governed vs contingency-shaped behavior","Verbal operants (mand, tact, intraverbal, echoic, textual)","Multiple control in verbal behavior","Emergent relations and generative performance","Behavioral momentum and response persistence","Matching law and response allocation","Imitation vs observational learning"]},
+ {id:"C",label:"Measurement, Data Display & Interpretation",short:"Measurement",icon:"ti-chart-line",q:21,pct:12,color:"#0F6E56",bg:"#E1F5EE",border:"#5DCAA5",
+  tasks:["Operational definitions of behavior","Direct, indirect, and product measures","Measuring occurrence (frequency, rate, count)","Temporal dimensions (duration, latency, IRT)","Continuous vs discontinuous measurement","Interval recording and time sampling procedures","Measuring efficiency (trials to criterion, cost-benefit)","Validity and reliability of measurement procedures","Selecting representative measurement procedures","Graphing data (equal-interval, bar, cumulative records)","Interpreting graphed data (level, trend, variability)","Procedural integrity measurement"]},
+ {id:"D",label:"Experimental Design",short:"Research Design",icon:"ti-flask",q:13,pct:7,color:"#534AB7",bg:"#EEEDFE",border:"#AFA9EC",
+  tasks:["Dependent vs independent variables","Internal vs external validity","Threats to internal validity (history, maturation, testing)","Single-case design features (repeated measures, prediction, verification)","Reversal (ABAB) design","Multiple baseline design","Multielement (alternating treatments) design","Changing criterion design","Single-case vs group design strengths","Comparative, component, and parametric analyses","Critiquing and interpreting single-case data"]},
+ {id:"E",label:"Ethical and Professional Issues",short:"Ethics",icon:"ti-scale",q:22,pct:13,color:"#A32D2D",bg:"#FCEBEB",border:"#F09595",
+  tasks:["Core ethics principles (benefit others, compassion, dignity, integrity)","Risks of unethical behavior to self, others, and profession","Maintaining competence through professional development","Confidentiality requirements and protected information","Public statements, social media, and credential misrepresentation","Discontinuing services and transitioning clients/supervisees","Multiple relationships and mitigation strategies","Interpersonal skills in professional relationships","Cultural humility in service delivery","Culturally responsive and inclusive services","Identifying personal biases affecting professional activity","Legal and regulatory requirements (licensure, funding, certification)"]},
+ {id:"F",label:"Behavior Assessment",short:"Assessment",icon:"ti-clipboard-list",q:23,pct:13,color:"#854F0B",bg:"#FAEEDA",border:"#FAC775",
+  tasks:["Reviewing records (educational, medical, historical)","Integrating cultural variables in assessment","Designing skills assessments (strengths and areas of need)","Preference assessments (single stimulus, paired stimulus, MSWO)","Descriptive assessments (ABC narrative, scatterplot)","Designing and evaluating functional analyses","Interpreting assessment data for services or referral","Prioritizing socially significant and culturally responsive goals"]},
+ {id:"G",label:"Behavior-Change Procedures",short:"B-Change Procedures",icon:"ti-chart-arrows-vertical",q:25,pct:14,color:"#993C1D",bg:"#FAECE7",border:"#F0997B",
+  tasks:["Positive and negative reinforcement procedures","Differential reinforcement (DRA, DRO, DRL, DRH) with/without extinction","Time-based reinforcement (FT schedules)","Token economies and conditioned reinforcers","MOs and SDs in behavior-change procedures","Simple and conditional discrimination training","Prompting procedures (errorless, most-to-least, least-to-most)","Prompt fading (prompt delay, stimulus fading)","Modeling procedures","Instructions and rules as behavior-change procedures","Shaping dimensions of behavior","Chaining (forward, backward, total task)","Trial-based vs free-operant teaching procedures","Group contingencies","Generalization procedures (stimulus and response)","Maintenance procedures (schedule thinning, natural reinforcers)","Positive and negative punishment (time-out, response cost, overcorrection)","Emotional and elicited effects of behavior-change procedures","Emergent relations and generative performance procedures"]},
+ {id:"H",label:"Selecting and Implementing Interventions",short:"Interventions",icon:"ti-target",q:20,pct:11,color:"#3B6D11",bg:"#EAF3DE",border:"#97C459",
+  tasks:["Developing observable and measurable intervention goals","Selecting interventions based on evidence, client preferences, contextual fit","Identifying socially valid alternative behaviors","Mitigating unwanted effects of reinforcement, extinction, and punishment","Planning for and mitigating behavioral relapse","Data-based decisions about procedural integrity","Data-based decisions about intervention effectiveness","Collaborating with others to support client services"]},
+ {id:"I",label:"Personnel Supervision and Management",short:"Supervision",icon:"ti-users-group",q:19,pct:11,color:"#72243E",bg:"#FBEAF0",border:"#ED93B1",
+  tasks:["Benefits of behavior-analytic supervision","Establishing effective supervisory relationships (contracts, expectations)","Equity in supervision practices","Supervision goals based on supervisee skills and cultural variables","Empirically validated performance management procedures","Behavioral skills training (BST) for supervisees","Evaluating supervisee performance data","Supporting supervisee self-care and burnout prevention"]},
+];
+
+const EXAM_PLAN=['B','G','C','E','F','B','G','H','I','B','E','F','C','G','D','H','B','I','E','G','F','H','C','I','A'];
+const STOR_KEY='bcba-hub-2025';
+const KEY_K='bcba-apikey';
+
+// ============================================================
+// STATE
+// ============================================================
+let state={
+ view:'dash',
+ stats:{byDomain:Object.fromEntries(D.map(d=>[d.id,{correct:0,total:0}])),allTime:{correct:0,total:0},history:[]},
+ practice:{domId:null,q:null,loading:false,selAns:null,showExp:false,err:null,sc:{c:0,t:0}},
+ exam:{active:false,plan:null,curr:0,q:null,loading:false,answers:[],timer:2100,done:false,results:null},
+ notes:{domId:'B',taskIdx:0,notes:null,loading:false,err:null},
+};
+let examTimer=null;
+
+// ============================================================
+// STORAGE
+// ============================================================
+function loadStats(){try{const s=localStorage.getItem(STOR_KEY);if(s)state.stats=JSON.parse(s);}catch{}}
+function saveStats(){try{localStorage.setItem(STOR_KEY,JSON.stringify(state.stats));}catch{}}
+
+// ============================================================
+// API KEY
+// ============================================================
+function getKey(){return localStorage.getItem(KEY_K)||'';}
+function submitKey(){
+  const k=document.getElementById('apikey-input').value.trim();
+  if(!k.startsWith('AIza')){alert('La API key de Google debe empezar con "AIza..."');return;}
+  localStorage.setItem(KEY_K,k);
+  document.getElementById('setup').classList.remove('active');
+  document.getElementById('app').classList.add('active');
+  init();
+}
+function resetKey(){
+  if(confirm('¿Cambiar API key?')){
+    localStorage.removeItem(KEY_K);
+    document.getElementById('app').classList.remove('active');
+    document.getElementById('setup').classList.add('active');
+    document.getElementById('apikey-input').value='';
+  }
+}
+// Allow Enter key on input
+document.getElementById('apikey-input').addEventListener('keydown',e=>{if(e.key==='Enter')submitKey();});
+
+// ============================================================
+// ANTHROPIC API
+// ============================================================
+async function callAI(prompt,max=1300,retries=3){
+  const key=getKey();
+  for(let i=0;i<retries;i++){
+    if(i>0) await new Promise(r=>setTimeout(r,2000*i));
+    try{
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          contents:[{role:"user",parts:[{text:prompt}]}],
+          generationConfig:{maxOutputTokens:max,temperature:0.7}
+        })
+      });
+      const data=await res.json();
+      if(data.error){
+        if(data.error.code===429&&i<retries-1) continue;
+        throw new Error(data.error.message);
+      }
+      return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    }catch(e){
+      if(i===retries-1) throw e;
+    }
+  }
+}
+
+async function genQuestion(domId,diff='standard'){
+  const d=D.find(x=>x.id===domId);
+  const task=d.tasks[Math.floor(Math.random()*d.tasks.length)];
+  const diffNote=diff==='hard'
+    ?'HARD: complex scenario with subtle differences between options requiring careful clinical discrimination.'
+    :'Standard difficulty matching actual BCBA exam level.';
+  const txt=await callAI(`BCBA Exam Question Generator — TCO 6th Edition (2025).
+Domain ${d.id}: ${d.label}. Task: "${task}". ${diffNote}
+
+Create ONE applied clinical-level question:
+- 3-4 sentence realistic clinical scenario (specific client, behavior, context)
+- Question requires clinical judgment not definition recall
+- All 4 options clinically plausible; wrong options = real clinical errors
+- Match actual BCBA exam difficulty
+
+Return ONLY valid JSON, no markdown:
+{"domain":"${d.id}","task":"${task}","scenario":"...","question":"...","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","explanation":"Why correct is right. Why A wrong. Why C wrong. Why D wrong."}`);
+  return JSON.parse(txt.replace(/```json|```/g,'').trim());
+}
+
+async function genNotes(domId,task){
+  const d=D.find(x=>x.id===domId);
+  const txt=await callAI(`BCBA expert instructor — high-yield study notes for TCO 6th Edition (2025).
+Domain ${d.id}: ${d.label}. Task: "${task}"
+
+Return ONLY valid JSON:
+{"definition":"Precise 1-2 sentence clinical definition","clinical_application":"How BCBAs apply this in real ABA practice (2-3 sentences)","key_distinctions":"2-3 critical discriminations (what makes it different from similar concepts)","common_exam_errors":"2-3 specific mistakes candidates make on exam questions about this","example":"Brief 2-sentence clinical example showing this concept","exam_tip":"One specific actionable tip for answering exam questions about this task"}`,900);
+  return JSON.parse(txt.replace(/```json|```/g,'').trim());
+}
+
+// ============================================================
+// RENDER ENGINE
+// ============================================================
+function $(sel){return document.querySelector(sel);}
+function render(){
+  updateNav();
+  updateSidebar();
+  const main=document.getElementById('main-content');
+  const views={dash:renderDash,practice:renderPractice,exam:renderExam,notes:renderNotes,analytics:renderAnalytics};
+  main.innerHTML='';
+  (views[state.view]||renderDash)(main);
+}
+
+function updateNav(){
+  const nav=document.getElementById('sidebar-nav');
+  const items=[
+    {id:'dash',label:'Dashboard',icon:'ti-layout-dashboard'},
+    {id:'practice',label:'Practicar',icon:'ti-brain'},
+    {id:'exam',label:'Examen Simulado',icon:'ti-clock'},
+    {id:'notes',label:'Notas con IA',icon:'ti-book'},
+    {id:'analytics',label:'Analíticas',icon:'ti-chart-bar'},
+  ];
+  nav.innerHTML=items.map(it=>`
+    <button class="nav-btn${state.view===it.id?' active':''}" onclick="setView('${it.id}')">
+      <i class="ti ${it.icon}"></i><span>${it.label}</span>
+    </button>`).join('');
+}
+
+function updateSidebar(){
+  const s=state.stats.allTime;
+  const pct=s.total>0?Math.round((s.correct/s.total)*100):0;
+  const el=document.getElementById('global-pct');
+  if(el){
+    el.textContent=s.total>0?pct+'%':'—';
+    el.style.color=pct>=72?'#3B6D11':pct>=60?'#854F0B':s.total>0?'#A32D2D':'#1a1a18';
+  }
+  const cnt=document.getElementById('global-count');
+  if(cnt)cnt.textContent=`${s.correct}/${s.total} correctas`;
+}
+
+function setView(v){state.view=v;render();}
+
+// helpers
+function weakDomains(){
+  return D.filter(d=>state.stats.byDomain[d.id]?.total>=3)
+    .sort((a,b)=>{
+      const pa=state.stats.byDomain[a.id].total>0?state.stats.byDomain[a.id].correct/state.stats.byDomain[a.id].total:1;
+      const pb=state.stats.byDomain[b.id].total>0?state.stats.byDomain[b.id].correct/state.stats.byDomain[b.id].total:1;
+      return pa-pb;
+    }).slice(0,3);
+}
+function fmtTime(s){return`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+function pctColor(p){return p>=70?'#3B6D11':p>=50?'#854F0B':'#A32D2D';}
+function pctBg(p){return p>=70?'#EAF3DE':p>=50?'#FAEEDA':'#FCEBEB';}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDash(el){
+  const weak=weakDomains();
+  const recomm=weak.length>0?weak[0]:D[1];
+  const allPct=state.stats.allTime.total>0?Math.round((state.stats.allTime.correct/state.stats.allTime.total)*100):0;
+
+  let html=`
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px;">
+    <div>
+      <h1 style="font-size:21px;font-weight:600;margin-bottom:3px;">BCBA Study Hub</h1>
+      <p style="font-size:12px;color:#888;">Test Content Outline 6ª Edición · 9 dominios · 104 tareas · IA adaptativa</p>
+    </div>
+    <button class="btn-primary" onclick="setView('exam')">
+      <i class="ti ti-player-play"></i>Examen Simulado
+    </button>
+  </div>
+  <div style="background:#E6F1FB;border:1px solid #85B7EB;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+    <div>
+      <div style="font-size:10px;font-weight:600;color:#185FA5;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Recomendación inteligente</div>
+      <div style="font-size:14px;font-weight:500;">${weak.length>0?`Reforzar: Dom. ${recomm.id} — ${recomm.short}`:`Empezar con Dom. B — Concepts and Principles`}</div>
+      <div style="font-size:12px;color:#555;margin-top:2px;">${weak.length>0?'Área con menor desempeño en tu historial':'Mayor peso del examen (14%)'}</div>
+    </div>
+    <button class="btn-primary" style="background:#185FA5;" onclick="startPractice('${recomm.id}')">Practicar →</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;">`;
+
+  D.forEach(d=>{
+    const ds=state.stats.byDomain[d.id];
+    const dp=ds?.total>0?Math.round((ds.correct/ds.total)*100):null;
+    const isWeak=weak.some(w=>w.id===d.id);
+    html+=`
+    <div class="domain-card" style="border-left:3px solid ${d.border};${isWeak?'border-color:#E24B4A;border-left-color:#E24B4A;':''}" >
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px;">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <div style="background:${d.bg};border-radius:6px;padding:5px;display:flex;">
+            <i class="ti ${d.icon}" style="font-size:14px;color:${d.color};"></i>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:600;color:${d.color};letter-spacing:.06em;">DOM. ${d.id}</div>
+            <div style="font-size:12px;font-weight:500;line-height:1.3;">${d.short}</div>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:12px;font-weight:600;color:${d.color};">${d.pct}%</div>
+          <div style="font-size:10px;color:#888;">${d.q}p</div>
+        </div>
+      </div>
+      ${dp!==null?`
+      <div style="margin-bottom:7px;">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#888;margin-bottom:3px;">
+          <span>${ds.correct}/${ds.total}</span>
+          <span style="color:${pctColor(dp)};font-weight:600;">${dp}%</span>
+        </div>
+        <div class="prog-track"><div class="prog-fill" style="width:${dp}%;background:${dp>=70?'#639922':dp>=50?'#EF9F27':'#D85A30'};"></div></div>
+      </div>`:''}
+      <button style="width:100%;padding:6px;background:${d.bg};color:${d.color};border:1px solid ${d.border};border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;"
+        onclick="startPractice('${d.id}')">${dp!==null?`Continuar (${dp}%) →`:'Comenzar →'}</button>
+    </div>`;
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+// ============================================================
+// PRACTICE
+// ============================================================
+function renderPractice(el){
+  if(!state.practice.domId){renderDomainPicker(el);return;}
+  const d=D.find(x=>x.id===state.practice.domId);
+  const p=state.practice;
+  const sc=p.sc;
+  const scPct=sc.t>0?Math.round((sc.c/sc.t)*100):null;
+
+  let html=`
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap;">
+    <button class="btn-secondary" style="padding:5px 10px;font-size:12px;" onclick="state.practice.domId=null;state.practice.q=null;render();">
+      <i class="ti ti-arrow-left"></i> Cambiar dominio
+    </button>
+    <span class="pill" style="background:${d.bg};color:${d.color};">Dom. ${d.id}: ${d.short}</span>
+    <div style="margin-left:auto;font-size:12px;color:#888;">Sesión: ${sc.c}/${sc.t}</div>
+    ${scPct!==null?`<span class="pill" style="background:${pctBg(scPct)};color:${pctColor(scPct)};">${scPct}%</span>`:''}
+  </div>`;
+
+  if(p.loading){
+    html+=`<div class="loading"><i class="ti ti-brain"></i><div style="font-size:14px;">Generando escenario clínico...</div></div>`;
+  } else if(p.err){
+    html+=`<div style="background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:1rem;color:#A32D2D;display:flex;align-items:center;gap:12px;margin-bottom:1rem;font-size:13px;">
+      ${p.err} <button onclick="nextPractice()" style="color:#A32D2D;text-decoration:underline;background:none;border:none;cursor:pointer;">Reintentar</button></div>`;
+  } else if(p.q){
+    const q=p.q;
+    html+=`
+    <div style="display:flex;gap:7px;margin-bottom:9px;flex-wrap:wrap;align-items:center;">
+      <span class="pill" style="background:${d.bg};color:${d.color};font-size:10px;">Dom. ${q.domain}</span>
+      <span style="font-size:11px;color:#888;">${q.task}</span>
+    </div>
+    <div class="scenario" style="border-left:3px solid ${d.border};">
+      <div class="scenario-label">Escenario clínico</div>
+      <p style="margin:0;font-size:13px;line-height:1.75;">${q.scenario}</p>
+    </div>
+    <p style="font-size:14px;font-weight:600;margin-bottom:.875rem;line-height:1.55;">${q.question}</p>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:.875rem;">`;
+
+    Object.entries(q.options).forEach(([letter,text])=>{
+      let bg='#fff',border='#d1d5db',tc='#1a1a18';
+      if(p.selAns){
+        if(letter===q.correct){bg='#EAF3DE';border='#639922';tc='#3B6D11';}
+        else if(letter===p.selAns){bg='#FCEBEB';border='#E24B4A';tc='#A32D2D';}
+        else{tc='#888';}
+      }
+      const checkX=p.selAns&&letter===q.correct?'<i class="ti ti-check" style="color:#3B6D11;margin-left:auto;flex-shrink:0;"></i>':
+        p.selAns&&letter===p.selAns&&letter!==q.correct?'<i class="ti ti-x" style="color:#A32D2D;margin-left:auto;flex-shrink:0;"></i>':'';
+      html+=`<button class="opt-btn" style="background:${bg};border-color:${border};color:${tc};" 
+        ${p.selAns?'disabled':''} onclick="handlePracticeAnswer('${letter}')">
+        <span style="font-weight:600;min-width:18px;font-size:14px;flex-shrink:0;">${letter}.</span>
+        <span style="font-size:14px;line-height:1.65;flex:1;">${text}</span>${checkX}</button>`;
+    });
+
+    html+=`</div>`;
+
+    if(p.showExp){
+      const ok=p.selAns===q.correct;
+      html+=`<div class="explain" style="background:${ok?'#EAF3DE':'#FAECE7'};border:1px solid ${ok?'#97C459':'#F0997B'};">
+        <div style="font-size:12px;font-weight:600;color:${ok?'#3B6D11':'#993C1D'};margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+          <i class="ti ti-${ok?'check':'x'}"></i>${ok?'¡Correcto!':` Incorrecto — Respuesta: ${q.correct}`}</div>
+        <p style="margin:0;font-size:13px;line-height:1.75;">${q.explanation}</p>
+      </div>`;
+    }
+
+    if(p.selAns){
+      const dominated=scPct>=70&&sc.t>3;
+      html+=`<div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="nextPractice()"><i class="ti ti-arrow-right"></i>${dominated?'¡Dominado! Siguiente →':'Siguiente →'}</button>
+        ${p.selAns!==q.correct?`<button class="btn-secondary" style="color:#185FA5;border-color:#85B7EB;" onclick="studyTopic('${state.practice.domId}','${q.task.replace(/'/g,"\\'")}')">
+          <i class="ti ti-book"></i>Estudiar este tema</button>`:''}
+      </div>`;
+    } else {
+      html+=`<button class="btn-secondary" onclick="nextPractice()"><i class="ti ti-refresh"></i>Nueva pregunta</button>`;
+    }
+  }
+  el.innerHTML=html;
+}
+
+function renderDomainPicker(el){
+  let html=`<h2 style="font-size:21px;font-weight:600;margin-bottom:1rem;">Selecciona un dominio</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">`;
+  D.forEach(d=>{
+    const ds=state.stats.byDomain[d.id];
+    const dp=ds?.total>0?Math.round((ds.correct/ds.total)*100):null;
+    html+=`<button onclick="startPractice('${d.id}')" style="background:#fff;border:1px solid ${d.border};border-radius:12px;padding:.875rem;cursor:pointer;text-align:left;border-left:3px solid ${d.border};">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+        <i class="ti ${d.icon}" style="font-size:16px;color:${d.color};"></i>
+        <span style="font-size:11px;font-weight:600;color:${d.color};">Dom. ${d.id}</span>
+        <span style="font-size:10px;color:#888;margin-left:auto;">${d.pct}%</span>
+      </div>
+      <div style="font-size:12px;font-weight:500;margin-bottom:4px;line-height:1.3;">${d.label}</div>
+      ${dp!==null?`<div style="font-size:11px;color:${pctColor(dp)};font-weight:600;">${dp}% (${ds.correct}/${ds.total})</div>`:''}
+    </button>`;
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+async function startPractice(domId,diff){
+  state.practice={...state.practice,domId,q:null,loading:true,selAns:null,showExp:false,err:null};
+  state.view='practice';
+  render();
+  try{const q=await genQuestion(domId,diff||'standard');state.practice.q=q;state.practice.loading=false;}
+  catch(e){state.practice.loading=false;state.practice.err='Error al generar pregunta. Verifica tu API key e intenta de nuevo.';}
+  render();
+}
+
+async function handlePracticeAnswer(letter){
+  if(state.practice.selAns||!state.practice.q)return;
+  const ok=letter===state.practice.q.correct;
+  const domId=state.practice.domId;
+  state.stats.allTime.correct+=ok?1:0;
+  state.stats.allTime.total+=1;
+  state.stats.byDomain[domId].correct+=(ok?1:0);
+  state.stats.byDomain[domId].total+=1;
+  state.stats.history=[{domId,task:state.practice.q.task,correct:ok,ts:Date.now()},...state.stats.history].slice(0,60);
+  saveStats();
+  state.practice.selAns=letter;
+  state.practice.showExp=true;
+  state.practice.sc.c+=(ok?1:0);
+  state.practice.sc.t+=1;
+  render();
+}
+
+async function nextPractice(){
+  const domId=state.practice.domId;
+  const ds=state.stats.byDomain[domId];
+  const p=ds?.total>4?Math.round((ds.correct/ds.total)*100):50;
+  const diff=p>=70?'hard':'standard';
+  state.practice={...state.practice,q:null,loading:true,selAns:null,showExp:false,err:null};
+  render();
+  try{const q=await genQuestion(domId,diff);state.practice.q=q;state.practice.loading=false;}
+  catch(e){state.practice.loading=false;state.practice.err='Error. Intenta de nuevo.';}
+  render();
+}
+
+async function studyTopic(domId,task){
+  const d=D.find(x=>x.id===domId);
+  const idx=d.tasks.indexOf(task);
+  state.notes={domId,taskIdx:idx>=0?idx:0,notes:null,loading:true,err:null};
+  state.view='notes';
+  render();
+  try{const notes=await genNotes(domId,task);state.notes.notes=notes;state.notes.loading=false;}
+  catch{state.notes.loading=false;state.notes.err='Error. Intenta de nuevo.';}
+  render();
+}
+
+// ============================================================
+// EXAM
+// ============================================================
+function renderExam(el){
+  const ex=state.exam;
+  if(!ex.active&&!ex.done){
+    el.innerHTML=`
+    <div style="max-width:600px;">
+      <h2 style="font-size:21px;font-weight:600;margin-bottom:.75rem;">Examen Simulado</h2>
+      <p style="font-size:13px;color:#888;margin-bottom:1.25rem;">25 preguntas · distribución proporcional al TCO · 35 minutos · sin retroalimentación hasta el final</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem;">
+        ${[['25','Preguntas'],['35 min','Tiempo'],['72%','Aprobación']].map(([v,l])=>
+          `<div class="metric"><div class="metric-val">${v}</div><div class="metric-label">${l}</div></div>`).join('')}
+      </div>
+      <div style="background:#FAEEDA;border:1px solid #FAC775;border-radius:8px;padding:.875rem 1rem;margin-bottom:1.25rem;font-size:13px;color:#854F0B;">
+        <i class="ti ti-alert-triangle" style="margin-right:6px;"></i>Sin retroalimentación hasta completar todas las preguntas.
+      </div>
+      <button class="btn-primary" style="font-size:14px;padding:11px 22px;" onclick="startExam()">
+        <i class="ti ti-player-play"></i>Iniciar examen
+      </button>
+    </div>`;
+    return;
+  }
+
+  if(ex.active&&!ex.done){
+    let html=`
+    <div style="max-width:660px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding:.75rem 1rem;background:#fff;border-radius:8px;border:1px solid #e5e5e3;">
+      <div style="font-size:13px;font-weight:600;">Pregunta ${ex.curr+1} / ${EXAM_PLAN.length}</div>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <div style="height:3px;width:100px;background:#e5e5e3;border-radius:2px;">
+          <div style="height:100%;width:${(ex.curr/EXAM_PLAN.length)*100}%;background:#0F6E56;border-radius:2px;"></div></div>
+        <div style="font-size:14px;font-weight:600;color:${ex.timer<300?'#A32D2D':'#1a1a18'};min-width:58px;display:flex;align-items:center;gap:4px;" id="exam-timer">
+          <i class="ti ti-clock" style="font-size:13px;"></i>${fmtTime(ex.timer)}</div>
+      </div>
+    </div>`;
+
+    if(ex.loading){
+      html+=`<div class="loading"><i class="ti ti-brain"></i><div>Cargando pregunta ${ex.curr+1}...</div></div>`;
+    } else if(ex.q){
+      const q=ex.q;
+      html+=`
+      <div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.09em;margin-bottom:9px;">Dominio ${q.domain}</div>
+      <div class="scenario" style="border-left:3px solid #d1d5db;">
+        <div class="scenario-label">Escenario clínico</div>
+        <p style="margin:0;font-size:13px;line-height:1.75;">${q.scenario}</p>
+      </div>
+      <p style="font-size:14px;font-weight:600;margin-bottom:.875rem;line-height:1.55;">${q.question}</p>
+      <div style="display:flex;flex-direction:column;gap:7px;">`;
+      Object.entries(q.options).forEach(([l,t])=>{
+        html+=`<button class="opt-btn" onclick="handleExamAnswer('${l}')">
+          <span style="font-weight:600;min-width:18px;font-size:14px;flex-shrink:0;">${l}.</span>
+          <span style="font-size:14px;line-height:1.65;">${t}</span></button>`;
+      });
+      html+='</div>';
+    }
+    html+='</div>';
+    el.innerHTML=html;
+    return;
+  }
+
+  if(ex.done&&ex.results){
+    const r=ex.results;
+    const pct=Math.round((r.correct/r.total)*100);
+    const pass=pct>=72;
+    let html=`
+    <div style="max-width:600px;">
+    <div style="text-align:center;margin-bottom:1.5rem;padding:1.5rem;background:#fff;border-radius:12px;border:1px solid #e5e5e3;">
+      <div style="font-size:52px;font-weight:700;color:${pass?'#3B6D11':'#A32D2D'};">${pct}%</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:4px;">${pass?'Excelente desempeño — ¡Sigue así! 🎯':'Sigue practicando — ¡Tú puedes! 💪'}</div>
+      <div style="font-size:13px;color:#888;">${r.correct} de ${r.total} correctas · ${fmtTime(2100-ex.timer)} utilizados</div>
+    </div>
+    <h3 style="font-size:15px;font-weight:600;margin:0 0 .75rem;">Resultados por dominio</h3>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:1.5rem;">`;
+    D.filter(d=>r.byDomain[d.id]).forEach(d=>{
+      const dr=r.byDomain[d.id];const p=Math.round((dr.correct/dr.total)*100);
+      html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #e5e5e3;">
+        <div style="background:${d.bg};border-radius:5px;padding:4px;display:flex;flex-shrink:0;">
+          <i class="ti ${d.icon}" style="font-size:13px;color:${d.color};"></i></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:500;">Dom. ${d.id}: ${d.short}</div>
+          <div class="prog-track" style="margin-top:4px;"><div class="prog-fill" style="width:${p}%;background:${p>=70?'#639922':'#D85A30'};"></div></div>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:${pctColor(p)};flex-shrink:0;">${p}% (${dr.correct}/${dr.total})</span>
+        ${p<70?`<button style="font-size:10px;padding:3px 7px;background:${d.bg};color:${d.color};border:1px solid ${d.border};border-radius:6px;cursor:pointer;" onclick="startPractice('${d.id}')">Reforzar</button>`:''}
+      </div>`;
+    });
+    html+=`</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-secondary" onclick="resetExam()">Nuevo examen</button>
+      <button class="btn-primary" onclick="setView('analytics')">Ver analíticas →</button>
+    </div></div>`;
+    el.innerHTML=html;
+  }
+}
+
+async function startExam(){
+  clearInterval(examTimer);
+  state.exam={active:true,plan:[...EXAM_PLAN],curr:0,q:null,loading:true,answers:[],timer:2100,done:false,results:null};
+  examTimer=setInterval(()=>{
+    if(!state.exam.active||state.exam.done){clearInterval(examTimer);return;}
+    state.exam.timer--;
+    if(state.exam.timer<=0){
+      clearInterval(examTimer);
+      state.exam.done=true;
+      state.exam.results=calcExamResults(state.exam.answers);
+      render();return;
+    }
+    const t=document.getElementById('exam-timer');
+    if(t){t.style.color=state.exam.timer<300?'#A32D2D':'#1a1a18';t.innerHTML=`<i class="ti ti-clock" style="font-size:13px;"></i>${fmtTime(state.exam.timer)}`;}
+  },1000);
+  render();
+  try{const q=await genQuestion(state.exam.plan[0]);state.exam.q=q;state.exam.loading=false;}
+  catch{state.exam.loading=false;}
+  render();
+}
+
+function calcExamResults(answers){
+  const r={total:answers.length,correct:answers.filter(a=>a.ok).length,byDomain:{}};
+  D.forEach(d=>{const da=answers.filter(a=>a.domId===d.id);if(da.length)r.byDomain[d.id]={correct:da.filter(a=>a.ok).length,total:da.length};});
+  return r;
+}
+
+async function handleExamAnswer(letter){
+  if(!state.exam.q)return;
+  const ok=letter===state.exam.q.correct;
+  const newAns=[...state.exam.answers,{domId:state.exam.plan[state.exam.curr],q:state.exam.q,answer:letter,ok}];
+  const ni=state.exam.curr+1;
+  if(ni>=state.exam.plan.length){
+    clearInterval(examTimer);
+    const results=calcExamResults(newAns);
+    state.exam={...state.exam,answers:newAns,done:true,results};
+    // Save to stats
+    state.stats.allTime.correct+=results.correct;
+    state.stats.allTime.total+=results.total;
+    D.forEach(d=>{if(results.byDomain[d.id]){state.stats.byDomain[d.id].correct+=results.byDomain[d.id].correct;state.stats.byDomain[d.id].total+=results.byDomain[d.id].total;}});
+    saveStats();
+    render();
+  } else {
+    state.exam={...state.exam,answers:newAns,curr:ni,q:null,loading:true};
+    render();
+    try{const q=await genQuestion(state.exam.plan[ni]);state.exam.q=q;state.exam.loading=false;}
+    catch{state.exam.loading=false;}
+    render();
+  }
+}
+
+function resetExam(){state.exam={active:false,plan:null,curr:0,q:null,loading:false,answers:[],timer:2100,done:false,results:null};render();}
+
+// ============================================================
+// NOTES
+// ============================================================
+function renderNotes(el){
+  const nx=state.notes;
+  const d=D.find(x=>x.id===nx.domId);
+  let html=`
+  <div style="max-width:660px;">
+  <h2 style="font-size:21px;font-weight:600;margin-bottom:.25rem;">Notas de Estudio</h2>
+  <p style="font-size:12px;color:#888;margin-bottom:1rem;">Selecciona dominio y tarea — la IA genera notas clínicas de alto rendimiento</p>
+  <div style="display:flex;gap:6px;margin-bottom:.875rem;flex-wrap:wrap;">`;
+  D.forEach(dd=>html+=`<button onclick="state.notes.domId='${dd.id}';state.notes.taskIdx=0;state.notes.notes=null;render();" 
+    style="padding:5px 10px;background:${nx.domId===dd.id?dd.bg:'#f5f5f4'};color:${nx.domId===dd.id?dd.color:'#666'};border:1px solid ${nx.domId===dd.id?dd.border:'#e5e5e3'};border-radius:20px;cursor:pointer;font-size:11px;font-weight:${nx.domId===dd.id?600:400};">Dom. ${dd.id}</button>`);
+  html+=`</div>
+  <select onchange="state.notes.taskIdx=Number(this.value);state.notes.notes=null;render();" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:13px;margin-bottom:.875rem;">
+    ${d.tasks.map((t,i)=>`<option value="${i}" ${nx.taskIdx===i?'selected':''}>${t}</option>`).join('')}
+  </select>
+  <button onclick="doGenNotes()" ${nx.loading?'disabled':''} style="display:flex;align-items:center;gap:7px;padding:9px 18px;background:${nx.loading?'#f5f5f4':'#0F6E56'};color:${nx.loading?'#888':'#fff'};border:none;border-radius:8px;cursor:${nx.loading?'default':'pointer'};font-size:13px;font-weight:600;margin-bottom:1.25rem;">
+    <i class="ti ti-${nx.loading?'loader':'sparkles'}"></i>${nx.loading?'Generando notas clínicas...':'Generar Notas con IA'}
+  </button>`;
+
+  if(nx.err)html+=`<div style="background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:.875rem;color:#A32D2D;margin-bottom:1rem;font-size:13px;">${nx.err}</div>`;
+
+  if(nx.notes){
+    html+=`<div style="font-size:10px;font-weight:600;color:#0F6E56;text-transform:uppercase;letter-spacing:.09em;margin-bottom:.875rem;">Dom. ${nx.domId} · ${d.tasks[nx.taskIdx]}</div>`;
+    const sections=[
+      {key:'definition',label:'Definición clínica',icon:'ti-book-2',bg:'#E6F1FB',color:'#185FA5',border:'#85B7EB'},
+      {key:'clinical_application',label:'Aplicación clínica',icon:'ti-stethoscope',bg:'#E1F5EE',color:'#0F6E56',border:'#5DCAA5'},
+      {key:'key_distinctions',label:'Distinciones clave para el examen',icon:'ti-arrows-diff',bg:'#EEEDFE',color:'#534AB7',border:'#AFA9EC'},
+      {key:'example',label:'Ejemplo clínico',icon:'ti-user-check',bg:'#FAECE7',color:'#993C1D',border:'#F0997B'},
+      {key:'common_exam_errors',label:'Errores comunes en el examen',icon:'ti-alert-triangle',bg:'#FAEEDA',color:'#854F0B',border:'#FAC775'},
+      {key:'exam_tip',label:'Tip de examen',icon:'ti-bulb',bg:'#EAF3DE',color:'#3B6D11',border:'#97C459'},
+    ];
+    sections.forEach(({key,label,icon,bg,color,border})=>{
+      if(nx.notes[key])html+=`
+      <div class="note-section" style="background:${bg};border-left:3px solid ${border};">
+        <div class="note-label" style="color:${color};"><i class="ti ${icon}" style="font-size:14px;"></i>${label}</div>
+        <p style="margin:0;font-size:13px;line-height:1.75;color:#1a1a18;">${nx.notes[key]}</p>
+      </div>`;
+    });
+    html+=`<button class="btn-primary" style="margin-top:.75rem;" onclick="startPractice('${nx.domId}')">
+      <i class="ti ti-brain"></i>Practicar este dominio</button>`;
+  }
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+async function doGenNotes(){
+  const nx=state.notes;
+  const d=D.find(x=>x.id===nx.domId);
+  const task=d.tasks[nx.taskIdx];
+  state.notes.notes=null;state.notes.loading=true;state.notes.err=null;
+  render();
+  try{const notes=await genNotes(nx.domId,task);state.notes.notes=notes;state.notes.loading=false;}
+  catch{state.notes.loading=false;state.notes.err='Error al generar notas. Verifica tu API key e intenta de nuevo.';}
+  render();
+}
+
+// ============================================================
+// ANALYTICS
+// ============================================================
+function renderAnalytics(el){
+  const s=state.stats;
+  const allPct=s.allTime.total>0?Math.round((s.allTime.correct/s.allTime.total)*100):0;
+  const weak=weakDomains();
+
+  let html=`
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px;">
+    <h2 style="font-size:21px;font-weight:600;margin:0;">Analíticas</h2>
+    <button onclick="if(confirm('¿Resetear todos los datos?')){localStorage.removeItem('${STOR_KEY}');state.stats={byDomain:Object.fromEntries(D.map(d=>[d.id,{correct:0,total:0}])),allTime:{correct:0,total:0},history:[]};render();updateSidebar();}"
+      style="font-size:11px;padding:5px 10px;color:#A32D2D;background:#FCEBEB;border:1px solid #F09595;border-radius:6px;cursor:pointer;">
+      Resetear datos</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem;">
+    ${[['Total respondidas',s.allTime.total,''],['Correctas',s.allTime.correct,''],['Desempeño global',s.allTime.total>0?allPct+'%':'—',pctColor(allPct)]].map(([l,v,c])=>
+      `<div class="metric"><div class="metric-val" style="${c?'color:'+c:''}">${v}</div><div class="metric-label">${l}</div></div>`).join('')}
+  </div>`;
+
+  if(s.allTime.total===0){
+    html+=`<div style="text-align:center;padding:3rem;color:#888;">
+      <i class="ti ti-chart-bar" style="font-size:32px;display:block;margin-bottom:10px;"></i>
+      <div style="font-size:14px;margin-bottom:12px;">Responde preguntas para ver tus analíticas</div>
+      <button class="btn-primary" style="display:inline-flex;" onclick="setView('dash')">Ir a practicar</button>
+    </div>`;
+  } else {
+    if(weak.length>0){
+      html+=`<div style="background:#FAEEDA;border:1px solid #FAC775;border-radius:8px;padding:.875rem 1rem;margin-bottom:1.25rem;">
+        <div style="font-size:11px;font-weight:600;color:#854F0B;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+          <i class="ti ti-alert-triangle"></i>Áreas prioritarias de refuerzo</div>
+        ${weak.map(d=>`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:13px;">
+          <span>Dom. ${d.id}: ${d.label}</span>
+          <button onclick="startPractice('${d.id}')" style="font-size:11px;padding:3px 8px;background:#854F0B;color:#fff;border:none;border-radius:6px;cursor:pointer;">Practicar</button>
+        </div>`).join('')}
+      </div>`;
+    }
+    html+=`<h3 style="font-size:15px;font-weight:600;margin:0 0 .75rem;">Desempeño por dominio</h3>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:1.25rem;">`;
+    D.forEach(d=>{
+      const ds=s.byDomain[d.id];
+      const dp=ds?.total>0?Math.round((ds.correct/ds.total)*100):null;
+      html+=`<div style="padding:9px 0;border-bottom:1px solid #e5e5e3;">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:${dp!==null?'5px':'0'};">
+          <div style="background:${d.bg};border-radius:5px;padding:4px;display:flex;flex-shrink:0;">
+            <i class="ti ${d.icon}" style="font-size:13px;color:${d.color};"></i></div>
+          <div style="flex:1;min-width:0;overflow:hidden;">
+            <span style="font-size:10px;font-weight:600;color:${d.color};">Dom. ${d.id} · </span>
+            <span style="font-size:12px;">${d.label}</span>
+            <span style="font-size:10px;color:#888;margin-left:5px;">(${d.pct}% examen)</span>
+          </div>
+          ${dp!==null?`<span style="font-size:12px;font-weight:600;color:${pctColor(dp)};flex-shrink:0;">${dp}% (${ds.correct}/${ds.total})</span>`:
+            `<span style="font-size:11px;color:#888;flex-shrink:0;">Sin datos</span>`}
+          <button onclick="startPractice('${d.id}')" style="font-size:10px;padding:3px 7px;background:${d.bg};color:${d.color};border:1px solid ${d.border};border-radius:6px;cursor:pointer;flex-shrink:0;">Practicar</button>
+        </div>
+        ${dp!==null?`<div class="prog-track" style="margin-left:36px;"><div class="prog-fill" style="width:${dp}%;background:${dp>=70?'#639922':dp>=50?'#EF9F27':'#D85A30'};"></div></div>`:''}
+      </div>`;
+    });
+    html+='</div>';
+
+    if(s.history.length>0){
+      html+=`<h3 style="font-size:15px;font-weight:600;margin:0 0 .75rem;">Historial reciente</h3><div>`;
+      s.history.slice(0,15).forEach((item,i)=>{
+        const d=D.find(x=>x.id===item.domId);
+        html+=`<div class="history-row">
+          <i class="ti ti-${item.correct?'check':'x'}" style="color:${item.correct?'#3B6D11':'#A32D2D'};flex-shrink:0;"></i>
+          <span style="font-weight:600;color:${d?d.color:'#888'};flex-shrink:0;">Dom. ${item.domId}</span>
+          <span style="color:#666;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.task}</span>
+          <span style="color:#aaa;flex-shrink:0;font-size:11px;">${new Date(item.ts).toLocaleDateString('es-ES',{month:'short',day:'numeric'})}</span>
+        </div>`;
+      });
+      html+='</div>';
+    }
+  }
+  el.innerHTML=html;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init(){
+  loadStats();
+  state.view='dash';
+  render();
+}
+
+// Check if key exists on load
+window.addEventListener('load',()=>{
+  if(getKey()){
+    document.getElementById('setup').classList.remove('active');
+    document.getElementById('app').classList.add('active');
+    init();
+  }
+});
+</script>
+</body>
+</html>
