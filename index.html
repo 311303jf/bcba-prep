@@ -84,6 +84,22 @@
     .nav-btn i{font-size:18px;}
     main{padding:1rem;}
   }
+
+  /* Flip card */
+  .flip-card{border-radius:12px;cursor:pointer;transition:all .15s;}
+  .flip-card:hover{transform:translateY(-2px);}
+  .flip-side{border-radius:12px;border:1px solid #e5e5e3;padding:1.5rem;background:#fff;transition:opacity .25s,transform .25s;}
+  .flip-side.hidden{opacity:0;transform:scale(.97);pointer-events:none;display:none;}
+  .flip-side.visible{opacity:1;transform:scale(1);}
+  .lang-btn{font-size:11px;padding:4px 10px;border-radius:20px;cursor:pointer;border:1px solid #d1d5db;background:#fff;color:#666;transition:all .15s;}
+  .lang-btn:hover{background:#f5f5f4;}
+  .lang-btn.active{background:#0F6E56;color:#fff;border-color:#0F6E56;}
+  .progress-dots{display:flex;gap:6px;justify-content:center;margin:1rem 0;}
+  .dot{width:10px;height:10px;border-radius:50%;background:#e5e5e3;transition:all .3s;}
+  .dot.done{background:#0F6E56;}
+  .dot.active{background:#0F6E56;transform:scale(1.3);}
+  .dot.wrong{background:#E24B4A;}
+
 </style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
 </head>
@@ -169,7 +185,7 @@ let state={
  practice:{domId:null,q:null,loading:false,selAns:null,showExp:false,err:null,sc:{c:0,t:0}},
  exam:{active:false,plan:null,curr:0,q:null,loading:false,answers:[],timer:2100,done:false,results:null},
  notes:{domId:'B',taskIdx:0,notes:null,loading:false,err:null},
- learn:{phase:'domains',domId:null,conceptIdx:0,content:null,loading:false,currentQ:0,answers:[],err:null},
+ learn:{phase:'overview',domId:null,conceptIdx:0,content:null,loading:false,currentQ:0,answers:[],err:null},
 };
 let examTimer=null;
 
@@ -302,7 +318,7 @@ function updateSidebar(){
   if(cnt)cnt.textContent=`${s.correct}/${s.total} correctas`;
 }
 
-function setView(v){state.view=v;render();}
+function setView(v){state.view=v;if(v==='learn'&&state.learn.phase!=='hook'&&state.learn.phase!=='questions'&&state.learn.phase!=='result')state.learn.phase='overview';render();}
 
 // helpers
 function weakDomains(){
@@ -319,22 +335,48 @@ function pctBg(p){return p>=70?'#EAF3DE':p>=50?'#FAEEDA':'#FCEBEB';}
 
 
 // ============================================================
-// LEARN MODE
+// LEARN MODE — Sequential flip cards with translation
 // ============================================================
+
+function getNextConcept(){
+  for(const d of D){
+    for(let i=0;i<d.tasks.length;i++){
+      if(!isMastered(d.id,i))return{domId:d.id,idx:i};
+    }
+  }
+  return null;
+}
+
 async function genLearnContent(domId,conceptIdx){
   const d=D.find(x=>x.id===domId);
   const task=d.tasks[conceptIdx];
-  const txt=await callAI(`You are an expert BCBA instructor. Create a complete learning module for the BCBA exam (TCO 6th Edition, 2025).
-Domain ${d.id}: ${d.label}
-Concept: "${task}"
+  const txt=await callAI(`You are an expert BCBA exam instructor (TCO 6th Edition, 2025).
+Domain ${d.id}: ${d.label}. Concept: "${task}"
 
-Return ONLY valid JSON (no markdown):
-{"concept":"${task}","definition":"Clear precise 2-3 sentence definition using exact ABA terminology. Include what it IS and what distinguishes it from similar concepts.","clinical_example":"A 3-4 sentence realistic clinical scenario showing this exact concept in action with a specific client.","key_points":["Critical point 1 for the exam","Critical point 2 for the exam","Critical point 3 for the exam"],"questions":[{"q":"Applied question about this concept in a clinical scenario?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","explanation":"Why B is correct and why others are wrong."},{"q":"Second applied question testing deeper understanding?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"A","explanation":"Why A is correct."},{"q":"Third question testing discrimination from similar concepts?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"C","explanation":"Why C is correct."}]}`,1800);
-  return JSON.parse(txt.replace(/\`\`\`json|\`\`\`/g,'').trim());
+Create a complete learning module. Return ONLY valid JSON (no markdown):
+{
+  "concept":"${task}",
+  "hook_question":"One sharp clinical question that PRIMES the learner to think about this concept before seeing the definition. Should feel like an exam question.",
+  "hook_answer":"The correct answer to the hook question in 1-2 sentences.",
+  "definition":"Precise 2-3 sentence definition using exact ABA terminology. Include what distinguishes it from similar concepts.",
+  "clinical_example":"3-4 sentence realistic clinical scenario showing this concept in action.",
+  "key_points":["Exam-critical point 1","Exam-critical point 2","Exam-critical point 3"],
+  "questions":[
+    {"q":"Applied clinical question testing this concept?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","explanation":"Why B is correct and why the others are wrong."},
+    {"q":"Second question testing discrimination from similar concepts?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"A","explanation":"Why A is correct."}
+  ]
+}`,1800);
+  return JSON.parse(txt.replace(/```json|```/g,'').trim());
+}
+
+async function translateContent(content){
+  const txt=await callAI(`Translate this BCBA study content to Spanish. Keep all ABA technical terms in English (e.g. reinforcement, extinction, MO, SD, FBA, VB-MAPP, DTT, etc.) but translate all other text. Return ONLY valid JSON with the same structure:
+${JSON.stringify(content)}`,1800);
+  return JSON.parse(txt.replace(/```json|```/g,'').trim());
 }
 
 async function startLearnConcept(domId,idx){
-  state.learn={phase:'learning',domId,conceptIdx:idx,content:null,loading:true,currentQ:0,answers:[],err:null};
+  state.learn={phase:'hook',domId,conceptIdx:idx,content:null,contentEs:null,lang:'en',flipped:false,currentQ:0,qAnswered:false,selectedAnswer:null,answers:[],loading:true,translating:false,err:null};
   state.view='learn';
   render();
   try{
@@ -343,273 +385,283 @@ async function startLearnConcept(domId,idx){
     state.learn.loading=false;
   }catch(e){
     state.learn.loading=false;
-    state.learn.err='Error generando contenido. Intenta de nuevo.';
+    state.learn.err='Error generando contenido. Verifica tu API key e intenta de nuevo.';
   }
   render();
 }
 
-function handleLearnAnswer(letter){
-  const q=state.learn.content.questions[state.learn.currentQ];
-  const ok=letter===q.correct;
-  state.learn.answers=[...state.learn.answers,{letter,ok,explanation:q.explanation,correct:q.correct}];
-  if(state.learn.currentQ<2){
-    state.learn.currentQ++;
-  } else {
-    state.learn.phase='result';
+async function startLearnAuto(){
+  const next=getNextConcept();
+  if(next) startLearnConcept(next.domId,next.idx);
+  else{state.learn.phase='complete';render();}
+}
+
+async function toggleLang(){
+  const lx=state.learn;
+  if(lx.lang==='en'&&!lx.contentEs){
+    state.learn.translating=true;render();
+    try{
+      const es=await translateContent(lx.content);
+      state.learn.contentEs=es;
+    }catch{}
+    state.learn.translating=false;
   }
+  state.learn.lang=lx.lang==='en'?'es':'en';
+  render();
+}
+
+function handleLearnAnswer(letter){
+  const lx=state.learn;
+  const c=lx.lang==='es'&&lx.contentEs?lx.contentEs:lx.content;
+  const q=c.questions[lx.currentQ];
+  const ok=letter===q.correct;
+  state.learn.selectedAnswer=letter;
+  state.learn.qAnswered=true;
+  state.learn.answers=[...lx.answers,{letter,ok,correct:q.correct,explanation:q.explanation}];
+  render();
+}
+
+function nextQuestion(){
+  state.learn.currentQ++;
+  state.learn.qAnswered=false;
+  state.learn.selectedAnswer=null;
+  render();
+}
+
+function finishLearn(){
+  state.learn.phase='result';
   render();
 }
 
 function markMastered(domId,idx){
   mastered[masterKey(domId,idx)]=true;
   saveMastered();
-  // Auto-advance to next concept
-  const d=D.find(x=>x.id===domId);
-  const nextIdx=idx+1;
-  if(nextIdx<d.tasks.length){
-    startLearnConcept(domId,nextIdx);
-  } else {
-    // Domain complete — go back to domain list
-    state.learn={phase:'domains',domId:null,conceptIdx:0,content:null,loading:false,currentQ:0,answers:[],err:null};
-    render();
-  }
+  startLearnAuto();
+}
+
+function retryLearn(){
+  startLearnConcept(state.learn.domId,state.learn.conceptIdx);
+}
+
+function renderLearnHeader(d,lx,totalMastered,totalConcepts){
+  const pct=totalConcepts>0?Math.round((totalMastered/totalConcepts)*100):0;
+  return `
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap;">
+    <button class="btn-secondary" style="padding:5px 10px;font-size:12px;" onclick="state.learn.phase='overview';render();">
+      <i class="ti ti-layout-grid"></i> Resumen</button>
+    ${d?`<span style="font-size:11px;font-weight:500;background:${d.bg};color:${d.color};padding:3px 10px;border-radius:20px;">Dom. ${d.id} · Concepto ${lx.conceptIdx+1}/${d.tasks.length}</span>`:''}
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+      <div style="font-size:11px;color:#888;">${totalMastered}/${totalConcepts} dominados</div>
+      <div style="height:6px;width:80px;background:#e5e5e3;border-radius:3px;"><div style="height:100%;width:${pct}%;background:#0F6E56;border-radius:3px;"></div></div>
+    </div>
+  </div>`;
 }
 
 function renderLearn(el){
   const lx=state.learn;
-  
-  // PHASE: Domain selection
-  if(lx.phase==='domains'){
+  const totalConcepts=D.reduce((s,d)=>s+d.tasks.length,0);
+  const totalMastered=D.reduce((s,d)=>s+masteredCount(d.id),0);
+
+  // OVERVIEW — domain grid
+  if(lx.phase==='overview'||lx.phase==='domains'){
+    const next=getNextConcept();
     let html=`
     <h2 style="font-size:21px;font-weight:600;margin-bottom:.25rem;">Aprender</h2>
-    <p style="font-size:12px;color:#888;margin-bottom:1.25rem;">Estudia cada concepto del TCO paso a paso — definición, ejemplo clínico y verificación con preguntas</p>`;
-    
-    // Overall progress
-    const totalConcepts=D.reduce((s,d)=>s+d.tasks.length,0);
-    const totalMastered=D.reduce((s,d)=>s+masteredCount(d.id),0);
-    const overallPct=totalConcepts>0?Math.round((totalMastered/totalConcepts)*100):0;
-    
-    html+=`<div style="background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem;">
-      <div style="flex:1;">
-        <div style="font-size:12px;color:#888;margin-bottom:4px;">Progreso total — ${totalMastered} de ${totalConcepts} conceptos dominados</div>
-        <div style="height:8px;background:#f5f5f4;border-radius:4px;"><div style="height:100%;width:${overallPct}%;background:#0F6E56;border-radius:4px;transition:width .4s;"></div></div>
+    <p style="font-size:12px;color:#888;margin-bottom:1rem;">Un concepto a la vez — pregunta, flip para ver la explicación, verifica</p>
+    <div style="background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:12px;color:#888;margin-bottom:4px;">${totalMastered} de ${totalConcepts} conceptos dominados</div>
+        <div style="height:8px;background:#f5f5f4;border-radius:4px;"><div style="height:100%;width:${totalConcepts>0?Math.round((totalMastered/totalConcepts)*100):0}%;background:#0F6E56;border-radius:4px;"></div></div>
       </div>
-      <div style="font-size:24px;font-weight:600;color:#0F6E56;flex-shrink:0;">${overallPct}%</div>
-    </div>`;
-    
-    html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">`;
-    D.forEach(d=>{
-      const mc=masteredCount(d.id);
-      const total=d.tasks.length;
-      const pct=Math.round((mc/total)*100);
-      const nextIdx=d.tasks.findIndex((_,i)=>!isMastered(d.id,i));
-      const allDone=nextIdx===-1;
-      html+=`<div style="background:#fff;border-radius:12px;border:1px solid ${allDone?'#97C459':'#e5e5e3'};padding:.875rem;border-left:3px solid ${d.border};">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <div style="background:${d.bg};border-radius:6px;padding:5px;display:flex;">
-            <i class="ti ${d.icon}" style="font-size:14px;color:${d.color};"></i></div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:9px;font-weight:600;color:${d.color};letter-spacing:.06em;">DOM. ${d.id}</div>
-            <div style="font-size:12px;font-weight:500;line-height:1.3;">${d.short||d.label}</div>
-          </div>
-          ${allDone?'<i class="ti ti-circle-check" style="color:#3B6D11;font-size:18px;flex-shrink:0;"></i>':''}
-        </div>
-        <div style="margin-bottom:8px;">
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:#888;margin-bottom:3px;">
-            <span>${mc}/${total} dominados</span>
-            <span style="color:${pct>=70?'#3B6D11':pct>=30?'#854F0B':'#888'};font-weight:600;">${pct}%</span>
-          </div>
-          <div style="height:4px;background:#f5f5f4;border-radius:2px;"><div style="height:100%;width:${pct}%;background:${pct>=70?'#639922':pct>=30?'#EF9F27':'#d1d5db'};border-radius:2px;"></div></div>
-        </div>
-        <button onclick="state.learn.phase='concepts';state.learn.domId='${d.id}';render();"
-          style="width:100%;padding:7px;background:${d.bg};color:${d.color};border:1px solid ${d.border};border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;">
-          ${allDone?'✅ Completado — Repasar':'Continuar →'}</button>
-      </div>`;
-    });
-    html+=`</div>`;
-    el.innerHTML=html;
-    return;
-  }
-  
-  // PHASE: Concept list
-  if(lx.phase==='concepts'){
-    const d=D.find(x=>x.id===lx.domId);
-    let html=`
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;">
-      <button class="btn-secondary" style="padding:5px 10px;font-size:12px;" onclick="state.learn.phase='domains';render();">
-        <i class="ti ti-arrow-left"></i> Dominios</button>
-      <span style="font-size:13px;font-weight:600;">Dom. ${d.id}: ${d.label}</span>
-      <span style="font-size:12px;color:#888;margin-left:auto;">${masteredCount(d.id)}/${d.tasks.length} dominados</span>
+      ${next?`<button class="btn-primary" style="font-size:14px;padding:11px 20px;" onclick="startLearnAuto()">
+        <i class="ti ti-player-play"></i>Continuar estudiando →</button>`
+      :`<div style="color:#3B6D11;font-weight:600;font-size:14px;">✅ ¡Todos los conceptos dominados!</div>`}
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px;">`;
-    
-    d.tasks.forEach((task,i)=>{
-      const done=isMastered(d.id,i);
-      html+=`<div style="background:#fff;border-radius:10px;border:1px solid ${done?'#97C459':'#e5e5e3'};padding:.875rem 1rem;display:flex;align-items:center;gap:12px;">
-        <div style="width:28px;height:28px;border-radius:50%;background:${done?'#EAF3DE':'#f5f5f4'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          ${done?'<i class="ti ti-check" style="color:#3B6D11;font-size:14px;"></i>':`<span style="font-size:11px;font-weight:600;color:#888;">${i+1}</span>`}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">`;
+    D.forEach(d=>{
+      const mc=masteredCount(d.id);const total=d.tasks.length;const pct=Math.round((mc/total)*100);
+      const nextIdx=d.tasks.findIndex((_,i)=>!isMastered(d.id,i));
+      html+=`<div style="background:#fff;border-radius:10px;border:1px solid #e5e5e3;padding:.875rem;border-left:3px solid ${d.border};">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;">
+          <div style="background:${d.bg};border-radius:5px;padding:4px;display:flex;"><i class="ti ${d.icon}" style="font-size:13px;color:${d.color};"></i></div>
+          <div style="flex:1;min-width:0;"><div style="font-size:9px;font-weight:600;color:${d.color};">DOM. ${d.id}</div><div style="font-size:11px;font-weight:500;line-height:1.3;">${d.short}</div></div>
+          <div style="font-size:11px;font-weight:600;color:${pct>=70?'#3B6D11':pct>=30?'#854F0B':'#888'}">${pct}%</div>
         </div>
-        <div style="flex:1;font-size:13px;${done?'color:#3B6D11;':''}font-weight:${done?500:400};">${task}</div>
-        <button onclick="startLearnConcept('${d.id}',${i})"
-          style="padding:6px 12px;background:${done?'#EAF3DE':'#0F6E56'};color:${done?'#3B6D11':'white'};border:${done?'1px solid #97C459':'none'};border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;flex-shrink:0;">
-          ${done?'Repasar':'Estudiar →'}</button>
+        <div style="height:3px;background:#f5f5f4;border-radius:2px;margin-bottom:8px;"><div style="height:100%;width:${pct}%;background:${pct>=70?'#639922':pct>=30?'#EF9F27':'#d1d5db'};border-radius:2px;"></div></div>
+        <div style="font-size:10px;color:#888;margin-bottom:7px;">${mc}/${total} dominados</div>
+        <button onclick="${nextIdx>=0?`startLearnConcept('${d.id}',${nextIdx})`:`startLearnConcept('${d.id}',0)`}"
+          style="width:100%;padding:6px;background:${d.bg};color:${d.color};border:1px solid ${d.border};border-radius:6px;cursor:pointer;font-size:10px;font-weight:600;">
+          ${nextIdx>=0?'Continuar →':'Repasar →'}</button>
       </div>`;
     });
     html+=`</div>`;
-    el.innerHTML=html;
+    el.innerHTML=html;return;
+  }
+
+  // ALL MASTERED
+  if(lx.phase==='complete'){
+    el.innerHTML=`<div style="text-align:center;padding:4rem;"><div style="font-size:48px;margin-bottom:1rem;">🎓</div>
+      <h2 style="font-size:21px;font-weight:600;margin-bottom:.5rem;">¡Todos los conceptos dominados!</h2>
+      <p style="color:#888;margin-bottom:1.5rem;">Has completado los 104 conceptos del TCO 6ª Edición.</p>
+      <button class="btn-primary" onclick="setView('practice')"><i class="ti ti-brain"></i>Ir a Practicar</button></div>`;
     return;
   }
-  
-  // PHASE: Learning content
-  if(lx.phase==='learning'){
-    const d=D.find(x=>x.id===lx.domId);
-    let html=`<div style="max-width:680px;">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap;">
-      <button class="btn-secondary" style="padding:5px 10px;font-size:12px;" onclick="state.learn.phase='concepts';render();">
-        <i class="ti ti-arrow-left"></i> Conceptos</button>
-      <span style="font-size:11px;font-weight:500;background:${d.bg};color:${d.color};padding:3px 10px;border-radius:20px;">Dom. ${d.id}</span>
-      <span style="font-size:11px;color:#888;">Concepto ${lx.conceptIdx+1} de ${d.tasks.length}</span>
-    </div>`;
-    
+
+  const d=D.find(x=>x.id===lx.domId);
+  const c=lx.lang==='es'&&lx.contentEs?lx.contentEs:lx.content;
+
+  // HOOK PHASE — flip card: question front / explanation back
+  if(lx.phase==='hook'){
+    let html=renderLearnHeader(d,lx,totalMastered,totalConcepts);
+    html+=`<div style="max-width:640px;">`;
+
     if(lx.loading){
-      html+=`<div class="loading"><i class="ti ti-brain"></i><div style="font-size:14px;">Generando módulo de aprendizaje...</div></div>`;
+      html+=`<div class="loading"><i class="ti ti-brain"></i><div>Generando módulo de aprendizaje...</div></div>`;
     } else if(lx.err){
       html+=`<div style="background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:1rem;color:#A32D2D;font-size:13px;">${lx.err}
-        <button onclick="startLearnConcept('${lx.domId}',${lx.conceptIdx})" style="margin-left:10px;color:#A32D2D;text-decoration:underline;background:none;border:none;cursor:pointer;">Reintentar</button></div>`;
-    } else if(lx.content){
-      const c=lx.content;
-      html+=`
-      <div style="background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:1.25rem;margin-bottom:10px;">
-        <div style="font-size:10px;font-weight:600;color:#0F6E56;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;">Concepto</div>
-        <div style="font-size:17px;font-weight:600;margin-bottom:1rem;color:#1a1a18;">${c.concept}</div>
-        
-        <div style="font-size:10px;font-weight:600;color:#185FA5;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;">Definición</div>
-        <p style="font-size:14px;line-height:1.75;margin-bottom:1rem;color:#1a1a18;">${c.definition}</p>
-        
-        <div style="background:#E6F1FB;border-radius:8px;padding:.875rem 1rem;margin-bottom:1rem;border-left:3px solid #85B7EB;">
-          <div style="font-size:10px;font-weight:600;color:#185FA5;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;">Ejemplo clínico</div>
-          <p style="font-size:13px;line-height:1.75;margin:0;color:#1a1a18;">${c.clinical_example}</p>
+        <button onclick="startLearnConcept('${lx.domId}',${lx.conceptIdx})" style="margin-left:8px;color:#A32D2D;text-decoration:underline;background:none;border:none;cursor:pointer;">Reintentar</button></div>`;
+    } else if(c){
+      // Lang toggle + concept label
+      html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:13px;font-weight:600;color:#1a1a18;">${c.concept}</div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          ${lx.translating?`<span style="font-size:11px;color:#888;">Traduciendo...</span>`:''}
+          <button class="lang-btn ${lx.lang==='en'?'active':''}" onclick="if(state.learn.lang!=='en'){state.learn.lang='en';render();}">EN</button>
+          <button class="lang-btn ${lx.lang==='es'?'active':''}" onclick="toggleLang()">ES</button>
         </div>
-        
-        <div style="font-size:10px;font-weight:600;color:#534AB7;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;">Puntos clave para el examen</div>
-        <ul style="padding-left:1.25rem;margin:0;">
-          ${c.key_points.map(p=>`<li style="font-size:13px;line-height:1.75;color:#1a1a18;">${p}</li>`).join('')}
-        </ul>
-      </div>
-      
-      <button class="btn-primary" style="font-size:14px;padding:11px 22px;" onclick="state.learn.phase='testing';state.learn.currentQ=0;state.learn.answers=[];render();">
-        <i class="ti ti-player-play"></i>Verificar comprensión →
-      </button>`;
-    }
-    html+=`</div>`;
-    el.innerHTML=html;
-    return;
-  }
-  
-  // PHASE: Testing (questions one by one)
-  if(lx.phase==='testing'){
-    const d=D.find(x=>x.id===lx.domId);
-    const c=lx.content;
-    const q=c.questions[lx.currentQ];
-    const answered=lx.answers[lx.currentQ];
-    
-    let html=`<div style="max-width:680px;">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;">
-      <span style="font-size:11px;font-weight:500;background:${d.bg};color:${d.color};padding:3px 10px;border-radius:20px;">Dom. ${d.id}</span>
-      <span style="font-size:12px;color:#888;">Pregunta ${lx.currentQ+1} de 3</span>
-      <div style="margin-left:auto;display:flex;gap:6px;">
-        ${[0,1,2].map(i=>`<div style="width:24px;height:24px;border-radius:50%;background:${i<lx.answers.length?(lx.answers[i].ok?'#EAF3DE':'#FCEBEB'):'#f5f5f4'};border:1px solid ${i<lx.answers.length?(lx.answers[i].ok?'#97C459':'#F09595'):'#e5e5e3'};display:flex;align-items:center;justify-content:center;">
-          ${i<lx.answers.length?`<i class="ti ti-${lx.answers[i].ok?'check':'x'}" style="font-size:12px;color:${lx.answers[i].ok?'#3B6D11':'#A32D2D'};"></i>`:`<span style="font-size:10px;font-weight:600;color:#aaa;">${i+1}</span>`}
-        </div>`).join('')}
-      </div>
-    </div>
-    
-    <div style="background:#f9f9f8;border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;border-left:3px solid ${d.border};">
-      <div style="font-size:9px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;">Pregunta de verificación</div>
-      <p style="margin:0;font-size:14px;font-weight:500;line-height:1.6;">${q.q}</p>
-    </div>
-    
-    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:.875rem;">`;
-    
-    Object.entries(q.options).forEach(([letter,text])=>{
-      let bg='#fff',border='#d1d5db',tc='#1a1a18';
-      if(answered){
-        if(letter===q.correct){bg='#EAF3DE';border='#639922';tc='#3B6D11';}
-        else if(letter===answered.letter){bg='#FCEBEB';border='#E24B4A';tc='#A32D2D';}
-        else{tc='#888';}
-      }
-      html+=`<button onclick="handleLearnAnswer('${letter}')" ${answered?'disabled':''} 
-        style="display:flex;align-items:flex-start;gap:12px;padding:11px 14px;background:${bg};border:1px solid ${border};border-radius:8px;cursor:${answered?'default':'pointer'};text-align:left;width:100%;color:${tc};">
-        <span style="font-weight:600;min-width:18px;font-size:14px;flex-shrink:0;">${letter}.</span>
-        <span style="font-size:13px;line-height:1.65;flex:1;">${text}</span>
-        ${answered&&letter===q.correct?'<i class="ti ti-check" style="color:#3B6D11;margin-left:auto;flex-shrink:0;"></i>':''}
-        ${answered&&letter===answered.letter&&letter!==q.correct?'<i class="ti ti-x" style="color:#A32D2D;margin-left:auto;flex-shrink:0;"></i>':''}
-      </button>`;
-    });
-    html+=`</div>`;
-    
-    if(answered){
-      html+=`<div style="background:${answered.ok?'#EAF3DE':'#FAECE7'};border:1px solid ${answered.ok?'#97C459':'#F0997B'};border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;">
-        <div style="font-size:12px;font-weight:600;color:${answered.ok?'#3B6D11':'#993C1D'};margin-bottom:6px;display:flex;align-items:center;gap:6px;">
-          <i class="ti ti-${answered.ok?'check':'x'}"></i>${answered.ok?'¡Correcto!':'Incorrecto — Respuesta: '+q.correct}
-        </div>
-        <p style="margin:0;font-size:13px;line-height:1.75;">${answered.explanation}</p>
       </div>`;
-      
-      if(lx.currentQ<2){
-        html+=`<button class="btn-primary" onclick="state.learn.currentQ++;render();">
-          <i class="ti ti-arrow-right"></i>Siguiente pregunta</button>`;
+
+      if(!lx.flipped){
+        // FRONT: Hook question
+        html+=`<div class="flip-side visible" style="background:linear-gradient(135deg,${d.bg} 0%,#fff 100%);border-color:${d.border};text-align:center;padding:2rem 1.5rem;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <div style="font-size:10px;font-weight:600;color:${d.color};text-transform:uppercase;letter-spacing:.1em;margin-bottom:.875rem;">💭 Piensa antes de responder</div>
+          <p style="font-size:16px;font-weight:500;line-height:1.65;color:#1a1a18;margin:0 0 1.5rem;">${c.hook_question}</p>
+          <button onclick="state.learn.flipped=true;render();" style="padding:10px 24px;background:${d.color};color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;">
+            <i class="ti ti-rotate-clockwise"></i>Ver respuesta y explicación</button>
+        </div>
+        <div style="text-align:center;margin-top:.75rem;font-size:11px;color:#aaa;">Clic para voltear la tarjeta</div>`;
       } else {
-        html+=`<button class="btn-primary" onclick="state.learn.phase='result';render();">
-          <i class="ti ti-chart-bar"></i>Ver resultados</button>`;
+        // BACK: Answer + full explanation
+        html+=`<div class="flip-side visible" style="border-color:${d.border};border-left:4px solid ${d.color};">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
+            <div style="font-size:10px;font-weight:600;color:${d.color};text-transform:uppercase;letter-spacing:.1em;">✅ Respuesta</div>
+            <button onclick="state.learn.flipped=false;render();" style="font-size:11px;padding:3px 10px;color:#888;border:1px solid #d1d5db;border-radius:20px;background:#fff;cursor:pointer;">
+              <i class="ti ti-rotate-2"></i> Ver pregunta</button>
+          </div>
+          <p style="font-size:15px;font-weight:500;color:#1a1a18;margin:0 0 1rem;line-height:1.65;border-bottom:1px solid #f5f5f4;padding-bottom:1rem;">${c.hook_answer}</p>
+          
+          <div style="font-size:10px;font-weight:600;color:#185FA5;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;">Definición</div>
+          <p style="font-size:13px;line-height:1.75;color:#1a1a18;margin:0 0 .875rem;">${c.definition}</p>
+          
+          <div style="background:#f9f9f8;border-radius:8px;padding:.875rem;margin-bottom:.875rem;border-left:3px solid ${d.border};">
+            <div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;">Ejemplo clínico</div>
+            <p style="font-size:13px;line-height:1.75;margin:0;color:#1a1a18;">${c.clinical_example}</p>
+          </div>
+          
+          <div style="font-size:10px;font-weight:600;color:#534AB7;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;">Puntos clave para el examen</div>
+          <ul style="padding-left:1.25rem;margin:0 0 1.25rem;">${c.key_points.map(p=>`<li style="font-size:12px;line-height:1.75;color:#1a1a18;">${p}</li>`).join('')}</ul>
+          
+          <button class="btn-primary" onclick="state.learn.phase='questions';state.learn.currentQ=0;state.learn.qAnswered=false;state.learn.selectedAnswer=null;state.learn.answers=[];render();">
+            <i class="ti ti-player-play"></i>Verificar comprensión →</button>
+        </div>`;
       }
     }
     html+=`</div>`;
-    el.innerHTML=html;
-    return;
+    el.innerHTML=html;return;
   }
-  
-  // PHASE: Result
+
+  // QUESTIONS PHASE
+  if(lx.phase==='questions'){
+    const q=c?c.questions[lx.currentQ]:null;
+    let html=renderLearnHeader(d,lx,totalMastered,totalConcepts);
+    html+=`<div style="max-width:640px;">`;
+
+    // Progress dots
+    html+=`<div class="progress-dots">
+      ${[0,1].map(i=>`<div class="dot ${i<lx.answers.length?(lx.answers[i].ok?'done':'wrong'):(i===lx.currentQ?'active':'')}"></div>`).join('')}
+    </div>`;
+
+    // Lang toggle
+    html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:8px;">
+      <span style="font-size:12px;color:#888;">Pregunta ${lx.currentQ+1} de 2</span>
+      <div style="display:flex;gap:6px;">
+        ${lx.translating?`<span style="font-size:11px;color:#888;">Traduciendo...</span>`:''}
+        <button class="lang-btn ${lx.lang==='en'?'active':''}" onclick="if(state.learn.lang!=='en'){state.learn.lang='en';render();}">EN</button>
+        <button class="lang-btn ${lx.lang==='es'?'active':''}" onclick="toggleLang()">ES</button>
+      </div>
+    </div>`;
+
+    if(q){
+      // Question card
+      html+=`<div style="background:#f9f9f8;border-radius:10px;padding:1rem 1.25rem;margin-bottom:.875rem;border-left:3px solid ${d.border};">
+        <div style="font-size:9px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;">Pregunta de verificación</div>
+        <p style="font-size:14px;font-weight:500;line-height:1.65;margin:0;">${q.q}</p>
+      </div>`;
+
+      // Options
+      html+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:.875rem;">`;
+      Object.entries(q.options).forEach(([letter,text])=>{
+        let bg='#fff',border='#d1d5db',tc='#1a1a18';
+        if(lx.qAnswered){
+          if(letter===q.correct){bg='#EAF3DE';border='#639922';tc='#3B6D11';}
+          else if(letter===lx.selectedAnswer){bg='#FCEBEB';border='#E24B4A';tc='#A32D2D';}
+          else{tc='#aaa';}
+        }
+        html+=`<button onclick="handleLearnAnswer('${letter}')" ${lx.qAnswered?'disabled':''}
+          style="display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:${bg};border:1px solid ${border};border-radius:8px;cursor:${lx.qAnswered?'default':'pointer'};text-align:left;width:100%;color:${tc};">
+          <span style="font-weight:600;min-width:18px;font-size:13px;flex-shrink:0;">${letter}.</span>
+          <span style="font-size:13px;line-height:1.6;flex:1;">${text}</span>
+          ${lx.qAnswered&&letter===q.correct?'<i class="ti ti-check" style="color:#3B6D11;margin-left:auto;flex-shrink:0;"></i>':''}
+          ${lx.qAnswered&&letter===lx.selectedAnswer&&letter!==q.correct?'<i class="ti ti-x" style="color:#A32D2D;margin-left:auto;flex-shrink:0;"></i>':''}
+        </button>`;
+      });
+      html+=`</div>`;
+
+      // Flip explanation (after answering)
+      if(lx.qAnswered){
+        const ans=lx.answers[lx.answers.length-1];
+        html+=`<div style="background:${ans.ok?'#EAF3DE':'#FAECE7'};border:1px solid ${ans.ok?'#97C459':'#F0997B'};border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;">
+          <div style="font-size:12px;font-weight:600;color:${ans.ok?'#3B6D11':'#993C1D'};margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+            <i class="ti ti-${ans.ok?'check':'x'}"></i>${ans.ok?'¡Correcto!':'Incorrecto — Respuesta: '+q.correct}
+          </div>
+          <p style="margin:0;font-size:13px;line-height:1.75;">${q.explanation}</p>
+        </div>`;
+
+        if(lx.currentQ<1){
+          html+=`<button class="btn-primary" onclick="nextQuestion()"><i class="ti ti-arrow-right"></i>Siguiente pregunta</button>`;
+        } else {
+          html+=`<button class="btn-primary" onclick="finishLearn()"><i class="ti ti-chart-bar"></i>Ver resultado final</button>`;
+        }
+      }
+    }
+    html+=`</div>`;
+    el.innerHTML=html;return;
+  }
+
+  // RESULT PHASE
   if(lx.phase==='result'){
-    const d=D.find(x=>x.id===lx.domId);
     const correct=lx.answers.filter(a=>a.ok).length;
-    const pct=Math.round((correct/3)*100);
-    const passed=correct>=2;
-    
+    const passed=correct>=1; // 1 of 2 minimum
+    const allCorrect=correct===2;
     let html=`<div style="max-width:500px;">
-    <div style="text-align:center;background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:2rem;margin-bottom:1.25rem;">
-      <div style="font-size:48px;font-weight:700;color:${passed?'#3B6D11':'#A32D2D'};margin-bottom:8px;">${pct}%</div>
-      <div style="font-size:15px;font-weight:600;margin-bottom:4px;">${passed?'¡Concepto dominado! 🎉':'Necesitas repasar 📖'}</div>
-      <div style="font-size:13px;color:#888;">${correct} de 3 preguntas correctas</div>
+    <div style="text-align:center;background:#fff;border-radius:12px;border:1px solid ${allCorrect?'#97C459':passed?'#FAC775':'#F09595'};padding:2rem;margin-bottom:1.25rem;">
+      <div style="font-size:52px;margin-bottom:.5rem;">${allCorrect?'🎯':passed?'👍':'📖'}</div>
+      <div style="font-size:36px;font-weight:700;color:${allCorrect?'#3B6D11':passed?'#854F0B':'#A32D2D'};margin-bottom:6px;">${correct}/2</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:4px;">${allCorrect?'¡Concepto dominado!':passed?'Bien — puedes continuar':'Necesitas repasar este concepto'}</div>
+      <div style="font-size:12px;color:#888;">${c?c.concept:''}</div>
     </div>
-    
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1.25rem;">
-      ${lx.answers.map((a,i)=>`
-      <div style="background:#fff;border-radius:8px;border:1px solid ${a.ok?'#97C459':'#F09595'};padding:.875rem;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-          <i class="ti ti-${a.ok?'check':'x'}" style="color:${a.ok?'#3B6D11':'#A32D2D'};"></i>
-          <span style="font-size:12px;font-weight:600;">Pregunta ${i+1} — ${a.ok?'Correcta':'Incorrecta — Resp: '+a.correct}</span>
-        </div>
-        <p style="margin:0;font-size:12px;color:#666;line-height:1.6;">${a.explanation}</p>
-      </div>`).join('')}
-    </div>
-    
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      ${passed?`
-      <button onclick="markMastered('${lx.domId}',${lx.conceptIdx})" class="btn-primary" style="font-size:14px;padding:11px 22px;">
-        <i class="ti ti-circle-check"></i>Dominado — Siguiente concepto →
-      </button>`:
-      `<button onclick="startLearnConcept('${lx.domId}',${lx.conceptIdx})" class="btn-primary" style="background:#185FA5;font-size:13px;">
-        <i class="ti ti-refresh"></i>Repasar este concepto
-      </button>`}
-      <button onclick="state.learn.phase='concepts';render();" class="btn-secondary">
-        Ver todos los conceptos</button>
+      ${passed?`<button onclick="markMastered('${lx.domId}',${lx.conceptIdx})" class="btn-primary" style="font-size:13px;padding:11px 20px;">
+        <i class="ti ti-circle-check"></i>${allCorrect?'¡Dominado! Siguiente →':'Continuar — Siguiente →'}
+      </button>`:''}
+      <button onclick="retryLearn()" class="btn-secondary" style="${passed?'':'background:#185FA5;color:#fff;border:none;'}">
+        <i class="ti ti-refresh"></i>Repasar este concepto</button>
     </div>
     </div>`;
-    el.innerHTML=html;
-    return;
+    el.innerHTML=html;return;
   }
 }
+
 
 // ============================================================
 // DASHBOARD
