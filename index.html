@@ -99,8 +99,8 @@
         <p style="margin:0;font-size:12px;color:#888;">TCO 6ª Edición · 2025</p>
       </div>
     </div>
-    <p>Esta app usa Google Gemini (IA gratuita) para generar preguntas clínicas de nivel BCBA. Necesitas una API key gratuita de Google — sin tarjeta de crédito.</p>
-    <input id="apikey-input" class="setup-input" type="password" placeholder="AIza..." autocomplete="off"/>
+    <p>Esta app usa Claude de Anthropic para generar preguntas clínicas de nivel BCBA. Necesitas tu API key de Anthropic.</p>
+    <input id="apikey-input" class="setup-input" type="password" placeholder="sk-ant-api03-..." autocomplete="off"/>
     <button class="setup-btn" onclick="submitKey()"><i class="ti ti-key" style="margin-right:6px;"></i>Guardar y comenzar</button>
     <p class="setup-note">
       ¿No tienes API key? Crea una <strong>gratis</strong> en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a><br/>
@@ -182,14 +182,14 @@ function saveStats(){try{localStorage.setItem(STOR_KEY,JSON.stringify(state.stat
 function getKey(){return localStorage.getItem(KEY_K)||'';}
 function submitKey(){
   const k=document.getElementById('apikey-input').value.trim();
-  if(!k.startsWith('AIza')){alert('La API key de Google debe empezar con "AIza..."');return;}
+  if(!k.startsWith('sk-ant')){alert('La API key debe empezar con "sk-ant-..."');return;}
   localStorage.setItem(KEY_K,k);
   document.getElementById('setup').classList.remove('active');
   document.getElementById('app').classList.add('active');
   init();
 }
 function resetKey(){
-  if(confirm('¿Cambiar API key?')){
+  if(confirm('¿Cambiar API key de Anthropic?')){
     localStorage.removeItem(KEY_K);
     document.getElementById('app').classList.remove('active');
     document.getElementById('setup').classList.add('active');
@@ -202,29 +202,25 @@ document.getElementById('apikey-input').addEventListener('keydown',e=>{if(e.key=
 // ============================================================
 // ANTHROPIC API
 // ============================================================
-async function callAI(prompt,max=1300,retries=3){
+async function callAI(prompt,max=1300){
   const key=getKey();
-  for(let i=0;i<retries;i++){
-    if(i>0) await new Promise(r=>setTimeout(r,2000*i));
-    try{
-      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          contents:[{role:"user",parts:[{text:prompt}]}],
-          generationConfig:{maxOutputTokens:max,temperature:0.7}
-        })
-      });
-      const data=await res.json();
-      if(data.error){
-        if(data.error.code===429&&i<retries-1) continue;
-        throw new Error(data.error.message);
-      }
-      return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
-    }catch(e){
-      if(i===retries-1) throw e;
-    }
-  }
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':key,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({
+      model:'claude-haiku-4-5-20251001',
+      max_tokens:max,
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  const data=await res.json();
+  if(data.error)throw new Error(data.error.message);
+  return data.content?.find(b=>b.type==='text')?.text||'';
 }
 
 async function genQuestion(domId,diff='standard'){
