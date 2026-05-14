@@ -190,15 +190,63 @@ let state={
 let examTimer=null;
 
 // ============================================================
+// MEMORY MANAGEMENT — prevents browser Out of Memory crashes
+// ============================================================
+const MODULE_CACHE = { current: null, next: null };
+let preloadInFlightKey = null;
+
+function moduleKey(m){
+  if(!m) return '';
+  const idx = m.idx!==undefined ? m.idx : m.conceptIdx;
+  return `${m.domId}-${idx}-${m.subIdx===null||m.subIdx===undefined?'x':m.subIdx}-${m.finalReview?'final':'study'}`;
+}
+function sameModule(a,b){ return !!a && !!b && moduleKey(a)===moduleKey(b); }
+function clearLearnMemory(){
+  if(state && state.learn){
+    state.learn.content = null;
+    state.learn.contentEs = null;
+    state.learn.answers = [];
+    state.learn.selectedAnswer = null;
+    state.learn.showHint = false;
+  }
+}
+function cleanupDOM(){
+  const main=document.getElementById('main-content');
+  if(main && main.childNodes.length>0) main.replaceChildren();
+}
+function pruneStatsHistory(max=50){
+  if(state?.stats?.history && state.stats.history.length>max){
+    state.stats.history = state.stats.history.slice(0,max);
+  }
+}
+function trimLargeState(){
+  pruneStatsHistory(50);
+  // Keep only current and one prefetched module in memory.
+  if(MODULE_CACHE.current && !sameModule(MODULE_CACHE.current,state.learn)) MODULE_CACHE.current = null;
+}
+
+// ============================================================
 // STORAGE
 // ============================================================
 function loadStats(){try{const s=localStorage.getItem(STOR_KEY);if(s)state.stats=JSON.parse(s);}catch{}}
 function loadMastered(){try{const m=localStorage.getItem(MASTER_KEY);if(m)mastered=JSON.parse(m);}catch{}}
 function saveMastered(){try{localStorage.setItem(MASTER_KEY,JSON.stringify(mastered));}catch{}}
-function masterKey(domId,idx){return domId+'-'+idx;}
-function isMastered(domId,idx){return!!mastered[masterKey(domId,idx)];}
-function masteredCount(domId){return D.find(d=>d.id===domId).tasks.filter((_,i)=>isMastered(domId,i)).length;}
-function saveStats(){try{localStorage.setItem(STOR_KEY,JSON.stringify(state.stats));}catch{}}
+function masterKey(domId,idx,subIdx=null,finalReview=false){
+  if(finalReview) return `${domId}-${idx}-final`;
+  if(subIdx!==null && subIdx!==undefined) return `${domId}-${idx}-sub-${subIdx}`;
+  return `${domId}-${idx}`;
+}
+function isMastered(domId,idx,subIdx=null,finalReview=false){return !!mastered[masterKey(domId,idx,subIdx,finalReview)];}
+function masteredCount(domId){
+  const d=D.find(d=>d.id===domId);
+  if(!d) return 0;
+  return d.tasks.filter((task,i)=>{
+    const subs=getSubconceptsForTask(task);
+    if(subs.length>1) return subs.every((_,si)=>isMastered(domId,i,si,false)) && isMastered(domId,i,null,true);
+    return isMastered(domId,i);
+  }).length;
+}
+function saveStats(){try{pruneStatsHistory(50);localStorage.setItem(STOR_KEY,JSON.stringify(state.stats));}catch{}}
 
 // ============================================================
 // API KEY
@@ -282,11 +330,12 @@ Return ONLY valid JSON:
 // ============================================================
 function $(sel){return document.querySelector(sel);}
 function render(){
+  trimLargeState();
   updateNav();
   updateSidebar();
   const main=document.getElementById('main-content');
   const views={dash:renderDash,learn:renderLearn,practice:renderPractice,exam:renderExam,notes:renderNotes,analytics:renderAnalytics};
-  main.innerHTML='';
+  if(main) main.replaceChildren();
   (views[state.view]||renderDash)(main);
 }
 
@@ -443,6 +492,46 @@ function getNextConcept(){
   return null;
 }
 
+function buildLearningPath(){
+  const path=[];
+  D.forEach(d=>{
+    d.tasks.forEach((task,idx)=>{
+      const subs=getSubconceptsForTask(task);
+      if(subs.length>1){
+        subs.forEach((_,subIdx)=>path.push({domId:d.id,idx,subIdx,finalReview:false}));
+        path.push({domId:d.id,idx,subIdx:null,finalReview:true});
+      }else{
+        path.push({domId:d.id,idx,subIdx:null,finalReview:false});
+      }
+    });
+  });
+  return path;
+}
+function getFollowingConcept(current){
+  const path=buildLearningPath();
+  const i=path.findIndex(x=>sameModule(x,current));
+  if(i<0) return getNextConcept();
+  return path[i+1]||null;
+}
+async function preloadNextConcept(fromModule=null){
+  const next=fromModule?getFollowingConcept(fromModule):getNextConcept();
+  if(!next) return;
+  const key=moduleKey(next);
+  if(preloadInFlightKey===key || sameModule(MODULE_CACHE.next,next)) return;
+  preloadInFlightKey=key;
+  try{
+    const content=await genLearnContent(next.domId,next.idx,next.subIdx,next.finalReview);
+    MODULE_CACHE.next={...next,content};
+  }catch(e){
+    console.log('Preload skipped:', e?.message || e);
+  }finally{
+    preloadInFlightKey=null;
+  }
+}
+function schedulePreload(fromModule){
+  setTimeout(()=>preloadNextConcept(fromModule),400);
+}
+
 async function genLearnContent(domId,conceptIdx,subIdx=null,finalReview=false){
   const d=D.find(x=>x.id===domId);
   const task=d.tasks[conceptIdx];
@@ -485,18 +574,37 @@ ${JSON.stringify(content)}`,1800);
 }
 
 async function startLearnConcept(domId,idx,subIdx=null,finalReview=false){
+  const requested={domId,idx,subIdx,finalReview};
+  clearLearnMemory();
+  cleanupDOM();
+
   state.learn={phase:'hook',domId,conceptIdx:idx,subIdx,finalReview,content:null,contentEs:null,lang:'en',flipped:false,currentQ:0,qAnswered:false,selectedAnswer:null,answers:[],loading:true,translating:false,showHint:false,err:null};
   state.view='learn';
   render();
+
   try{
-    const content=await genLearnContent(domId,idx,subIdx,finalReview);
+    let content=null;
+    if(sameModule(MODULE_CACHE.next,requested) && MODULE_CACHE.next.content){
+      content=MODULE_CACHE.next.content;
+      MODULE_CACHE.current={...requested,content};
+      MODULE_CACHE.next=null;
+    }else{
+      content=await genLearnContent(domId,idx,subIdx,finalReview);
+      MODULE_CACHE.current={...requested,content};
+      MODULE_CACHE.next=null;
+    }
+
+    if(!sameModule(requested,state.learn)) return;
     state.learn.content=content;
     state.learn.loading=false;
+    render();
+    schedulePreload(requested);
   }catch(e){
+    if(!sameModule(requested,state.learn)) return;
     state.learn.loading=false;
     state.learn.err='Error generando contenido. Verifica tu API key e intenta de nuevo.';
+    render();
   }
-  render();
 }
 
 async function startLearnAuto(){
@@ -507,13 +615,23 @@ async function startLearnAuto(){
 
 async function toggleLang(){
   const lx=state.learn;
+  const current={domId:lx.domId,idx:lx.conceptIdx,subIdx:lx.subIdx,finalReview:lx.finalReview};
   if(lx.lang==='en'&&!lx.contentEs){
     state.learn.translating=true;render();
-    try{state.learn.contentEs=await translateContent(lx.content);}catch{}
+    try{
+      const translated=await translateContent(lx.content);
+      if(sameModule(current,state.learn)) state.learn.contentEs=translated;
+    }catch{}
     state.learn.translating=false;
   }
   state.learn.lang=lx.lang==='en'?'es':'en';
   render();
+  // Translation doubles memory. If the learner returns to English, clear Spanish copy after 30 seconds.
+  setTimeout(()=>{
+    if(sameModule(current,state.learn) && state.learn.lang==='en' && state.learn.contentEs){
+      state.learn.contentEs=null;
+    }
+  },30000);
 }
 
 function handleLearnAnswer(letter){
@@ -886,7 +1004,7 @@ async function handlePracticeAnswer(letter){
   state.stats.allTime.total+=1;
   state.stats.byDomain[domId].correct+=(ok?1:0);
   state.stats.byDomain[domId].total+=1;
-  state.stats.history=[{domId,task:state.practice.q.task,correct:ok,ts:Date.now()},...state.stats.history].slice(0,60);
+  state.stats.history=[{domId,task:state.practice.q.task,correct:ok,ts:Date.now()},...state.stats.history].slice(0,50);
   saveStats();
   state.practice.selAns=letter;
   state.practice.showExp=true;
