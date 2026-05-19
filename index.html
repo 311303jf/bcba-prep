@@ -1,1383 +1,598 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>BCBA Study Hub — TCO 6ª Edición 2025</title>
+<title>BCBA Study Hub — Full Version Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900&family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f4;color:#1a1a18;min-height:100vh;}
-  button:focus-visible{outline:2px solid #0F6E56;outline-offset:2px;}
-  select:focus{outline:2px solid #0F6E56;outline-offset:2px;}
-  ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:#f1f1f1;} ::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px;}
-  /* API key setup screen */
-  #setup{display:none;position:fixed;inset:0;background:#f5f5f4;z-index:999;align-items:center;justify-content:center;}
-  #setup.active{display:flex;}
-  .setup-card{background:#fff;border-radius:16px;padding:2rem;max-width:480px;width:90%;border:1px solid #e5e5e3;}
-  .setup-card h1{font-size:22px;font-weight:600;margin-bottom:4px;color:#1a1a18;}
-  .setup-card p{font-size:14px;color:#666;margin-bottom:1.5rem;line-height:1.6;}
-  .setup-input{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:8px;font-family:monospace;}
-  .setup-input:focus{outline:2px solid #0F6E56;border-color:#0F6E56;}
-  .setup-btn{width:100%;padding:11px;background:#0F6E56;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:12px;}
-  .setup-btn:hover{background:#0a5a45;}
-  .setup-note{font-size:12px;color:#888;line-height:1.6;}
-  .setup-note a{color:#0F6E56;}
-  /* App shell */
-  #app{display:none;height:100vh;overflow:hidden;}
-  #app.active{display:flex;}
-  aside{width:190px;background:#fff;border-right:1px solid #e5e5e3;display:flex;flex-direction:column;flex-shrink:0;height:100vh;}
-  .sidebar-logo{padding:1rem;border-bottom:1px solid #e5e5e3;}
-  .sidebar-badge{font-size:10px;font-weight:600;color:#0F6E56;letter-spacing:.1em;margin-bottom:3px;}
-  .sidebar-title{font-size:17px;font-weight:600;color:#1a1a18;}
-  .sidebar-sub{font-size:10px;color:#888;margin-top:2px;}
-  nav{padding:.5rem 0;flex:1;overflow-y:auto;}
-  .nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:9px 1rem;background:transparent;border:none;border-left:2px solid transparent;cursor:pointer;font-size:13px;font-weight:400;color:#666;text-align:left;transition:all .15s;}
-  .nav-btn:hover{background:#f5f5f4;color:#1a1a18;}
-  .nav-btn.active{background:#f0faf5;border-left-color:#0F6E56;color:#1a1a18;font-weight:500;}
-  .nav-btn i{font-size:16px;}
-  .sidebar-stats{padding:.875rem 1rem;border-top:1px solid #e5e5e3;}
-  .sidebar-stats-label{font-size:11px;color:#888;margin-bottom:3px;}
-  .sidebar-stats-pct{font-size:24px;font-weight:600;}
-  .sidebar-stats-count{font-size:11px;color:#888;}
-  .api-reset{font-size:10px;color:#aaa;cursor:pointer;border:none;background:none;padding:4px 1rem;width:100%;text-align:left;}
-  .api-reset:hover{color:#A32D2D;}
-  main{flex:1;overflow-y:auto;padding:1.5rem;background:#f5f5f4;}
-  /* Cards */
-  .card{background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:1.25rem;}
-  .domain-card{background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:.875rem;}
-  /* Buttons */
-  .btn-primary{display:flex;align-items:center;gap:7px;padding:9px 16px;background:#0F6E56;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;}
-  .btn-primary:hover{background:#0a5a45;}
-  .btn-secondary{display:flex;align-items:center;gap:6px;padding:8px 14px;background:transparent;color:#666;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:13px;}
-  .btn-secondary:hover{background:#f5f5f4;}
-  /* Loading */
-  .loading{text-align:center;padding:4rem 0;color:#888;}
-  .loading i{font-size:32px;display:block;margin-bottom:10px;color:#0F6E56;}
-  /* Pill */
-  .pill{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;}
-  /* Progress bar */
-  .prog-track{height:3px;background:#e5e5e3;border-radius:2px;}
-  .prog-fill{height:100%;border-radius:2px;transition:width .4s;}
-  /* Scenario box */
-  .scenario{background:#f9f9f8;border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;}
-  .scenario-label{font-size:9px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;}
-  /* Explanation */
-  .explain{border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;}
-  /* Option buttons */
-  .opt-btn{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;background:#fff;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;text-align:left;width:100%;transition:border-color .1s;}
-  .opt-btn:hover:not(:disabled){border-color:#0F6E56;}
-  .opt-btn:disabled{cursor:default;}
-  /* Metric cards */
-  .metric{background:#f5f5f4;border-radius:8px;padding:.875rem;text-align:center;}
-  .metric-val{font-size:24px;font-weight:600;}
-  .metric-label{font-size:11px;color:#888;margin-top:3px;}
-  /* Notes sections */
-  .note-section{border-radius:8px;padding:.875rem 1rem;margin-bottom:8px;}
-  .note-label{font-size:11px;font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:6px;}
-  /* History row */
-  .history-row{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid #e5e5e3;font-size:12px;}
-  /* Responsive */
-  @media(max-width:640px){
-    aside{width:48px;}
-    .sidebar-logo,.sidebar-stats,.sidebar-badge,.sidebar-title,.sidebar-sub,.nav-btn span,.api-reset{display:none;}
-    .nav-btn{justify-content:center;padding:12px;}
-    .nav-btn i{font-size:18px;}
-    main{padding:1rem;}
-  }
+:root{
+  --green:#0B6B52;--green-dark:#084D3B;--green-light:#E0F3EC;--green-mid:#5CC9A0;
+  --gold:#C9860B;--gold-light:#FEF3DC;--gold-border:#F5C76A;
+  --blue:#2460A7;--blue-light:#E8F0FB;--blue-border:#8AB4E8;
+  --purple:#6D28D9;--purple-light:#F3EEFF;--purple-border:#C4B5FD;
+  --pink:#BE185D;--pink-light:#FFF0F6;--pink-border:#F9A8D4;
+  --red:#C0392B;--red-light:#FDECEA;--red-border:#F0A099;
+  --ok:#3B6D11;--ok-light:#EDF7E0;--ok-border:#97C459;
+  --ink:#141412;--ink-mid:#444440;--ink-soft:#777772;--ink-faint:#ADADAA;
+  --surface:#FAFAF8;--white:#FFFFFF;--border:#E4E4E0;--border-soft:#EFEFEC;
+  --radius-sm:10px;--radius-md:16px;--radius-lg:22px;--radius-xl:30px;
+  --shadow-sm:0 2px 8px rgba(0,0,0,.06);
+  --shadow-md:0 10px 28px rgba(0,0,0,.10);
+  --shadow-lg:0 22px 68px rgba(0,0,0,.14);
+  --font-display:'Fraunces',Georgia,serif;
+  --font-body:'DM Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--surface);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+button,input,select{font-family:var(--font-body)}
+button{cursor:pointer}
+.screen{display:none}
+.screen.active{display:block}
 
-  /* Flip card */
-  .flip-card{border-radius:12px;cursor:pointer;transition:all .15s;}
-  .flip-card:hover{transform:translateY(-2px);}
-  .flip-side{border-radius:12px;border:1px solid #e5e5e3;padding:1.5rem;background:#fff;transition:opacity .25s,transform .25s;}
-  .flip-side.hidden{opacity:0;transform:scale(.97);pointer-events:none;display:none;}
-  .flip-side.visible{opacity:1;transform:scale(1);}
-  .lang-btn{font-size:11px;padding:4px 10px;border-radius:20px;cursor:pointer;border:1px solid #d1d5db;background:#fff;color:#666;transition:all .15s;}
-  .lang-btn:hover{background:#f5f5f4;}
-  .lang-btn.active{background:#0F6E56;color:#fff;border-color:#0F6E56;}
-  .progress-dots{display:flex;gap:6px;justify-content:center;margin:1rem 0;}
-  .dot{width:10px;height:10px;border-radius:50%;background:#e5e5e3;transition:all .3s;}
-  .dot.done{background:#0F6E56;}
-  .dot.active{background:#0F6E56;transform:scale(1.3);}
-  .dot.wrong{background:#E24B4A;}
+/* LANDING */
+#landing.screen.active{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:
+  radial-gradient(circle at 15% 15%, rgba(224,243,236,.9), transparent 32%),
+  radial-gradient(circle at 85% 25%, rgba(254,243,220,.85), transparent 28%),
+  var(--surface);}
+.land-card{background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:var(--radius-xl);padding:38px;max-width:680px;width:100%;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;backdrop-filter:blur(8px)}
+.land-card::before{content:'';position:absolute;top:-70px;right:-70px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle,var(--green-light) 0%,transparent 70%);pointer-events:none;z-index:0}
+.land-card>*{position:relative;z-index:1}
+.brand-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.brand-left{display:flex;align-items:center;gap:14px}
+.brand-icon{background:var(--green-light);border-radius:19px;width:62px;height:62px;display:flex;align-items:center;justify-content:center;font-size:31px;flex-shrink:0;border:2px solid var(--green-mid)}
+.brand-name{font-family:var(--font-display);font-size:32px;font-weight:900;line-height:1;color:var(--ink)}
+.brand-tagline{font-size:12px;color:var(--ink-soft);margin-top:4px;font-weight:700}
+.hero-box{background:linear-gradient(135deg,var(--green-dark),var(--green));border-radius:var(--radius-lg);padding:22px 24px;margin:18px 0;color:white}
+.hero-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.13em;font-weight:900;opacity:.8;margin-bottom:8px}
+.hero-heading{font-family:var(--font-display);font-size:27px;font-weight:900;line-height:1.18;margin-bottom:8px}
+.hero-sub{font-size:13.5px;opacity:.88;line-height:1.75}
+.position-box{background:var(--gold-light);border:1px solid var(--gold-border);border-radius:var(--radius-md);padding:15px 16px;margin:14px 0;font-size:13px;color:#6f4703;font-weight:700;line-height:1.65}
+.trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}
+.trust-item{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:11px 12px;font-size:12px;color:var(--ink-mid);display:flex;align-items:center;gap:8px;font-weight:800}
+.cta-btn{width:100%;background:linear-gradient(135deg,var(--green-dark),var(--green));color:white;border:none;border-radius:var(--radius-md);padding:17px;font-size:16px;font-weight:900;letter-spacing:.01em;transition:all .2s;box-shadow:0 4px 22px rgba(11,107,82,.34);margin-top:7px}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 9px 30px rgba(11,107,82,.42)}
+.checklist{display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}
+.check-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft);font-weight:700}
+.check-dot{width:17px;height:17px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--green);flex-shrink:0;font-weight:900}
 
+/* language */
+.lang-switch{display:flex;gap:4px;background:var(--border-soft);border-radius:999px;padding:3px}
+.lang-btn{border:none;background:transparent;color:var(--ink-soft);border-radius:999px;padding:6px 11px;font-size:11px;font-weight:900;cursor:pointer;transition:all .15s}
+.lang-btn.active{background:var(--white);color:var(--green);box-shadow:var(--shadow-sm)}
+
+/* APP */
+#app.screen.active{display:block}
+.layout{display:flex;height:100vh;overflow:hidden}
+aside{width:255px;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-logo{padding:20px;border-bottom:1px solid var(--border-soft)}
+.sidebar-badge{font-size:9px;color:var(--green);font-weight:900;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px}
+.sidebar-title{font-family:var(--font-display);font-size:23px;font-weight:900;color:var(--ink)}
+.sidebar-sub{font-size:11px;color:var(--ink-soft);margin-top:3px;font-weight:700}
+.sidebar-user{padding:13px 16px;background:var(--green-light);border-bottom:1px solid var(--border-soft);display:flex;align-items:center;gap:10px}
+.user-avatar{width:35px;height:35px;border-radius:50%;background:linear-gradient(135deg,var(--green-dark),var(--green));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:white;flex-shrink:0}
+.user-info{font-size:12px;color:var(--green-dark);font-weight:900;line-height:1.35}
+.user-plan{font-size:10px;color:var(--ink-soft);font-weight:700}
+nav{padding:10px 0;flex:1;overflow-y:auto}
+.nav-section{font-size:9px;font-weight:900;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);padding:12px 16px 4px}
+.nav-btn{width:100%;padding:11px 16px;text-align:left;border:none;background:transparent;color:var(--ink-soft);font-size:13px;cursor:pointer;border-left:3px solid transparent;display:flex;gap:10px;align-items:center;font-weight:700;transition:all .15s}
+.nav-btn:hover{background:var(--surface);color:var(--ink)}
+.nav-btn.active{background:var(--green-light);color:var(--green-dark);border-left-color:var(--green);font-weight:900}
+.sidebar-footer{border-top:1px solid var(--border-soft);padding:15px 16px}
+.prog-label{font-size:10px;font-weight:900;color:var(--ink-soft);margin-bottom:7px;display:flex;justify-content:space-between}
+.progress-bar{height:7px;background:var(--border-soft);border-radius:999px;margin-bottom:8px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green-mid));border-radius:999px;width:73%;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.streak-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--gold);font-weight:900;margin-top:10px}
+main{flex:1;overflow-y:auto;padding:28px;background:var(--surface)}
+
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:22px;flex-wrap:wrap}
+.page-title{font-family:var(--font-display);font-size:31px;font-weight:900;color:var(--ink);margin-bottom:4px;line-height:1.16}
+.page-sub{font-size:13px;color:var(--ink-soft);line-height:1.65;font-weight:700}
+.topbar-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:none;border-radius:var(--radius-sm);padding:10px 16px;font-size:13px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;letter-spacing:.01em}
+.btn-primary{background:linear-gradient(135deg,var(--green-dark),var(--green));color:white;box-shadow:0 3px 13px rgba(11,107,82,.28)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(11,107,82,.38)}
+.btn-secondary{background:var(--white);color:var(--ink-mid);border:1.5px solid var(--border)}
+.btn-secondary:hover{border-color:var(--ink-soft);color:var(--ink)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#E8A030);color:white;box-shadow:0 3px 12px rgba(201,134,11,.26)}
+.btn-purple{background:linear-gradient(135deg,#4C1D95,var(--purple));color:white}
+.btn-pink{background:linear-gradient(135deg,#831843,var(--pink));color:white}
+
+/* DASHBOARD */
+.dash-hero{display:grid;grid-template-columns:1.35fr .65fr;gap:20px;align-items:center;background:linear-gradient(135deg,var(--green-dark),var(--green));color:white;border-radius:var(--radius-xl);padding:26px;box-shadow:var(--shadow-md);margin-bottom:18px;overflow:hidden;position:relative}
+.dash-hero:after{content:'';position:absolute;right:-40px;bottom:-70px;width:210px;height:210px;border-radius:50%;background:rgba(255,255,255,.08)}
+.dash-hero>*{position:relative;z-index:1}
+.hero-dash-label{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.13em;opacity:.75;margin-bottom:7px}
+.hero-dash-title{font-family:var(--font-display);font-size:30px;font-weight:900;line-height:1.15;margin-bottom:8px}
+.hero-dash-sub{font-size:13px;line-height:1.75;opacity:.88}
+.readiness-ring{--p:73;width:150px;height:150px;border-radius:50%;margin-left:auto;background:conic-gradient(var(--gold) calc(var(--p)*1%),rgba(255,255,255,.18) 0);display:flex;align-items:center;justify-content:center;position:relative}
+.readiness-ring:after{content:'';position:absolute;inset:12px;border-radius:50%;background:var(--green-dark)}
+.ring-content{position:relative;z-index:1;text-align:center}
+.ring-num{font-family:var(--font-display);font-size:39px;font-weight:900;line-height:1}
+.ring-label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;opacity:.78;font-weight:900;margin-top:4px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:18px}
+.metric{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-md);padding:17px;position:relative;overflow:hidden}
+.metric::after{content:'';position:absolute;bottom:-22px;right:-22px;width:68px;height:68px;border-radius:50%;background:var(--green-light);opacity:.55}
+.metric-value{font-family:var(--font-display);font-size:29px;font-weight:900;color:var(--green);line-height:1}
+.metric-label{font-size:11px;color:var(--ink-soft);margin-top:4px;font-weight:800}
+.dash-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;margin-bottom:20px}
+.panel{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.03)}
+.panel-label{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px}
+.focus-title{font-family:var(--font-display);font-size:24px;font-weight:900;margin-bottom:7px;color:var(--ink)}
+.reason{background:var(--blue-light);border:1px solid var(--blue-border);border-left:4px solid var(--blue);border-radius:var(--radius-sm);padding:13px;font-size:13px;line-height:1.72;color:#184b84;margin:12px 0}
+.session-list{display:flex;flex-direction:column;gap:8px}
+.session-item{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--ink-mid);font-weight:800;display:flex;justify-content:space-between;gap:12px}
+.session-item strong{color:var(--green-dark)}
+.domain-title-row{font-family:var(--font-display);font-size:22px;font-weight:900;margin:22px 0 12px;color:var(--ink)}
+.domain-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px}
+.domain-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:17px;transition:all .2s}
+.domain-card:hover{border-color:var(--green-mid);box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:4px 10px;font-size:10px;font-weight:900;letter-spacing:.05em;margin-bottom:10px;text-transform:uppercase}
+.pill.green{background:var(--green-light);color:var(--green)}
+.pill.gold{background:var(--gold-light);color:var(--gold);border:1px solid var(--gold-border)}
+.pill.purple{background:var(--purple-light);color:var(--purple);border:1px solid var(--purple-border)}
+.pill.pink{background:var(--pink-light);color:var(--pink);border:1px solid var(--pink-border)}
+.dom-name{font-size:15px;font-weight:900;line-height:1.32;color:var(--ink)}
+.dom-meta{font-size:11px;color:var(--ink-soft);margin-top:3px;font-weight:700}
+.dom-bars{margin-top:12px;display:flex;flex-direction:column;gap:7px}
+.mini-label{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-soft);font-weight:900}
+.mini-track{height:6px;background:var(--border-soft);border-radius:99px;overflow:hidden}
+.mini-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green-mid));border-radius:99px}
+
+/* Learn/Practice */
+.learn-wrap,.practice-wrap{max-width:860px}
+.learn-card,.question-card,.complete-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:26px;box-shadow:var(--shadow-sm)}
+.module-label{font-size:11px;font-weight:900;color:var(--green);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.module-title{font-family:var(--font-display);font-size:29px;font-weight:900;margin-bottom:10px;color:var(--ink)}
+.definition{background:var(--surface);border-left:4px solid var(--green);border-radius:var(--radius-sm);padding:16px;margin:14px 0;font-size:14px;line-height:1.8;color:var(--ink-mid)}
+.note-box{background:var(--blue-light);border:1px solid var(--blue-border);border-radius:var(--radius-sm);padding:14px;font-size:13px;line-height:1.75;margin:12px 0;color:#184b84}
+.path-strip{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.path-chip{font-size:11px;font-weight:900;border-radius:999px;padding:6px 11px;border:1px solid var(--border);background:#fff;color:var(--ink-soft)}
+.path-chip.done{background:var(--ok-light);border-color:var(--ok-border);color:var(--ok)}
+.path-chip.active{background:var(--green-light);border-color:var(--green-mid);color:var(--green-dark)}
+.question-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.question-meta{font-size:12px;color:var(--ink-soft);font-weight:800}
+.timer-pill{font-size:12px;font-weight:900;border-radius:999px;padding:6px 12px;display:flex;align-items:center;gap:5px;color:var(--green);background:var(--green-light);border:1px solid var(--green-mid)}
+.timer-pill.exam{color:var(--gold);background:var(--gold-light);border-color:var(--gold-border)}
+.question-text{font-size:15px;line-height:1.75;font-weight:600;margin-bottom:16px;background:var(--surface);border-radius:var(--radius-sm);padding:16px;color:var(--ink);border-left:4px solid var(--border)}
+.option{width:100%;text-align:left;background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 15px;margin-bottom:8px;cursor:pointer;font-size:13.5px;line-height:1.6;font-weight:700;transition:all .15s;display:flex;align-items:flex-start;gap:10px}
+.option-letter{width:25px;height:25px;border-radius:50%;background:var(--surface);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:var(--ink-soft);flex-shrink:0;margin-top:1px;transition:all .15s}
+.option:hover:not(:disabled){border-color:var(--green);background:var(--green-light)}
+.option:hover:not(:disabled) .option-letter{background:var(--green);border-color:var(--green);color:white}
+.option.correct{background:var(--ok-light);border-color:var(--ok-border)}
+.option.correct .option-letter{background:var(--ok);border-color:var(--ok);color:white}
+.option.wrong{background:var(--red-light);border-color:var(--red-border)}
+.option.wrong .option-letter{background:var(--red);border-color:var(--red);color:white}
+.option:disabled{cursor:default}
+.confidence-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin:12px 0}
+.conf-label{font-size:11px;font-weight:900;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.conf-opts{display:flex;gap:8px}
+.conf-btn{flex:1;border:1.5px solid var(--border);background:var(--white);border-radius:var(--radius-sm);padding:10px 6px;font-size:12px;font-weight:800;color:var(--ink-mid);transition:all .15s;text-align:center}
+.conf-btn.active{border-color:var(--green);background:var(--green-light);color:var(--green)}
+.feedback{border-radius:var(--radius-md);padding:16px;font-size:13px;line-height:1.75;margin:14px 0}
+.feedback.good{background:var(--ok-light);border:1px solid var(--ok-border)}
+.feedback.bad{background:var(--red-light);border:1px solid var(--red-border)}
+.feedback-title{font-size:15px;font-weight:900;margin-bottom:6px}
+.feedback.good .feedback-title{color:var(--ok)}
+.feedback.bad .feedback-title{color:var(--red)}
+.exam-rules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+.rule-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:15px;text-align:center}
+.rule-value{font-family:var(--font-display);font-size:28px;font-weight:900;color:var(--gold)}
+.rule-label{font-size:11px;color:var(--ink-soft);font-weight:800;margin-top:3px}
+.analytics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:13px}
+.insight-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px}
+.insight-value{font-family:var(--font-display);font-size:31px;font-weight:900;color:var(--green)}
+.insight-title{font-size:13px;font-weight:900;margin-top:3px}
+.insight-copy{font-size:12px;color:var(--ink-soft);line-height:1.6;margin-top:6px;font-weight:700}
+
+/* Admin */
+.admin-panel{display:none;position:fixed;right:18px;bottom:18px;z-index:50;background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-lg);padding:16px;width:min(410px,calc(100vw - 36px))}
+.admin-panel.active{display:block}
+.admin-panel h3{font-family:var(--font-display);font-size:20px;margin-bottom:8px}
+.admin-panel p{font-size:12px;color:var(--ink-soft);line-height:1.5;margin-bottom:10px;font-weight:700}
+.admin-input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px;font-size:12px;margin-bottom:9px}
+.admin-row{display:flex;gap:8px;flex-wrap:wrap}
+
+@media(max-width:840px){
+  .layout{display:block;height:auto}
+  aside{width:100%}
+  nav{display:flex;overflow-x:auto;padding:0}
+  .nav-section{display:none}
+  .nav-btn{white-space:nowrap;border-left:none;border-bottom:3px solid transparent;padding:10px 12px}
+  .nav-btn.active{border-left:none;border-bottom-color:var(--green)}
+  main{padding:16px}
+  .dash-hero,.dash-grid{grid-template-columns:1fr}
+  .readiness-ring{margin:0}
+  .trust-grid,.exam-rules{grid-template-columns:1fr}
+  .land-card{padding:26px}
+}
 </style>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
 </head>
 <body>
 
-<!-- Setup Screen -->
-<div id="setup" class="active">
-  <div class="setup-card">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">
-      <div style="background:#E1F5EE;border-radius:10px;padding:10px;"><i class="ti ti-brain" style="font-size:24px;color:#0F6E56;"></i></div>
-      <div>
-        <h1>BCBA Study Hub</h1>
-        <p style="margin:0;font-size:12px;color:#888;">TCO 6ª Edición · 2025</p>
+<section id="landing" class="screen active">
+  <div class="land-card">
+    <div class="brand-row">
+      <div class="brand-left">
+        <div class="brand-icon">🧠</div>
+        <div>
+          <div class="brand-name">BCBA Study Hub</div>
+          <div class="brand-tagline">Adaptive Mastery Learning System</div>
+        </div>
       </div>
+      <div id="landingLang"></div>
     </div>
-    <p>Esta app usa Claude de Anthropic para generar preguntas clínicas de nivel BCBA. Necesitas tu API key de Anthropic.</p>
-    <input id="apikey-input" class="setup-input" type="password" placeholder="sk-ant-api03-..." autocomplete="off"/>
-    <button class="setup-btn" onclick="submitKey()"><i class="ti ti-key" style="margin-right:6px;"></i>Guardar y comenzar</button>
-    <p class="setup-note">
-      ¿No tienes API key? Crea una <strong>gratis</strong> en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a><br/>
-      Sin tarjeta de crédito. Tu key se guarda solo en este dispositivo. Nunca sale de tu navegador.<br/><br/>
-      <strong>✅ 100% gratuito</strong> — Google Gemini Flash tiene capa gratuita generosa.
-    </p>
+    <div class="hero-box">
+      <div class="hero-eyebrow" data-i="landEyebrow"></div>
+      <div class="hero-heading" data-i="landHeading"></div>
+      <div class="hero-sub" data-i="landSub"></div>
+    </div>
+    <div class="position-box" data-i="landPosition"></div>
+    <div class="trust-grid">
+      <div class="trust-item" data-i="trust1"></div>
+      <div class="trust-item" data-i="trust2"></div>
+      <div class="trust-item" data-i="trust3"></div>
+      <div class="trust-item" data-i="trust4"></div>
+    </div>
+    <button type="button" class="cta-btn" id="startBtn" data-i="startDemo"></button>
+    <div class="checklist">
+      <div class="check-item"><span class="check-dot">✓</span><span data-i="check1"></span></div>
+      <div class="check-item"><span class="check-dot">✓</span><span data-i="check2"></span></div>
+      <div class="check-item"><span class="check-dot">✓</span><span data-i="check3"></span></div>
+      <div class="check-item"><span class="check-dot">✓</span><span data-i="check4"></span></div>
+      <div class="check-item"><span class="check-dot">✓</span><span data-i="check5"></span></div>
+    </div>
   </div>
-</div>
+</section>
 
-<!-- App -->
-<div id="app">
-  <aside>
-    <div class="sidebar-logo">
-      <div class="sidebar-badge">BCBA PREP</div>
-      <div class="sidebar-title">Study Hub</div>
-      <div class="sidebar-sub">TCO 6ª Ed. · 2025 · IA</div>
-    </div>
-    <nav id="sidebar-nav"></nav>
-    <div class="sidebar-stats">
-      <div class="sidebar-stats-label">Desempeño global</div>
-      <div class="sidebar-stats-pct" id="global-pct">—</div>
-      <div class="sidebar-stats-count" id="global-count">0/0 correctas</div>
-    </div>
-    <button class="api-reset" onclick="resetKey()">⚙ Cambiar API key</button>
-  </aside>
-  <main id="main-content"></main>
+<section id="app" class="screen">
+  <div class="layout">
+    <aside>
+      <div class="sidebar-logo">
+        <div class="sidebar-badge">BCBA PREP</div>
+        <div class="sidebar-title">Study Hub</div>
+        <div class="sidebar-sub">6th Edition TCO · Full Prototype</div>
+      </div>
+      <div class="sidebar-user">
+        <div class="user-avatar">J</div>
+        <div>
+          <div class="user-info">Demo Learner</div>
+          <div class="user-plan" data-i="guidedPlan"></div>
+        </div>
+      </div>
+      <nav>
+        <div class="nav-section" data-i="main"></div>
+        <button type="button" class="nav-btn active" data-view="dashboard">🏠 <span data-i="dashboard"></span></button>
+        <button type="button" class="nav-btn" data-view="learn">🎓 <span data-i="learn"></span></button>
+        <button type="button" class="nav-btn" data-view="practice">🧩 <span data-i="practice"></span></button>
+        <button type="button" class="nav-btn" data-view="domainExam">⏱ <span data-i="domainExam"></span></button>
+        <button type="button" class="nav-btn" data-view="analytics">📊 <span data-i="analytics"></span></button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="prog-label"><span data-i="readiness"></span><span id="sideProgressPct">73%</span></div>
+        <div class="progress-bar"><div class="progress-bar-fill"></div></div>
+        <div class="streak-badge">🔥 <span data-i="streak"></span></div>
+      </div>
+    </aside>
+    <main id="main"></main>
+  </div>
+</section>
+
+<div class="admin-panel" id="adminPanel">
+  <h3>Admin Settings</h3>
+  <p>This prototype keeps the key local only. For public release, move this to a secure backend.</p>
+  <input class="admin-input" id="apiKeyInput" type="password" placeholder="Admin API key (local prototype only)"/>
+  <div class="admin-row">
+    <button class="btn btn-primary" id="saveKeyBtn">Save Key</button>
+    <button class="btn btn-secondary" id="closeAdminBtn">Close</button>
+  </div>
 </div>
 
 <script>
-// ============================================================
-// DATA — TCO 6th Edition, official BACB document
-// ============================================================
-const D=[
- {id:"A",label:"Behaviorism & Philosophical Foundations",short:"Behaviorism",icon:"ti-book-2",q:8,pct:5,color:"#444441",bg:"#F1EFE8",border:"#B4B2A9",
-  tasks:["Goals of behavior analysis (description, prediction, control)","Philosophical assumptions (selectionism, determinism, empiricism, parsimony, pragmatism)","Radical behaviorism perspective","Distinguishing ABA from EAB and professional practice","Dimensions of applied behavior analysis"]},
- {id:"B",label:"Concepts and Principles",short:"Concepts",icon:"ti-atom",q:24,pct:14,color:"#185FA5",bg:"#E6F1FB",border:"#85B7EB",
-  tasks:["Positive and negative reinforcement contingencies","Positive and negative punishment contingencies","Automatic vs socially mediated contingencies","Unconditioned, conditioned, and generalized reinforcers","Unconditioned, conditioned, and generalized punishers","Simple schedules of reinforcement","Concurrent, multiple, mixed, and chained schedules","Operant and respondent extinction","Stimulus control and stimulus discrimination","Stimulus and response generalization","Response maintenance","Motivating operations (EO and AO)","Motivating operations vs stimulus control","Rule-governed vs contingency-shaped behavior","Verbal operants (mand, tact, intraverbal, echoic, textual)","Multiple control in verbal behavior","Emergent relations and generative performance","Behavioral momentum and response persistence","Matching law and response allocation","Imitation vs observational learning"]},
- {id:"C",label:"Measurement, Data Display & Interpretation",short:"Measurement",icon:"ti-chart-line",q:21,pct:12,color:"#0F6E56",bg:"#E1F5EE",border:"#5DCAA5",
-  tasks:["Operational definitions of behavior","Direct, indirect, and product measures","Measuring occurrence (frequency, rate, count)","Temporal dimensions (duration, latency, IRT)","Continuous vs discontinuous measurement","Interval recording and time sampling procedures","Measuring efficiency (trials to criterion, cost-benefit)","Validity and reliability of measurement procedures","Selecting representative measurement procedures","Graphing data (equal-interval, bar, cumulative records)","Interpreting graphed data (level, trend, variability)","Procedural integrity measurement"]},
- {id:"D",label:"Experimental Design",short:"Research Design",icon:"ti-flask",q:13,pct:7,color:"#534AB7",bg:"#EEEDFE",border:"#AFA9EC",
-  tasks:["Dependent vs independent variables","Internal vs external validity","Threats to internal validity (history, maturation, testing)","Single-case design features (repeated measures, prediction, verification)","Reversal (ABAB) design","Multiple baseline design","Multielement (alternating treatments) design","Changing criterion design","Single-case vs group design strengths","Comparative, component, and parametric analyses","Critiquing and interpreting single-case data"]},
- {id:"E",label:"Ethical and Professional Issues",short:"Ethics",icon:"ti-scale",q:22,pct:13,color:"#A32D2D",bg:"#FCEBEB",border:"#F09595",
-  tasks:["Core ethics principles (benefit others, compassion, dignity, integrity)","Risks of unethical behavior to self, others, and profession","Maintaining competence through professional development","Confidentiality requirements and protected information","Public statements, social media, and credential misrepresentation","Discontinuing services and transitioning clients/supervisees","Multiple relationships and mitigation strategies","Interpersonal skills in professional relationships","Cultural humility in service delivery","Culturally responsive and inclusive services","Identifying personal biases affecting professional activity","Legal and regulatory requirements (licensure, funding, certification)"]},
- {id:"F",label:"Behavior Assessment",short:"Assessment",icon:"ti-clipboard-list",q:23,pct:13,color:"#854F0B",bg:"#FAEEDA",border:"#FAC775",
-  tasks:["Reviewing records (educational, medical, historical)","Integrating cultural variables in assessment","Designing skills assessments (strengths and areas of need)","Preference assessments (single stimulus, paired stimulus, MSWO)","Descriptive assessments (ABC narrative, scatterplot)","Designing and evaluating functional analyses","Interpreting assessment data for services or referral","Prioritizing socially significant and culturally responsive goals"]},
- {id:"G",label:"Behavior-Change Procedures",short:"B-Change Procedures",icon:"ti-chart-arrows-vertical",q:25,pct:14,color:"#993C1D",bg:"#FAECE7",border:"#F0997B",
-  tasks:["Positive and negative reinforcement procedures","Differential reinforcement (DRA, DRO, DRL, DRH) with/without extinction","Time-based reinforcement (FT schedules)","Token economies and conditioned reinforcers","MOs and SDs in behavior-change procedures","Simple and conditional discrimination training","Prompting procedures (errorless, most-to-least, least-to-most)","Prompt fading (prompt delay, stimulus fading)","Modeling procedures","Instructions and rules as behavior-change procedures","Shaping dimensions of behavior","Chaining (forward, backward, total task)","Trial-based vs free-operant teaching procedures","Group contingencies","Generalization procedures (stimulus and response)","Maintenance procedures (schedule thinning, natural reinforcers)","Positive and negative punishment (time-out, response cost, overcorrection)","Emotional and elicited effects of behavior-change procedures","Emergent relations and generative performance procedures"]},
- {id:"H",label:"Selecting and Implementing Interventions",short:"Interventions",icon:"ti-target",q:20,pct:11,color:"#3B6D11",bg:"#EAF3DE",border:"#97C459",
-  tasks:["Developing observable and measurable intervention goals","Selecting interventions based on evidence, client preferences, contextual fit","Identifying socially valid alternative behaviors","Mitigating unwanted effects of reinforcement, extinction, and punishment","Planning for and mitigating behavioral relapse","Data-based decisions about procedural integrity","Data-based decisions about intervention effectiveness","Collaborating with others to support client services"]},
- {id:"I",label:"Personnel Supervision and Management",short:"Supervision",icon:"ti-users-group",q:19,pct:11,color:"#72243E",bg:"#FBEAF0",border:"#ED93B1",
-  tasks:["Benefits of behavior-analytic supervision","Establishing effective supervisory relationships (contracts, expectations)","Equity in supervision practices","Supervision goals based on supervisee skills and cultural variables","Empirically validated performance management procedures","Behavioral skills training (BST) for supervisees","Evaluating supervisee performance data","Supporting supervisee self-care and burnout prevention"]},
+(function(){
+'use strict';
+
+const TX={
+  en:{
+    landEyebrow:'BCBA Exam Preparation · 6th Edition TCO',
+    landHeading:'Build exam readiness. Trust your reasoning.',
+    landSub:'Clinical scenarios, dynamic study paths, retention checks, and exam-style practice designed to help you feel real progress from day one.',
+    landPosition:'Designed for candidates who want to understand the material, not just memorize it — because the BCBA exam tests clinical reasoning, retention, and decision-making under pressure.',
+    trust1:'📘 6th Edition TCO aligned',
+    trust2:'🧩 Real clinical scenarios',
+    trust3:'🎯 Dynamic mastery path',
+    trust4:'🇺🇸🇪🇸 English + Spanish support',
+    startDemo:'▶ Start Full Preview',
+    check1:'Learn Mode',check2:'Clinical practice',check3:'Exam Reality Mode',check4:'Retention checks',check5:'No card required',
+    guidedPlan:'Guided Study Plan',main:'Main',dashboard:'Dashboard',learn:'Learn Mode',practice:'Clinical Practice',domainExam:'Domain Exam',analytics:'Insights',readiness:'Exam Readiness',streak:'Day 1 of studying',
+    dashTitle:'Dashboard',dashSub:'Your study plan protects retention, closes weak links, and keeps all domains stable.',
+    welcome:'Good evening, Joany',dashHero:'Today’s plan is designed to prevent the “peaks and valleys” problem: improving one domain while previously mastered areas decay.',
+    continue:'Continue Study Session',recommended:'Recommended Focus',focusTitle:'Motivating Operations vs Stimulus Control',
+    focusReason:'Your accuracy is improving, but retention is still unstable. Today’s session combines short review, guided discrimination, and applied clinical cases.',
+    startFocus:'Start Focus Session',today:'Today’s Session',domains:'Domain Stability',
+    metric1:'Stable Domains',metric2:'Retention Alerts',metric3:'Integrated Cases',metric4:'Confidence Alerts',
+    learnTitle:'Understand → Practice → Apply',learnSub:'A concept is not mastered until you can recognize it across different clinical situations.',
+    concept:'Motivating Operations vs SD',definition:'Motivating Operations temporarily change the value of a consequence and alter the current frequency of behavior related to that consequence. Discriminative stimuli signal the availability of reinforcement for a response.',
+    example:'If a learner has not had access to water for several hours, water becomes more valuable and requesting water is more likely. The sight of a water bottle may also signal that asking can produce water.',
+    strategy:'Ask: Is the stimulus changing the VALUE of the reinforcer, or is it signaling that reinforcement is available?',
+    practiceConcept:'Practice This Concept',back:'Back to Dashboard',
+    clinicalPractice:'Clinical Practice',practiceSub:'Scenario-based items with immediate teaching feedback.',
+    confidence:'How confident were you before answering?',low:'Unsure / guessed',mid:'Somewhat sure',high:'Very confident',
+    hint:'Hint / Strategy',correct:'Correct',incorrect:'Incorrect',next:'Next Item',review:'Review Concept',
+    qStem:'A learner has not had access to water for several hours. During a session, the learner is more likely to request water, and access to water functions as a stronger reinforcer than usual. Which interpretation is most accurate?',
+    optA:'Water functions as the SD because it always signals reinforcement.',
+    optB:'Water deprivation functions as an MO because it increases the value of water.',
+    optC:'The water bottle is a conditioned punisher.',
+    optD:'Requesting water is respondent behavior.',
+    feedbackGood:'Water deprivation changes the value of water as a reinforcer and evokes behavior that has historically produced water. That is a Motivating Operation, not merely stimulus control.',
+    feedbackBad:'The key distinction is value change. Water deprivation increases the effectiveness of water as a reinforcer and evokes water-seeking behavior. That is a Motivating Operation.',
+    examTitle:'Exam Reality Mode',examSub:'Final domain items use longer clinical stems, plausible distractors, and delayed feedback.',
+    masteryAssessment:'Domain Mastery Assessment',examDesc:'This stage should feel closer to the real exam: 3–4 sentence clinical stems, cumulative reasoning, no hints, and review only after completion.',
+    startChallenge:'Start 5-Item Challenge',questions:'Questions',time:'Minutes',feedback:'Feedback at end',
+    analyticsTitle:'Performance Insights',analyticsSub:'Track readiness, retention, stability, confidence, and drift across domains.',
+    recentSignals:'Recent Learning Signals'
+  },
+  es:{
+    landEyebrow:'Preparación BCBA · 6th Edition TCO',
+    landHeading:'Construye preparación. Confía en tu razonamiento.',
+    landSub:'Escenarios clínicos, rutas dinámicas de estudio, chequeos de retención y práctica estilo examen para que sientas progreso real desde el primer día.',
+    landPosition:'Diseñado para candidatos que quieren entender el material, no solo memorizarlo — porque el examen BCBA evalúa razonamiento clínico, retención y toma de decisiones bajo presión.',
+    trust1:'📘 Alineado al 6th Edition TCO',
+    trust2:'🧩 Escenarios clínicos reales',
+    trust3:'🎯 Ruta dinámica de maestría',
+    trust4:'🇺🇸🇪🇸 English + apoyo en Español',
+    startDemo:'▶ Comenzar Preview Completo',
+    check1:'Learn Mode',check2:'Práctica clínica',check3:'Exam Reality Mode',check4:'Chequeos de retención',check5:'Sin tarjeta requerida',
+    guidedPlan:'Plan de Estudio Guiado',main:'Principal',dashboard:'Dashboard',learn:'Modo Aprender',practice:'Práctica Clínica',domainExam:'Examen de Dominio',analytics:'Insights',readiness:'Preparación para el Examen',streak:'Día 1 de estudio',
+    dashTitle:'Dashboard',dashSub:'Tu plan protege la retención, cierra puntos débiles y mantiene todos los dominios estables.',
+    welcome:'Buenas noches, Joany',dashHero:'El plan de hoy está diseñado para prevenir el problema de “picos y valles”: mejorar un dominio mientras áreas previamente dominadas decaen.',
+    continue:'Continuar Sesión',recommended:'Foco Recomendado',focusTitle:'Motivating Operations vs Stimulus Control',
+    focusReason:'Tu precisión está mejorando, pero la retención todavía está inestable. La sesión de hoy combina repaso breve, discriminación guiada y casos clínicos aplicados.',
+    startFocus:'Comenzar Sesión Focalizada',today:'Sesión de Hoy',domains:'Estabilidad por Dominio',
+    metric1:'Dominios Estables',metric2:'Alertas de Retención',metric3:'Casos Integrados',metric4:'Alertas de Confianza',
+    learnTitle:'Entender → Practicar → Aplicar',learnSub:'Un concepto no está dominado hasta que puedes reconocerlo en diferentes situaciones clínicas.',
+    concept:'Motivating Operations vs SD',definition:'Las Motivating Operations cambian temporalmente el valor de una consecuencia y alteran la frecuencia actual de la conducta relacionada con esa consecuencia. Los discriminative stimuli señalan la disponibilidad de reinforcement para una respuesta.',
+    example:'Si un learner no ha tenido acceso a agua por varias horas, el agua se vuelve más valiosa y pedir agua es más probable. Ver una botella de agua también puede señalar que pedir puede producir agua.',
+    strategy:'Pregunta: ¿El estímulo cambia el VALOR del reinforcer, o señala que reinforcement está disponible?',
+    practiceConcept:'Practicar Este Concepto',back:'Volver al Dashboard',
+    clinicalPractice:'Práctica Clínica',practiceSub:'Ítems basados en escenarios con feedback instructivo inmediato.',
+    confidence:'¿Qué tan seguro estabas antes de responder?',low:'No seguro / adiviné',mid:'Algo seguro',high:'Muy seguro',
+    hint:'Pista / Estrategia',correct:'Correcto',incorrect:'Incorrecto',next:'Siguiente Ítem',review:'Repasar Concepto',
+    qStem:'A learner has not had access to water for several hours. During a session, the learner is more likely to request water, and access to water functions as a stronger reinforcer than usual. Which interpretation is most accurate?',
+    optA:'El agua funciona como SD porque siempre señala reinforcement.',
+    optB:'La privación de agua funciona como MO porque aumenta el valor del agua.',
+    optC:'La botella de agua es un punisher condicionado.',
+    optD:'Pedir agua es respondent behavior.',
+    feedbackGood:'La privación de agua cambia el valor del agua como reinforcer y evoca conducta que históricamente produjo agua. Eso es Motivating Operation, no simplemente stimulus control.',
+    feedbackBad:'La distinción clave es cambio de valor. La privación de agua aumenta la efectividad del agua como reinforcer y evoca conducta para obtener agua. Eso es Motivating Operation.',
+    examTitle:'Modo Realidad de Examen',examSub:'Los ítems finales del dominio usan escenarios clínicos largos, distractores plausibles y feedback al final.',
+    masteryAssessment:'Evaluación de Maestría del Dominio',examDesc:'Esta etapa debe sentirse más cercana al examen real: escenarios clínicos de 3–4 oraciones, razonamiento acumulativo, sin pistas y revisión solo al finalizar.',
+    startChallenge:'Comenzar Reto de 5 Ítems',questions:'Preguntas',time:'Minutos',feedback:'Feedback al final',
+    analyticsTitle:'Insights de Desempeño',analyticsSub:'Monitorea preparación, retención, estabilidad, confianza y drift entre dominios.',
+    recentSignals:'Señales Recientes de Aprendizaje'
+  }
+};
+
+const domains=[
+  ['A','Behaviorism & Philosophical Foundations',62,54],
+  ['B','Concepts and Principles',78,67],
+  ['C','Measurement, Data Display & Interpretation',71,58],
+  ['D','Experimental Design',59,44],
+  ['E','Ethical and Professional Issues',82,74],
+  ['F','Behavior Assessment',69,57],
+  ['G','Behavior-Change Procedures',64,49],
+  ['H','Selecting and Implementing Interventions',73,61],
+  ['I','Personnel Supervision and Management',68,55]
 ];
 
-const EXAM_PLAN=['B','G','C','E','F','B','G','H','I','B','E','F','C','G','D','H','B','I','E','G','F','H','C','I','A'];
-const STOR_KEY='bcba-hub-2025';
-const MASTER_KEY='bcba-mastered-2025';
-let mastered={};
-const KEY_K='bcba-apikey';
+let lang=localStorage.getItem('bcba_full_lang') || 'en';
+let view='dashboard';
+let answered=null;
+let confidence='';
 
-// ============================================================
-// STATE
-// ============================================================
-let state={
- view:'dash',
- stats:{byDomain:Object.fromEntries(D.map(d=>[d.id,{correct:0,total:0}])),allTime:{correct:0,total:0},history:[]},
- practice:{domId:null,q:null,loading:false,selAns:null,showExp:false,err:null,sc:{c:0,t:0}},
- exam:{active:false,plan:null,curr:0,q:null,loading:false,answers:[],timer:2100,done:false,results:null},
- notes:{domId:'B',taskIdx:0,notes:null,loading:false,err:null},
- learn:{phase:'overview',domId:null,conceptIdx:0,content:null,loading:false,currentQ:0,answers:[],err:null},
-};
-let examTimer=null;
-
-// ============================================================
-// MEMORY MANAGEMENT — prevents browser Out of Memory crashes
-// ============================================================
-const MODULE_CACHE = { current: null, next: null };
-let preloadInFlightKey = null;
-
-function moduleKey(m){
-  if(!m) return '';
-  const idx = m.idx!==undefined ? m.idx : m.conceptIdx;
-  return `${m.domId}-${idx}-${m.subIdx===null||m.subIdx===undefined?'x':m.subIdx}-${m.finalReview?'final':'study'}`;
+function L(k){ return (TX[lang]&&TX[lang][k]) || TX.en[k] || k; }
+function langSwitch(){
+  return `<div class="lang-switch">
+    <button type="button" class="lang-btn ${lang==='en'?'active':''}" data-lang="en">🇺🇸 EN</button>
+    <button type="button" class="lang-btn ${lang==='es'?'active':''}" data-lang="es">🇪🇸 ES</button>
+  </div>`;
 }
-function sameModule(a,b){ return !!a && !!b && moduleKey(a)===moduleKey(b); }
-function clearLearnMemory(){
-  if(state && state.learn){
-    state.learn.content = null;
-    state.learn.contentEs = null;
-    state.learn.answers = [];
-    state.learn.selectedAnswer = null;
-    state.learn.showHint = false;
-  }
+function setLang(v){ lang=v; localStorage.setItem('bcba_full_lang',v); render(); }
+function setScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById(id);
+  if(el){ el.classList.add('active'); }
 }
-function cleanupDOM(){
-  const main=document.getElementById('main-content');
-  if(main && main.childNodes.length>0) main.replaceChildren();
+function go(v){ view=v; answered=null; confidence=''; render(); }
+function applyText(){
+  document.documentElement.lang=lang;
+  document.querySelectorAll('[data-i]').forEach(el=>{ el.textContent=L(el.dataset.i); });
+  const ll=document.getElementById('landingLang'); if(ll) ll.innerHTML=langSwitch();
 }
-function pruneStatsHistory(max=50){
-  if(state?.stats?.history && state.stats.history.length>max){
-    state.stats.history = state.stats.history.slice(0,max);
-  }
+function bindClicks(){
+  document.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
+  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>go(b.dataset.view));
+  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
+  document.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{answered=b.dataset.answer; render();});
+  document.querySelectorAll('[data-conf]').forEach(b=>b.onclick=()=>{confidence=b.dataset.conf; render();});
+  const start=document.getElementById('startBtn'); if(start) start.onclick=()=>{setScreen('app');go('dashboard');};
 }
-function trimLargeState(){
-  pruneStatsHistory(50);
-  // Keep only current and one prefetched module in memory.
-  if(MODULE_CACHE.current && !sameModule(MODULE_CACHE.current,state.learn)) MODULE_CACHE.current = null;
+function activateNav(){
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+}
+function appHeader(title,sub,showBack=true){
+  return `<div class="topbar">
+    <div><div class="page-title">${title}</div><div class="page-sub">${sub}</div></div>
+    <div class="topbar-right">${langSwitch()}${showBack?`<button class="btn btn-secondary" data-go="dashboard">${L('back')}</button>`:''}</div>
+  </div>`;
 }
 
-// ============================================================
-// STORAGE
-// ============================================================
-function loadStats(){try{const s=localStorage.getItem(STOR_KEY);if(s)state.stats=JSON.parse(s);}catch{}}
-function loadMastered(){try{const m=localStorage.getItem(MASTER_KEY);if(m)mastered=JSON.parse(m);}catch{}}
-function saveMastered(){try{localStorage.setItem(MASTER_KEY,JSON.stringify(mastered));}catch{}}
-function masterKey(domId,idx,subIdx=null,finalReview=false){
-  if(finalReview) return `${domId}-${idx}-final`;
-  if(subIdx!==null && subIdx!==undefined) return `${domId}-${idx}-sub-${subIdx}`;
-  return `${domId}-${idx}`;
-}
-function isMastered(domId,idx,subIdx=null,finalReview=false){return !!mastered[masterKey(domId,idx,subIdx,finalReview)];}
-function masteredCount(domId){
-  const d=D.find(d=>d.id===domId);
-  if(!d) return 0;
-  return d.tasks.filter((task,i)=>{
-    const subs=getSubconceptsForTask(task);
-    if(subs.length>1) return subs.every((_,si)=>isMastered(domId,i,si,false)) && isMastered(domId,i,null,true);
-    return isMastered(domId,i);
-  }).length;
-}
-function saveStats(){try{pruneStatsHistory(50);localStorage.setItem(STOR_KEY,JSON.stringify(state.stats));}catch{}}
-
-// ============================================================
-// API KEY
-// ============================================================
-function getKey(){return localStorage.getItem(KEY_K)||'';}
-function submitKey(){
-  const k=document.getElementById('apikey-input').value.trim();
-  if(!k.startsWith('sk-ant')){alert('La API key debe empezar con "sk-ant-..."');return;}
-  localStorage.setItem(KEY_K,k);
-  document.getElementById('setup').classList.remove('active');
-  document.getElementById('app').classList.add('active');
-  init();
-}
-function resetKey(){
-  if(confirm('¿Cambiar API key de Anthropic?')){
-    localStorage.removeItem(KEY_K);
-    document.getElementById('app').classList.remove('active');
-    document.getElementById('setup').classList.add('active');
-    document.getElementById('apikey-input').value='';
-  }
-}
-// Allow Enter key on input
-document.getElementById('apikey-input').addEventListener('keydown',e=>{if(e.key==='Enter')submitKey();});
-
-// ============================================================
-// ANTHROPIC API
-// ============================================================
-async function callAI(prompt,max=1300){
-  const key=getKey();
-  const res=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key':key,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-access':'true'
-    },
-    body:JSON.stringify({
-      model:'claude-haiku-4-5-20251001',
-      max_tokens:max,
-      messages:[{role:'user',content:prompt}]
-    })
-  });
-  const data=await res.json();
-  if(data.error)throw new Error(data.error.message);
-  return data.content?.find(b=>b.type==='text')?.text||'';
+function dashboard(){
+  return `${appHeader(L('dashTitle'),L('dashSub'),false)}
+  <section class="dash-hero">
+    <div>
+      <div class="hero-dash-label">${L('readiness')}</div>
+      <div class="hero-dash-title">${L('welcome')}</div>
+      <div class="hero-dash-sub">${L('dashHero')}</div>
+      <button class="btn btn-gold" style="margin-top:16px" data-go="practice">${L('continue')}</button>
+    </div>
+    <div class="readiness-ring" style="--p:73"><div class="ring-content"><div class="ring-num">73%</div><div class="ring-label">${L('readiness')}</div></div></div>
+  </section>
+  <div class="metrics">
+    <div class="metric"><div class="metric-value">4</div><div class="metric-label">${L('metric1')}</div></div>
+    <div class="metric"><div class="metric-value">3</div><div class="metric-label">${L('metric2')}</div></div>
+    <div class="metric"><div class="metric-value">12</div><div class="metric-label">${L('metric3')}</div></div>
+    <div class="metric"><div class="metric-value">2</div><div class="metric-label">${L('metric4')}</div></div>
+  </div>
+  <div class="dash-grid">
+    <div class="panel">
+      <div class="panel-label">${L('recommended')}</div>
+      <div class="focus-title">${L('focusTitle')}</div>
+      <div class="reason">${L('focusReason')}</div>
+      <button class="btn btn-primary" data-go="practice">${L('startFocus')}</button>
+    </div>
+    <div class="panel">
+      <div class="panel-label">${L('today')}</div>
+      <div class="session-list">
+        <div class="session-item"><span>8 min retention review</span><strong>MO vs SD</strong></div>
+        <div class="session-item"><span>12 min weak-link practice</span><strong>DOM. D</strong></div>
+        <div class="session-item"><span>10 min integrated cases</span><strong>B + C</strong></div>
+        <div class="session-item"><span>1 cumulative challenge</span><strong>Final</strong></div>
+      </div>
+    </div>
+  </div>
+  <div class="domain-title-row">${L('domains')}</div>
+  <div class="domain-grid">
+    ${domains.map((d,i)=>`
+      <div class="domain-card">
+        <span class="pill ${i%4===0?'gold':i%4===1?'green':i%4===2?'purple':'pink'}">DOM. ${d[0]}</span>
+        <div class="dom-name">${d[1]}</div>
+        <div class="dom-meta">Accuracy ${d[2]}% · Stability ${d[3]}%</div>
+        <div class="dom-bars">
+          <div><div class="mini-label"><span>Accuracy</span><span>${d[2]}%</span></div><div class="mini-track"><div class="mini-fill" style="width:${d[2]}%"></div></div></div>
+          <div><div class="mini-label"><span>Stability</span><span>${d[3]}%</span></div><div class="mini-track"><div class="mini-fill" style="width:${d[3]}%;background:linear-gradient(90deg,var(--gold),#E8A030)"></div></div></div>
+        </div>
+      </div>`).join('')}
+  </div>`;
 }
 
-async function genQuestion(domId,diff='standard'){
-  const d=D.find(x=>x.id===domId);
-  const task=d.tasks[Math.floor(Math.random()*d.tasks.length)];
-  const diffNote=diff==='hard'
-    ?'HARD: complex scenario with subtle differences between options requiring careful clinical discrimination.'
-    :'Standard difficulty matching actual BCBA exam level.';
-  const txt=await callAI(`BCBA Exam Question Generator — TCO 6th Edition (2025).
-Domain ${d.id}: ${d.label}. Task: "${task}". ${diffNote}
-
-Create ONE applied clinical-level question:
-- 3-4 sentence realistic clinical scenario (specific client, behavior, context)
-- Question requires clinical judgment not definition recall
-- All 4 options clinically plausible; wrong options = real clinical errors
-- Match actual BCBA exam difficulty
-
-Return ONLY valid JSON, no markdown:
-{"domain":"${d.id}","task":"${task}","scenario":"...","question":"...","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","explanation":"Why correct is right. Why A wrong. Why C wrong. Why D wrong."}`);
-  return JSON.parse(txt.replace(/```json|```/g,'').trim());
+function learn(){
+  return `${appHeader(L('learnTitle'),L('learnSub'))}
+  <div class="learn-wrap">
+    <div class="path-strip">
+      <span class="path-chip done">✓ Concept</span><span class="path-chip active">● Discrimination</span><span class="path-chip">○ Application</span><span class="path-chip">○ Retention</span>
+    </div>
+    <div class="learn-card">
+      <div class="module-label">DOM. B · Concepts and Principles</div>
+      <div class="module-title">${L('concept')}</div>
+      <div class="definition"><strong>Definition:</strong> ${L('definition')}</div>
+      <div class="note-box"><strong>Clinical example:</strong> ${L('example')}</div>
+      <div class="note-box"><strong>Exam strategy:</strong> ${L('strategy')}</div>
+      <button class="btn btn-primary" data-go="practice">${L('practiceConcept')}</button>
+    </div>
+  </div>`;
 }
 
-async function genNotes(domId,task){
-  const d=D.find(x=>x.id===domId);
-  const txt=await callAI(`BCBA expert instructor — high-yield study notes for TCO 6th Edition (2025).
-Domain ${d.id}: ${d.label}. Task: "${task}"
-
-Return ONLY valid JSON:
-{"definition":"Precise 1-2 sentence clinical definition","clinical_application":"How BCBAs apply this in real ABA practice (2-3 sentences)","key_distinctions":"2-3 critical discriminations (what makes it different from similar concepts)","common_exam_errors":"2-3 specific mistakes candidates make on exam questions about this","example":"Brief 2-sentence clinical example showing this concept","exam_tip":"One specific actionable tip for answering exam questions about this task"}`,900);
-  return JSON.parse(txt.replace(/```json|```/g,'').trim());
+function practice(){
+  const opts={A:L('optA'),B:L('optB'),C:L('optC'),D:L('optD')};
+  return `${appHeader(L('clinicalPractice'),L('practiceSub'))}
+  <div class="practice-wrap">
+    <div class="question-card">
+      <div class="question-head">
+        <div class="question-meta">DOM. B · Motivating Operations · Guided Discrimination</div>
+        <div class="timer-pill">Study Mode</div>
+      </div>
+      <div class="question-text">${L('qStem')}</div>
+      ${Object.entries(opts).map(([k,v])=>`<button class="option ${answered&&k==='B'?'correct':''} ${answered&&k===answered&&k!=='B'?'wrong':''}" ${answered?'disabled':''} data-answer="${k}"><span class="option-letter">${k}</span><span>${v}</span></button>`).join('')}
+      <div class="confidence-panel">
+        <div class="conf-label">${L('confidence')}</div>
+        <div class="conf-opts">
+          <button class="conf-btn ${confidence==='low'?'active':''}" data-conf="low">${L('low')}</button>
+          <button class="conf-btn ${confidence==='mid'?'active':''}" data-conf="mid">${L('mid')}</button>
+          <button class="conf-btn ${confidence==='high'?'active':''}" data-conf="high">${L('high')}</button>
+        </div>
+      </div>
+      ${answered?feedback():`<button class="btn btn-secondary">${L('hint')}</button>`}
+    </div>
+  </div>`;
+}
+function feedback(){
+  const ok=answered==='B';
+  return `<div class="feedback ${ok?'good':'bad'}"><div class="feedback-title">${ok?L('correct'):L('incorrect')}</div>${ok?L('feedbackGood'):L('feedbackBad')}</div>
+  <button class="btn btn-primary" data-go="practice">${L('next')}</button>
+  <button class="btn btn-secondary" data-go="learn">${L('review')}</button>
+  <button class="btn btn-gold" data-go="domainExam">${L('examTitle')}</button>`;
 }
 
-// ============================================================
-// RENDER ENGINE
-// ============================================================
-function $(sel){return document.querySelector(sel);}
+function domainExam(){
+  return `${appHeader(L('examTitle'),L('examSub'))}
+  <div class="complete-card">
+    <div class="module-label">DOM. B · Final Domain Phase</div>
+    <div class="module-title">${L('masteryAssessment')}</div>
+    <p class="page-sub">${L('examDesc')}</p>
+    <div class="exam-rules">
+      <div class="rule-item"><div class="rule-value">5</div><div class="rule-label">${L('questions')}</div></div>
+      <div class="rule-item"><div class="rule-value">8</div><div class="rule-label">${L('time')}</div></div>
+      <div class="rule-item"><div class="rule-value">End</div><div class="rule-label">${L('feedback')}</div></div>
+    </div>
+    <button class="btn btn-gold">${L('startChallenge')}</button>
+  </div>`;
+}
+
+function analytics(){
+  return `${appHeader(L('analyticsTitle'),L('analyticsSub'))}
+  <div class="analytics-grid">
+    <div class="insight-card"><div class="insight-value">73%</div><div class="insight-title">${L('readiness')}</div><div class="insight-copy">Improving toward stable passing range.</div></div>
+    <div class="insight-card"><div class="insight-value">68%</div><div class="insight-title">Retention Stability</div><div class="insight-copy">Some previously learned areas need short review.</div></div>
+    <div class="insight-card"><div class="insight-value">+14%</div><div class="insight-title">Trend Improvement</div><div class="insight-copy">Recent sessions show stronger clinical discrimination.</div></div>
+    <div class="insight-card"><div class="insight-value">2</div><div class="insight-title">Confidence Alerts</div><div class="insight-copy">High confidence errors need targeted correction.</div></div>
+  </div>
+  <div class="panel" style="margin-top:14px">
+    <div class="panel-label">${L('recentSignals')}</div>
+    <div class="session-list">
+      <div class="session-item"><span>✓ MO vs SD</span><strong>Stable</strong></div>
+      <div class="session-item"><span>✗ Multiple Baseline Design</span><strong>Review</strong></div>
+      <div class="session-item"><span>✓ Preference Assessment</span><strong>Improving</strong></div>
+    </div>
+  </div>`;
+}
+
 function render(){
-  trimLargeState();
-  updateNav();
-  updateSidebar();
-  const main=document.getElementById('main-content');
-  const views={dash:renderDash,learn:renderLearn,practice:renderPractice,exam:renderExam,notes:renderNotes,analytics:renderAnalytics};
-  if(main) main.replaceChildren();
-  (views[state.view]||renderDash)(main);
-}
-
-function updateNav(){
-  const nav=document.getElementById('sidebar-nav');
-  const items=[
-    {id:'dash',label:'Dashboard',icon:'ti-layout-dashboard'},
-    {id:'learn',label:'Aprender',icon:'ti-school'},
-    {id:'practice',label:'Practicar',icon:'ti-brain'},
-    {id:'exam',label:'Examen Simulado',icon:'ti-clock'},
-    {id:'notes',label:'Notas con IA',icon:'ti-book'},
-    {id:'analytics',label:'Analíticas',icon:'ti-chart-bar'},
-  ];
-  nav.innerHTML=items.map(it=>`
-    <button class="nav-btn${state.view===it.id?' active':''}" onclick="setView('${it.id}')">
-      <i class="ti ${it.icon}"></i><span>${it.label}</span>
-    </button>`).join('');
-}
-
-function updateSidebar(){
-  const s=state.stats.allTime;
-  const pct=s.total>0?Math.round((s.correct/s.total)*100):0;
-  const el=document.getElementById('global-pct');
-  if(el){
-    el.textContent=s.total>0?pct+'%':'—';
-    el.style.color=pct>=72?'#3B6D11':pct>=60?'#854F0B':s.total>0?'#A32D2D':'#1a1a18';
+  applyText();
+  const app=document.getElementById('app');
+  const main=document.getElementById('main');
+  if(app.classList.contains('active') && main){
+    const views={dashboard,learn,practice,domainExam,analytics};
+    main.innerHTML=(views[view]||dashboard)();
   }
-  const cnt=document.getElementById('global-count');
-  if(cnt)cnt.textContent=`${s.correct}/${s.total} correctas`;
+  applyText();
+  activateNav();
+  bindClicks();
 }
 
-function setView(v){state.view=v;if(v==='learn'&&state.learn.phase!=='hook'&&state.learn.phase!=='questions'&&state.learn.phase!=='result')state.learn.phase='overview';render();}
-
-// helpers
-function weakDomains(){
-  return D.filter(d=>state.stats.byDomain[d.id]?.total>=3)
-    .sort((a,b)=>{
-      const pa=state.stats.byDomain[a.id].total>0?state.stats.byDomain[a.id].correct/state.stats.byDomain[a.id].total:1;
-      const pb=state.stats.byDomain[b.id].total>0?state.stats.byDomain[b.id].correct/state.stats.byDomain[b.id].total:1;
-      return pa-pb;
-    }).slice(0,3);
-}
-function fmtTime(s){return`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
-function pctColor(p){return p>=70?'#3B6D11':p>=50?'#854F0B':'#A32D2D';}
-function pctBg(p){return p>=70?'#EAF3DE':p>=50?'#FAEEDA':'#FCEBEB';}
-
-
-// ============================================================
-// LEARN MODE — Concept → Subconcept Mastery + Translation + Hints
-// ============================================================
-
-const COMPLEX_CONCEPTS={
-  "Philosophical assumptions (selectionism, determinism, empiricism, parsimony, pragmatism)":["Selectionism","Determinism","Empiricism","Parsimony","Pragmatism"],
-  "Goals of behavior analysis (description, prediction, control)":["Description","Prediction","Control"],
-  "Dimensions of applied behavior analysis":["Applied","Behavioral","Analytic","Technological","Conceptually Systematic","Effective","Generality"],
-  "Positive and negative reinforcement contingencies":["Positive Reinforcement","Negative Reinforcement","Escape","Avoidance"],
-  "Positive and negative punishment contingencies":["Positive Punishment","Negative Punishment","Response Cost","Time-Out"],
-  "Automatic vs socially mediated contingencies":["Automatic Reinforcement","Automatic Punishment","Socially Mediated Reinforcement","Socially Mediated Punishment"],
-  "Unconditioned, conditioned, and generalized reinforcers":["Unconditioned Reinforcers","Conditioned Reinforcers","Generalized Conditioned Reinforcers"],
-  "Unconditioned, conditioned, and generalized punishers":["Unconditioned Punishers","Conditioned Punishers","Generalized Conditioned Punishers"],
-  "Simple schedules of reinforcement":["Fixed Ratio","Variable Ratio","Fixed Interval","Variable Interval"],
-  "Concurrent, multiple, mixed, and chained schedules":["Concurrent Schedules","Multiple Schedules","Mixed Schedules","Chained Schedules"],
-  "Operant and respondent extinction":["Operant Extinction","Respondent Extinction","Extinction Burst","Spontaneous Recovery"],
-  "Stimulus control and stimulus discrimination":["Stimulus Control","Discriminative Stimulus (SD)","Stimulus Delta (SΔ)","Stimulus Discrimination"],
-  "Stimulus and response generalization":["Stimulus Generalization","Response Generalization","Generalization Gradient"],
-  "Motivating operations (EO and AO)":["Establishing Operations (EO)","Abolishing Operations (AO)","Value-Altering Effect","Behavior-Altering Effect"],
-  "Motivating operations vs stimulus control":["Motivating Operations","Stimulus Control","MO vs SD Discrimination"],
-  "Rule-governed vs contingency-shaped behavior":["Rule-Governed Behavior","Contingency-Shaped Behavior","Pliance","Tracking"],
-  "Verbal operants (mand, tact, intraverbal, echoic, textual)":["Mand","Tact","Intraverbal","Echoic","Textual","Transcription"],
-  "Multiple control in verbal behavior":["Convergent Multiple Control","Divergent Multiple Control","Joint Control"],
-  "Emergent relations and generative performance":["Reflexivity","Symmetry","Transitivity","Equivalence Classes","Generative Performance"],
-  "Behavioral momentum and response persistence":["Behavioral Momentum","Response Persistence","High-P Request Sequence"],
-  "Matching law and response allocation":["Matching Law","Response Allocation","Relative Rates of Reinforcement"],
-  "Imitation vs observational learning":["Imitation","Observational Learning","Modeling"],
-  "Direct, indirect, and product measures":["Direct Measures","Indirect Measures","Permanent Product Measures"],
-  "Measuring occurrence (frequency, rate, count)":["Count","Frequency","Rate","Celeration"],
-  "Temporal dimensions (duration, latency, IRT)":["Duration","Latency","Interresponse Time (IRT)"],
-  "Continuous vs discontinuous measurement":["Continuous Measurement","Discontinuous Measurement","Whole Interval","Partial Interval","Momentary Time Sampling"],
-  "Interval recording and time sampling procedures":["Whole-Interval Recording","Partial-Interval Recording","Momentary Time Sampling","Planned Activity Check"],
-  "Measuring efficiency (trials to criterion, cost-benefit)":["Trials to Criterion","Cost-Benefit Analysis","Efficiency Measures"],
-  "Validity and reliability of measurement procedures":["Validity","Accuracy","Reliability","IOA"],
-  "Graphing data (equal-interval, bar, cumulative records)":["Equal-Interval Line Graphs","Bar Graphs","Cumulative Records","Scatterplots"],
-  "Interpreting graphed data (level, trend, variability)":["Level","Trend","Variability","Immediacy of Effect","Overlap"],
-  "Dependent vs independent variables":["Dependent Variable","Independent Variable","Extraneous Variables"],
-  "Internal vs external validity":["Internal Validity","External Validity","Experimental Control"],
-  "Threats to internal validity (history, maturation, testing)":["History","Maturation","Testing","Instrumentation","Attrition"],
-  "Single-case design features (repeated measures, prediction, verification)":["Repeated Measurement","Prediction","Verification","Replication"],
-  "Reversal (ABAB) design":["Baseline","Intervention","Reversal","Replication"],
-  "Multiple baseline design":["Across Behaviors","Across Settings","Across Participants","Staggered Implementation"],
-  "Multielement (alternating treatments) design":["Alternating Treatments","Rapid Alternation","Sequence Effects"],
-  "Changing criterion design":["Criterion Changes","Stepwise Behavior Change","Experimental Control"],
-  "Comparative, component, and parametric analyses":["Comparative Analysis","Component Analysis","Parametric Analysis"],
-  "Core ethics principles (benefit others, compassion, dignity, integrity)":["Benefit Others","Treat Others with Compassion","Respect Dignity","Behave with Integrity","Ensure Competence"],
-  "Public statements, social media, and credential misrepresentation":["Public Statements","Social Media","Credential Misrepresentation","Testimonials"],
-  "Cultural humility in service delivery":["Cultural Humility","Culturally Responsive Practice","Self-Reflection"],
-  "Culturally responsive and inclusive services":["Cultural Responsiveness","Inclusion","Client Values","Contextual Fit"],
-  "Preference assessments (single stimulus, paired stimulus, MSWO)":["Single-Stimulus Preference Assessment","Paired-Stimulus Preference Assessment","MSWO","Free-Operant Preference Assessment"],
-  "Descriptive assessments (ABC narrative, scatterplot)":["ABC Narrative Recording","Scatterplot","Descriptive Assessment Limits"],
-  "Designing and evaluating functional analyses":["Attention Condition","Escape Condition","Alone Condition","Play/Control Condition","Tangible Condition"],
-  "Positive and negative reinforcement procedures":["Positive Reinforcement Procedures","Negative Reinforcement Procedures","Schedule Thinning"],
-  "Differential reinforcement (DRA, DRO, DRL, DRH) with/without extinction":["DRA","DRI","DRO","DRL","DRH","Extinction with Differential Reinforcement"],
-  "Time-based reinforcement (FT schedules)":["Fixed-Time Schedules","Noncontingent Reinforcement","NCR Schedule Thinning"],
-  "Token economies and conditioned reinforcers":["Tokens","Backup Reinforcers","Exchange Schedule","Generalized Conditioned Reinforcers"],
-  "MOs and SDs in behavior-change procedures":["MO Manipulation","SD Arrangement","Contriving Motivation","Capturing Motivation"],
-  "Simple and conditional discrimination training":["Simple Discrimination","Conditional Discrimination","Matching-to-Sample"],
-  "Prompting procedures (errorless, most-to-least, least-to-most)":["Errorless Teaching","Most-to-Least Prompting","Least-to-Most Prompting","Prompt Hierarchy"],
-  "Prompt fading (prompt delay, stimulus fading)":["Prompt Fading","Progressive Time Delay","Constant Time Delay","Stimulus Fading"],
-  "Shaping dimensions of behavior":["Successive Approximations","Differential Reinforcement","Terminal Behavior"],
-  "Chaining (forward, backward, total task)":["Forward Chaining","Backward Chaining","Total-Task Chaining","Task Analysis"],
-  "Trial-based vs free-operant teaching procedures":["Discrete Trial Teaching","Free-Operant Teaching","Natural Environment Teaching"],
-  "Group contingencies":["Independent Group Contingency","Dependent Group Contingency","Interdependent Group Contingency"],
-  "Generalization procedures (stimulus and response)":["Stimulus Generalization Procedures","Response Generalization Procedures","Multiple Exemplars","Programming Common Stimuli"],
-  "Maintenance procedures (schedule thinning, natural reinforcers)":["Schedule Thinning","Natural Reinforcers","Delayed Reinforcement","Intermittent Schedules"],
-  "Positive and negative punishment (time-out, response cost, overcorrection)":["Positive Punishment","Negative Punishment","Time-Out","Response Cost","Overcorrection"],
-  "Emotional and elicited effects of behavior-change procedures":["Emotional Effects","Elicited Effects","Side Effects of Punishment","Extinction-Induced Behavior"],
-  "Planning for and mitigating behavioral relapse":["Resurgence","Renewal","Reinstatement","Spontaneous Recovery"],
-  "Data-based decisions about procedural integrity":["Procedural Integrity Data","Treatment Fidelity","Implementation Feedback"],
-  "Data-based decisions about intervention effectiveness":["Visual Analysis","Decision Rules","Modify/Maintain/Terminate Intervention"],
-  "Empirically validated performance management procedures":["Performance Feedback","Goal Setting","Self-Monitoring","Reinforcement Systems"],
-  "Behavioral skills training (BST) for supervisees":["Instruction","Modeling","Rehearsal","Feedback"],
-  "Evaluating supervisee performance data":["Performance Data","Treatment Integrity Data","Outcome Data"],
-};
-
-function normalizeConceptId(txt){return String(txt||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
-function getTask(domId,idx){const d=D.find(x=>x.id===domId);return d?.tasks?.[idx]||'';}
-function getSubconceptsForTask(task){
-  if(COMPLEX_CONCEPTS[task]) return COMPLEX_CONCEPTS[task];
-  const inside=(task.match(/\(([^)]+)\)/)||[])[1];
-  if(inside && /,|\band\b|\bor\b|\bvs\b|\//i.test(inside)){
-    return inside.replace(/\betc\.?/gi,'').split(/,|\band\b|\bor\b|\bvs\b|\//i).map(x=>x.trim()).filter(x=>x.length>2).map(x=>x.replace(/^and\s+/i,''));
-  }
-  if(/\bvs\b/i.test(task)) return task.split(/\bvs\b/i).map(x=>x.trim()).filter(Boolean);
-  return [];
-}
-function getConceptTitle(task){return task.replace(/\s*\([^)]*\)\s*/g,'').trim();}
-function hasSubconcepts(domId,idx){return getSubconceptsForTask(getTask(domId,idx)).length>1;}
-function subKey(domId,idx,subIdx){return `${domId}-${idx}-sub-${subIdx}`;}
-function finalKey(domId,idx){return `${domId}-${idx}-final`;}
-function isConceptComplete(domId,idx){
-  const subs=getSubconceptsForTask(getTask(domId,idx));
-  if(subs.length>1) return subs.every((_,i)=>isMastered(domId,idx,i,false)) && isMastered(domId,idx,null,true);
-  return isMastered(domId,idx);
-}
-function getNextConcept(){
-  for(const d of D){
-    for(let i=0;i<d.tasks.length;i++){
-      const subs=getSubconceptsForTask(d.tasks[i]);
-      if(subs.length>1){
-        for(let si=0;si<subs.length;si++) if(!isMastered(d.id,i,si,false)) return{domId:d.id,idx:i,subIdx:si,finalReview:false};
-        if(!isMastered(d.id,i,null,true)) return{domId:d.id,idx:i,subIdx:null,finalReview:true};
-      }else if(!isMastered(d.id,i)) return{domId:d.id,idx:i,subIdx:null,finalReview:false};
-    }
-  }
-  return null;
-}
-
-function buildLearningPath(){
-  const path=[];
-  D.forEach(d=>{
-    d.tasks.forEach((task,idx)=>{
-      const subs=getSubconceptsForTask(task);
-      if(subs.length>1){
-        subs.forEach((_,subIdx)=>path.push({domId:d.id,idx,subIdx,finalReview:false}));
-        path.push({domId:d.id,idx,subIdx:null,finalReview:true});
-      }else{
-        path.push({domId:d.id,idx,subIdx:null,finalReview:false});
-      }
-    });
-  });
-  return path;
-}
-function getFollowingConcept(current){
-  const path=buildLearningPath();
-  const i=path.findIndex(x=>sameModule(x,current));
-  if(i<0) return getNextConcept();
-  return path[i+1]||null;
-}
-async function preloadNextConcept(fromModule=null){
-  const next=fromModule?getFollowingConcept(fromModule):getNextConcept();
-  if(!next) return;
-  const key=moduleKey(next);
-  if(preloadInFlightKey===key || sameModule(MODULE_CACHE.next,next)) return;
-  preloadInFlightKey=key;
-  try{
-    const content=await genLearnContent(next.domId,next.idx,next.subIdx,next.finalReview);
-    MODULE_CACHE.next={...next,content};
-  }catch(e){
-    console.log('Preload skipped:', e?.message || e);
-  }finally{
-    preloadInFlightKey=null;
-  }
-}
-function schedulePreload(fromModule){
-  setTimeout(()=>preloadNextConcept(fromModule),400);
-}
-
-async function genLearnContent(domId,conceptIdx,subIdx=null,finalReview=false){
-  const d=D.find(x=>x.id===domId);
-  const task=d.tasks[conceptIdx];
-  const subs=getSubconceptsForTask(task);
-  const conceptTitle=getConceptTitle(task);
-  const subName=subIdx!==null?subs[subIdx]:null;
-  const focus=finalReview
-    ? `FINAL MIXED REVIEW. Teach and test the full concept "${conceptTitle}" by comparing these subconcepts: ${subs.join(', ')}.`
-    : subName
-      ? `SUBCONCEPT MASTERY. Teach ONLY the subconcept "${subName}" inside the larger concept "${conceptTitle}". Include discrimination from the other subconcepts: ${subs.filter((_,i)=>i!==subIdx).join(', ')}.`
-      : `CONCEPT MASTERY. Teach the full concept "${task}".`;
-  const txt=await callAI(`You are an expert BCBA exam instructor (TCO 6th Edition, 2025).
-Domain ${d.id}: ${d.label}.
-Main Concept: "${task}".
-${focus}
-
-Create a complete learning module. Return ONLY valid JSON (no markdown):
-{
-  "concept":"${finalReview?conceptTitle:(subName||task)}",
-  "main_concept":"${conceptTitle}",
-  "subconcept":"${subName||''}",
-  "hook_question":"One sharp clinical question that primes the learner to think before seeing the definition.",
-  "hook_answer":"The correct answer to the hook question in 1-2 sentences.",
-  "definition":"Precise 2-3 sentence definition using exact ABA terminology.",
-  "clinical_example":"3-4 sentence realistic clinical scenario showing this concept in action.",
-  "key_points":["Exam-critical point 1","Exam-critical point 2","Exam-critical point 3"],
-  "strategy":"A short strategy for how to identify this concept on BCBA exam questions.",
-  "questions":[
-    {"q":"Applied clinical question?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"B","hint":"Teach the strategy to analyze the question without giving away the answer.","explanation":"Why correct is right and why the others are wrong."},
-    {"q":"Second applied question testing discrimination?","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"A","hint":"Teach the strategy to analyze the question without giving away the answer.","explanation":"Why correct is right and why the others are wrong."}
-  ]
-}`,2200);
-  return JSON.parse(txt.replace(/```json|```/g,'').trim());
-}
-
-async function translateContent(content){
-  const txt=await callAI(`Translate this BCBA study content to Spanish. Keep all ABA technical terms in English (e.g. reinforcement, extinction, MO, SD, FBA, VB-MAPP, DTT, etc.) but translate all other text. Return ONLY valid JSON with the same structure:
-${JSON.stringify(content)}`,1800);
-  return JSON.parse(txt.replace(/```json|```/g,'').trim());
-}
-
-async function startLearnConcept(domId,idx,subIdx=null,finalReview=false){
-  const requested={domId,idx,subIdx,finalReview};
-  clearLearnMemory();
-  cleanupDOM();
-
-  state.learn={phase:'hook',domId,conceptIdx:idx,subIdx,finalReview,content:null,contentEs:null,lang:'en',flipped:false,currentQ:0,qAnswered:false,selectedAnswer:null,answers:[],loading:true,translating:false,showHint:false,err:null};
-  state.view='learn';
-  render();
-
-  try{
-    let content=null;
-    if(sameModule(MODULE_CACHE.next,requested) && MODULE_CACHE.next.content){
-      content=MODULE_CACHE.next.content;
-      MODULE_CACHE.current={...requested,content};
-      MODULE_CACHE.next=null;
-    }else{
-      content=await genLearnContent(domId,idx,subIdx,finalReview);
-      MODULE_CACHE.current={...requested,content};
-      MODULE_CACHE.next=null;
-    }
-
-    if(!sameModule(requested,state.learn)) return;
-    state.learn.content=content;
-    state.learn.loading=false;
-    render();
-    schedulePreload(requested);
-  }catch(e){
-    if(!sameModule(requested,state.learn)) return;
-    state.learn.loading=false;
-    state.learn.err='Error generando contenido. Verifica tu API key e intenta de nuevo.';
-    render();
-  }
-}
-
-async function startLearnAuto(){
-  const next=getNextConcept();
-  if(next) startLearnConcept(next.domId,next.idx,next.subIdx,next.finalReview);
-  else{state.learn.phase='complete';render();}
-}
-
-async function toggleLang(){
-
-  const lx = state.learn;
-
-  // Switch back to English instantly
-  if (lx.lang === 'es') {
-    state.learn.lang = 'en';
-    render();
-
-    // Clear Spanish memory after 30s
-    setTimeout(() => {
-      if (
-        state.learn.lang === 'en' &&
-        state.learn.contentEs
-      ) {
-        state.learn.contentEs = null;
-      }
-    }, 30000);
-
-    return;
-  }
-
-  // No content yet
-  if (!state.learn.content) {
-    alert('Content is not ready yet.');
-    return;
-  }
-
-  state.learn.translating = true;
-  render();
-
-  try {
-
-    // Generate translation only once
-    if (!state.learn.contentEs) {
-      const translated = await translateContent(state.learn.content);
-
-      if (!translated || !translated.questions) {
-        throw new Error('Invalid translation response');
-      }
-
-      state.learn.contentEs = translated;
-    }
-
-    state.learn.lang = 'es';
-
-  } catch (e) {
-
-    console.error('Translation error:', e);
-
-    alert('No se pudo traducir el contenido.');
-
-    state.learn.lang = 'en';
-
-  }
-
-  state.learn.translating = false;
-
-  render();
-}
-
-function handleLearnAnswer(letter){
-  const lx=state.learn;
-  if(lx.qAnswered) return;
-  const c=lx.lang==='es'&&lx.contentEs?lx.contentEs:lx.content;
-  const q=c.questions[lx.currentQ];
-  const ok=letter===q.correct;
-  state.learn.selectedAnswer=letter;
-  state.learn.qAnswered=true;
-  state.learn.answers=[...lx.answers,{question:q.q,options:q.options,letter,ok,correct:q.correct,hint:q.hint||'',explanation:q.explanation}];
-  render();
-}
-
-function nextQuestion(){state.learn.currentQ++;state.learn.qAnswered=false;state.learn.selectedAnswer=null;state.learn.showHint=false;render();}
-function finishLearn(){state.learn.phase='result';render();}
-
-function markMastered(domId,idx,subIdx=null,finalReview=false){
-  mastered[masterKey(domId,idx,subIdx,finalReview)]=true;
-  saveMastered();
-  const subs=getSubconceptsForTask(getTask(domId,idx));
-  if(subIdx!==null && subs.length>1){
-    const nextSub=subs.findIndex((_,i)=>!isMastered(domId,idx,i,false));
-    if(nextSub>=0) startLearnConcept(domId,idx,nextSub,false);
-    else startLearnConcept(domId,idx,null,true);
-    return;
-  }
-  startLearnAuto();
-}
-
-function retryLearn(){startLearnConcept(state.learn.domId,state.learn.conceptIdx,state.learn.subIdx,state.learn.finalReview);}
-
-function renderLangButtons(lx){return `<div style="display:flex;gap:6px;align-items:center;">
-  ${lx.translating?`<span style="font-size:11px;color:#888;">Traduciendo...</span>`:''}
-  <button class="lang-btn ${lx.lang==='en'?'active':''}" onclick="if(state.learn.lang!=='en'){state.learn.lang='en';render();}">English</button>
-  <button class="lang-btn ${lx.lang==='es'?'active':''}" onclick="toggleLang()">Español</button>
-</div>`;}
-
-function renderLearnHeader(d,lx,totalMastered,totalConcepts){
-  const pct=totalConcepts>0?Math.round((totalMastered/totalConcepts)*100):0;
-  const subs=lx.domId?getSubconceptsForTask(getTask(lx.domId,lx.conceptIdx)):[];
-  const subText=lx.finalReview?'Final mixed review':(lx.subIdx!==null&&subs[lx.subIdx]?`Subconcepto ${lx.subIdx+1}/${subs.length}: ${subs[lx.subIdx]}`:`Concepto ${lx.conceptIdx+1}/${d?.tasks?.length||0}`);
-  return `
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap;">
-    <button class="btn-secondary" style="padding:5px 10px;font-size:12px;" onclick="state.learn.phase='overview';render();">
-      <i class="ti ti-layout-grid"></i> Resumen</button>
-    ${d?`<span style="font-size:11px;font-weight:500;background:${d.bg};color:${d.color};padding:3px 10px;border-radius:20px;">Dom. ${d.id} · ${subText}</span>`:''}
-    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-      <div style="font-size:11px;color:#888;">${totalMastered}/${totalConcepts} conceptos dominados</div>
-      <div style="height:6px;width:80px;background:#e5e5e3;border-radius:3px;"><div style="height:100%;width:${pct}%;background:#0F6E56;border-radius:3px;"></div></div>
-    </div>
-  </div>`;
-}
-
-function renderLearn(el){
-  const lx=state.learn;
-  const totalConcepts=D.reduce((s,d)=>s+d.tasks.length,0);
-  const totalMastered=D.reduce((s,d)=>s+masteredCount(d.id),0);
-
-  if(lx.phase==='overview'||lx.phase==='domains'){
-    const next=getNextConcept();
-    let html=`
-    <h2 style="font-size:21px;font-weight:600;margin-bottom:.25rem;">Aprender</h2>
-    <p style="font-size:12px;color:#888;margin-bottom:1rem;">Mastery por concepto y subconcepto — estudia, practica y cierra con mixed review.</p>
-    <div style="background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-      <div style="flex:1;min-width:200px;">
-        <div style="font-size:12px;color:#888;margin-bottom:4px;">${totalMastered} de ${totalConcepts} conceptos dominados</div>
-        <div style="height:8px;background:#f5f5f4;border-radius:4px;"><div style="height:100%;width:${totalConcepts>0?Math.round((totalMastered/totalConcepts)*100):0}%;background:#0F6E56;border-radius:4px;"></div></div>
-      </div>
-      ${next?`<button class="btn-primary" style="font-size:14px;padding:11px 20px;" onclick="startLearnAuto()"><i class="ti ti-player-play"></i>Continuar estudiando →</button>`:`<div style="color:#3B6D11;font-weight:600;font-size:14px;">✅ ¡Todos los conceptos dominados!</div>`}
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;">`;
-    D.forEach(d=>{
-      const mc=masteredCount(d.id);const total=d.tasks.length;const pct=Math.round((mc/total)*100);
-      const nextIdx=d.tasks.findIndex((_,i)=>!isConceptComplete(d.id,i));
-      const complexCount=d.tasks.filter((_,i)=>hasSubconcepts(d.id,i)).length;
-      html+=`<div style="background:#fff;border-radius:10px;border:1px solid #e5e5e3;padding:.875rem;border-left:3px solid ${d.border};">
-        <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;">
-          <div style="background:${d.bg};border-radius:5px;padding:4px;display:flex;"><i class="ti ${d.icon}" style="font-size:13px;color:${d.color};"></i></div>
-          <div style="flex:1;min-width:0;"><div style="font-size:9px;font-weight:600;color:${d.color};">DOM. ${d.id}</div><div style="font-size:12px;font-weight:600;line-height:1.3;">${d.short}</div></div>
-          <div style="font-size:11px;font-weight:600;color:${pct>=70?'#3B6D11':pct>=30?'#854F0B':'#888'}">${pct}%</div>
-        </div>
-        <div style="height:3px;background:#f5f5f4;border-radius:2px;margin-bottom:8px;"><div style="height:100%;width:${pct}%;background:${pct>=70?'#639922':pct>=30?'#EF9F27':'#d1d5db'};border-radius:2px;"></div></div>
-        <div style="font-size:10px;color:#888;margin-bottom:7px;">${mc}/${total} conceptos dominados · ${complexCount} con sub-sesiones</div>
-        <button onclick="${nextIdx>=0?`startLearnConcept('${d.id}',${nextIdx},${getSubconceptsForTask(d.tasks[nextIdx]).length>1?0:'null'},false)`:`startLearnConcept('${d.id}',0,${getSubconceptsForTask(d.tasks[0]).length>1?0:'null'},false)`}"
-          style="width:100%;padding:7px;background:${d.bg};color:${d.color};border:1px solid ${d.border};border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">${nextIdx>=0?'Continuar →':'Repasar →'}</button>`;
-      if(nextIdx>=0){
-        const task=d.tasks[nextIdx]; const subs=getSubconceptsForTask(task);
-        if(subs.length>1){
-          html+=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid #f1f1f1;"><div style="font-size:10px;font-weight:600;color:#666;margin-bottom:5px;">Próximo: ${getConceptTitle(task)}</div>`;
-          subs.slice(0,5).forEach((sname,si)=>{html+=`<div style="font-size:10px;color:${isMastered(d.id,nextIdx,si,false)?'#3B6D11':'#888'};line-height:1.6;">${isMastered(d.id,nextIdx,si,false)?'✔':'○'} ${sname}</div>`;});
-          if(subs.length>5) html+=`<div style="font-size:10px;color:#aaa;">+${subs.length-5} más</div>`;
-          html+=`</div>`;
-        }
-      }
-      html+=`</div>`;
-    });
-    html+=`</div>`;
-    el.innerHTML=html;return;
-  }
-
-  if(lx.phase==='complete'){
-    el.innerHTML=`<div style="text-align:center;padding:4rem;"><div style="font-size:48px;margin-bottom:1rem;">🎓</div>
-      <h2 style="font-size:21px;font-weight:600;margin-bottom:.5rem;">¡Todos los conceptos dominados!</h2>
-      <p style="color:#888;margin-bottom:1.5rem;">Has completado los conceptos del TCO 6ª Edición.</p>
-      <button class="btn-primary" onclick="setView('practice')"><i class="ti ti-brain"></i>Ir a Practicar</button></div>`;return;
-  }
-
-  const d=D.find(x=>x.id===lx.domId);
-  const c=lx.lang==='es'&&lx.contentEs?lx.contentEs:lx.content;
-  const subs=getSubconceptsForTask(getTask(lx.domId,lx.conceptIdx));
-
-  if(lx.phase==='hook'){
-    let html=renderLearnHeader(d,lx,totalMastered,totalConcepts);
-    html+=`<div style="max-width:700px;">`;
-    if(lx.loading){html+=`<div class="loading"><i class="ti ti-brain"></i><div>Generando módulo de aprendizaje...</div></div>`;}
-    else if(lx.err){html+=`<div style="background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:1rem;color:#A32D2D;font-size:13px;">${lx.err}<button onclick="retryLearn()" style="margin-left:8px;color:#A32D2D;text-decoration:underline;background:none;border:none;cursor:pointer;">Reintentar</button></div>`;}
-    else if(c){
-      html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:8px;">
-        <div><div style="font-size:14px;font-weight:700;color:#1a1a18;">${c.concept}</div>${lx.subIdx!==null?`<div style="font-size:11px;color:#888;">Sub-session de: ${getConceptTitle(getTask(lx.domId,lx.conceptIdx))}</div>`:''}${lx.finalReview?`<div style="font-size:11px;color:#888;">Cierre del concepto completo · mixed discrimination</div>`:''}</div>
-        ${renderLangButtons(lx)}
-      </div>`;
-      if(subs.length>1){
-        html+=`<div style="background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:.75rem;margin-bottom:.875rem;">
-          <div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Subconcept mastery path</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;">${subs.map((sname,si)=>`<span style="font-size:10px;padding:4px 8px;border-radius:20px;border:1px solid ${lx.subIdx===si?'#0F6E56':'#e5e5e3'};background:${isMastered(lx.domId,lx.conceptIdx,si,false)?'#EAF3DE':lx.subIdx===si?'#E1F5EE':'#fff'};color:${isMastered(lx.domId,lx.conceptIdx,si,false)?'#3B6D11':lx.subIdx===si?'#0F6E56':'#666'};">${isMastered(lx.domId,lx.conceptIdx,si,false)?'✔':'○'} ${sname}</span>`).join('')}${isMastered(lx.domId,lx.conceptIdx,null,true)?`<span style="font-size:10px;padding:4px 8px;border-radius:20px;background:#EAF3DE;color:#3B6D11;">✔ Final review</span>`:`<span style="font-size:10px;padding:4px 8px;border-radius:20px;background:${lx.finalReview?'#E6F1FB':'#fff'};color:${lx.finalReview?'#185FA5':'#888'};border:1px solid #e5e5e3;">${lx.finalReview?'●':'○'} Final review</span>`}</div>
-        </div>`;
-      }
-      if(!lx.flipped){
-        html+=`<div class="flip-side visible" style="background:linear-gradient(135deg,${d.bg} 0%,#fff 100%);border-color:${d.border};text-align:center;padding:2rem 1.5rem;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-          <div style="font-size:10px;font-weight:600;color:${d.color};text-transform:uppercase;letter-spacing:.1em;margin-bottom:.875rem;">💭 Piensa antes de responder</div>
-          <p style="font-size:16px;font-weight:500;line-height:1.65;color:#1a1a18;margin:0 0 1.5rem;">${c.hook_question}</p>
-          <button onclick="state.learn.flipped=true;render();" style="padding:10px 24px;background:${d.color};color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;"><i class="ti ti-rotate-clockwise"></i>Ver respuesta y explicación</button>
-        </div>`;
-      }else{
-        html+=`<div class="flip-side visible" style="border-color:${d.border};border-left:4px solid ${d.color};">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:8px;"><div style="font-size:10px;font-weight:600;color:${d.color};text-transform:uppercase;letter-spacing:.1em;">✅ Respuesta</div><button onclick="state.learn.flipped=false;render();" style="font-size:11px;padding:3px 10px;color:#888;border:1px solid #d1d5db;border-radius:20px;background:#fff;cursor:pointer;"><i class="ti ti-rotate-2"></i> Ver pregunta</button></div>
-          <p style="font-size:15px;font-weight:500;color:#1a1a18;margin:0 0 1rem;line-height:1.65;border-bottom:1px solid #f5f5f4;padding-bottom:1rem;">${c.hook_answer}</p>
-          <div style="font-size:10px;font-weight:600;color:#185FA5;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;">Definición</div><p style="font-size:13px;line-height:1.75;color:#1a1a18;margin:0 0 .875rem;">${c.definition}</p>
-          <div style="background:#f9f9f8;border-radius:8px;padding:.875rem;margin-bottom:.875rem;border-left:3px solid ${d.border};"><div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;">Ejemplo clínico</div><p style="font-size:13px;line-height:1.75;margin:0;color:#1a1a18;">${c.clinical_example}</p></div>
-          ${c.strategy?`<div style="background:#E6F1FB;border:1px solid #85B7EB;border-radius:8px;padding:.875rem;margin-bottom:.875rem;"><div style="font-size:11px;font-weight:700;color:#185FA5;margin-bottom:5px;">💡 Exam Strategy</div><p style="font-size:13px;line-height:1.7;margin:0;">${c.strategy}</p></div>`:''}
-          <div style="font-size:10px;font-weight:600;color:#534AB7;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;">Puntos clave para el examen</div><ul style="padding-left:1.25rem;margin:0 0 1.25rem;">${(c.key_points||[]).map(p=>`<li style="font-size:12px;line-height:1.75;color:#1a1a18;">${p}</li>`).join('')}</ul>
-          <button class="btn-primary" onclick="state.learn.phase='questions';state.learn.currentQ=0;state.learn.qAnswered=false;state.learn.selectedAnswer=null;state.learn.answers=[];state.learn.showHint=false;render();"><i class="ti ti-player-play"></i>Verificar comprensión →</button>
-        </div>`;
-      }
-    }
-    html+=`</div>`;el.innerHTML=html;return;
-  }
-
-  if(lx.phase==='questions'){
-    const qs=c?.questions||[]; const q=qs[lx.currentQ]; const qCount=qs.length||2;
-    let html=renderLearnHeader(d,lx,totalMastered,totalConcepts);
-    html+=`<div style="max-width:700px;">`;
-    html+=`<div class="progress-dots">${Array.from({length:qCount},(_,i)=>`<div class="dot ${i<lx.answers.length?(lx.answers[i].ok?'done':'wrong'):(i===lx.currentQ?'active':'')}"></div>`).join('')}</div>`;
-    html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:8px;"><span style="font-size:12px;color:#888;">Pregunta ${lx.currentQ+1} de ${qCount}</span>${renderLangButtons(lx)}</div>`;
-    if(q){
-      html+=`<div style="background:#f9f9f8;border-radius:10px;padding:1rem 1.25rem;margin-bottom:.875rem;border-left:3px solid ${d.border};"><div style="font-size:9px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;">Pregunta de verificación</div><p style="font-size:14px;font-weight:500;line-height:1.65;margin:0;">${q.q}</p></div>`;
-      html+=`<div style="display:flex;gap:8px;margin-bottom:.875rem;flex-wrap:wrap;"><button class="btn-secondary" onclick="state.learn.showHint=!state.learn.showHint;render();"><i class="ti ti-bulb"></i> Hint / Strategy</button></div>`;
-      if(lx.showHint){html+=`<div style="background:#E6F1FB;border:1px solid #85B7EB;border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;"><div style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:6px;">💡 Hint / Strategy</div><p style="font-size:13px;line-height:1.7;margin:0;">${q.hint||'Identify what the question is really asking, eliminate distractors, and choose the answer most consistent with ABA principles.'}</p></div>`;}
-      html+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:.875rem;">`;
-      Object.entries(q.options).forEach(([letter,text])=>{
-        let bg='#fff',border='#d1d5db',tc='#1a1a18';
-        if(lx.qAnswered){if(letter===q.correct){bg='#EAF3DE';border='#639922';tc='#3B6D11';}else if(letter===lx.selectedAnswer){bg='#FCEBEB';border='#E24B4A';tc='#A32D2D';}else{tc='#aaa';}}
-        html+=`<button onclick="handleLearnAnswer('${letter}')" ${lx.qAnswered?'disabled':''} style="display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:${bg};border:1px solid ${border};border-radius:8px;cursor:${lx.qAnswered?'default':'pointer'};text-align:left;width:100%;color:${tc};"><span style="font-weight:600;min-width:18px;font-size:13px;flex-shrink:0;">${letter}.</span><span style="font-size:13px;line-height:1.6;flex:1;">${text}</span>${lx.qAnswered&&letter===q.correct?'<i class="ti ti-check" style="color:#3B6D11;margin-left:auto;flex-shrink:0;"></i>':''}${lx.qAnswered&&letter===lx.selectedAnswer&&letter!==q.correct?'<i class="ti ti-x" style="color:#A32D2D;margin-left:auto;flex-shrink:0;"></i>':''}</button>`;
-      });
-      html+=`</div>`;
-      if(lx.qAnswered){
-        const ans=lx.answers[lx.answers.length-1];
-        const feedbackTitle=lx.lang==='es'?(ans.ok?'¡Correcto!':'Incorrecto'):(ans.ok?'Correct!':'Incorrect');
-        const questionLabel=lx.lang==='es'?'Pregunta':'Question';
-        const yourAnswerLabel=lx.lang==='es'?'Tu respuesta':'Your answer';
-        const correctAnswerLabel=lx.lang==='es'?'Respuesta correcta':'Correct answer';
-        html+=`<div style="background:${ans.ok?'#EAF3DE':'#FCEBEB'};border:1px solid ${ans.ok?'#97C459':'#F09595'};border-radius:10px;padding:1rem;margin-bottom:.875rem;"><div style="font-size:13px;font-weight:700;color:${ans.ok?'#3B6D11':'#A32D2D'};margin-bottom:8px;display:flex;align-items:center;gap:6px;"><i class="ti ti-${ans.ok?'check':'x'}"></i>${feedbackTitle}</div><div style="background:#fff;border-radius:8px;padding:.875rem;margin-bottom:.875rem;border:1px solid #e5e5e3;"><div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">${questionLabel}</div><p style="font-size:13px;line-height:1.7;margin:0;">${q.q}</p></div><div style="font-size:12px;margin-bottom:8px;line-height:1.6;"><strong>${yourAnswerLabel}:</strong> ${ans.letter} · <strong>${correctAnswerLabel}:</strong> ${q.correct}</div><p style="margin:0;font-size:13px;line-height:1.75;">${q.explanation}</p></div>`;
-        if(lx.currentQ<qCount-1) html+=`<button class="btn-primary" onclick="nextQuestion()"><i class="ti ti-arrow-right"></i>Siguiente pregunta</button>`;
-        else html+=`<button class="btn-primary" onclick="finishLearn()"><i class="ti ti-chart-bar"></i>Ver resultado final</button>`;
-      }
-    }
-    html+=`</div>`;el.innerHTML=html;return;
-  }
-
-  if(lx.phase==='result'){
-    const correct=lx.answers.filter(a=>a.ok).length;
-    const total=lx.answers.length||2;
-    const passed=correct>=Math.ceil(total*0.5);
-    const allCorrect=correct===total;
-    const label=lx.finalReview?'Concepto completo dominado':lx.subIdx!==null?'Subconcepto dominado':'Concepto dominado';
-    let html=`<div style="max-width:520px;"><div style="text-align:center;background:#fff;border-radius:12px;border:1px solid ${allCorrect?'#97C459':passed?'#FAC775':'#F09595'};padding:2rem;margin-bottom:1.25rem;"><div style="font-size:52px;margin-bottom:.5rem;">${allCorrect?'🎯':passed?'👍':'📖'}</div><div style="font-size:36px;font-weight:700;color:${allCorrect?'#3B6D11':passed?'#854F0B':'#A32D2D'};margin-bottom:6px;">${correct}/${total}</div><div style="font-size:15px;font-weight:600;margin-bottom:4px;">${passed?label:'Necesitas repasar este punto'}</div><div style="font-size:12px;color:#888;">${c?c.concept:''}</div></div><div style="display:flex;gap:8px;flex-wrap:wrap;">${passed?`<button onclick="markMastered('${lx.domId}',${lx.conceptIdx},${lx.subIdx===null?'null':lx.subIdx},${lx.finalReview?'true':'false'})" class="btn-primary" style="font-size:13px;padding:11px 20px;"><i class="ti ti-circle-check"></i>${allCorrect?'¡Dominado! Siguiente →':'Continuar →'}</button>`:''}<button onclick="retryLearn()" class="btn-secondary" style="${passed?'':'background:#185FA5;color:#fff;border:none;'}"><i class="ti ti-refresh"></i>Repasar este punto</button></div></div>`;
-    el.innerHTML=html;return;
-  }
-}
-
-// ============================================================
-// DASHBOARD
-// ============================================================
-function renderDash(el){
-  const weak=weakDomains();
-  const recomm=weak.length>0?weak[0]:D[1];
-  const allPct=state.stats.allTime.total>0?Math.round((state.stats.allTime.correct/state.stats.allTime.total)*100):0;
-
-  let html=`
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px;">
-    <div>
-      <h1 style="font-size:21px;font-weight:600;margin-bottom:3px;">BCBA Study Hub</h1>
-      <p style="font-size:12px;color:#888;">Test Content Outline 6ª Edición · 9 dominios · 104 tareas · IA adaptativa</p>
-    </div>
-    <button class="btn-primary" onclick="setView('exam')">
-      <i class="ti ti-player-play"></i>Examen Simulado
-    </button>
-  </div>
-  <div style="background:#E6F1FB;border:1px solid #85B7EB;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-    <div>
-      <div style="font-size:10px;font-weight:600;color:#185FA5;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Recomendación inteligente</div>
-      <div style="font-size:14px;font-weight:500;">${weak.length>0?`Reforzar: Dom. ${recomm.id} — ${recomm.short}`:`Empezar con Dom. B — Concepts and Principles`}</div>
-      <div style="font-size:12px;color:#555;margin-top:2px;">${weak.length>0?'Área con menor desempeño en tu historial':'Mayor peso del examen (14%)'}</div>
-    </div>
-    <button class="btn-primary" style="background:#185FA5;" onclick="startPractice('${recomm.id}')">Practicar →</button>
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;">`;
-
-  D.forEach(d=>{
-    const ds=state.stats.byDomain[d.id];
-    const dp=ds?.total>0?Math.round((ds.correct/ds.total)*100):null;
-    const isWeak=weak.some(w=>w.id===d.id);
-    html+=`
-    <div class="domain-card" style="border-left:3px solid ${d.border};${isWeak?'border-color:#E24B4A;border-left-color:#E24B4A;':''}" >
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px;">
-        <div style="display:flex;align-items:center;gap:7px;">
-          <div style="background:${d.bg};border-radius:6px;padding:5px;display:flex;">
-            <i class="ti ${d.icon}" style="font-size:14px;color:${d.color};"></i>
-          </div>
-          <div>
-            <div style="font-size:9px;font-weight:600;color:${d.color};letter-spacing:.06em;">DOM. ${d.id}</div>
-            <div style="font-size:12px;font-weight:500;line-height:1.3;">${d.short}</div>
-          </div>
-        </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:12px;font-weight:600;color:${d.color};">${d.pct}%</div>
-          <div style="font-size:10px;color:#888;">${d.q}p</div>
-        </div>
-      </div>
-      ${dp!==null?`
-      <div style="margin-bottom:7px;">
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:#888;margin-bottom:3px;">
-          <span>${ds.correct}/${ds.total}</span>
-          <span style="color:${pctColor(dp)};font-weight:600;">${dp}%</span>
-        </div>
-        <div class="prog-track"><div class="prog-fill" style="width:${dp}%;background:${dp>=70?'#639922':dp>=50?'#EF9F27':'#D85A30'};"></div></div>
-      </div>`:''}
-      <button style="width:100%;padding:6px;background:${d.bg};color:${d.color};border:1px solid ${d.border};border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;"
-        onclick="startPractice('${d.id}')">${dp!==null?`Continuar (${dp}%) →`:'Comenzar →'}</button>
-    </div>`;
-  });
-  html+='</div>';
-  el.innerHTML=html;
-}
-
-// ============================================================
-// PRACTICE
-// ============================================================
-function renderPractice(el){
-  if(!state.practice.domId){renderDomainPicker(el);return;}
-  const d=D.find(x=>x.id===state.practice.domId);
-  const p=state.practice;
-  const sc=p.sc;
-  const scPct=sc.t>0?Math.round((sc.c/sc.t)*100):null;
-
-  let html=`
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap;">
-    <button class="btn-secondary" style="padding:5px 10px;font-size:12px;" onclick="state.practice.domId=null;state.practice.q=null;render();">
-      <i class="ti ti-arrow-left"></i> Cambiar dominio
-    </button>
-    <span class="pill" style="background:${d.bg};color:${d.color};">Dom. ${d.id}: ${d.short}</span>
-    <div style="margin-left:auto;font-size:12px;color:#888;">Sesión: ${sc.c}/${sc.t}</div>
-    ${scPct!==null?`<span class="pill" style="background:${pctBg(scPct)};color:${pctColor(scPct)};">${scPct}%</span>`:''}
-  </div>`;
-
-  if(p.loading){
-    html+=`<div class="loading"><i class="ti ti-brain"></i><div style="font-size:14px;">Generando escenario clínico...</div></div>`;
-  } else if(p.err){
-    html+=`<div style="background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:1rem;color:#A32D2D;display:flex;align-items:center;gap:12px;margin-bottom:1rem;font-size:13px;">
-      ${p.err} <button onclick="nextPractice()" style="color:#A32D2D;text-decoration:underline;background:none;border:none;cursor:pointer;">Reintentar</button></div>`;
-  } else if(p.q){
-    const q=p.q;
-    html+=`
-    <div style="display:flex;gap:7px;margin-bottom:9px;flex-wrap:wrap;align-items:center;">
-      <span class="pill" style="background:${d.bg};color:${d.color};font-size:10px;">Dom. ${q.domain}</span>
-      <span style="font-size:11px;color:#888;">${q.task}</span>
-    </div>
-    <div class="scenario" style="border-left:3px solid ${d.border};">
-      <div class="scenario-label">Escenario clínico</div>
-      <p style="margin:0;font-size:13px;line-height:1.75;">${q.scenario}</p>
-    </div>
-    <p style="font-size:14px;font-weight:600;margin-bottom:.875rem;line-height:1.55;">${q.question}</p>
-    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:.875rem;">`;
-
-    Object.entries(q.options).forEach(([letter,text])=>{
-      let bg='#fff',border='#d1d5db',tc='#1a1a18';
-      if(p.selAns){
-        if(letter===q.correct){bg='#EAF3DE';border='#639922';tc='#3B6D11';}
-        else if(letter===p.selAns){bg='#FCEBEB';border='#E24B4A';tc='#A32D2D';}
-        else{tc='#888';}
-      }
-      const checkX=p.selAns&&letter===q.correct?'<i class="ti ti-check" style="color:#3B6D11;margin-left:auto;flex-shrink:0;"></i>':
-        p.selAns&&letter===p.selAns&&letter!==q.correct?'<i class="ti ti-x" style="color:#A32D2D;margin-left:auto;flex-shrink:0;"></i>':'';
-      html+=`<button class="opt-btn" style="background:${bg};border-color:${border};color:${tc};" 
-        ${p.selAns?'disabled':''} onclick="handlePracticeAnswer('${letter}')">
-        <span style="font-weight:600;min-width:18px;font-size:14px;flex-shrink:0;">${letter}.</span>
-        <span style="font-size:14px;line-height:1.65;flex:1;">${text}</span>${checkX}</button>`;
-    });
-
-    html+=`</div>`;
-
-    if(p.showExp){
-      const ok=p.selAns===q.correct;
-      html+=`<div class="explain" style="background:${ok?'#EAF3DE':'#FAECE7'};border:1px solid ${ok?'#97C459':'#F0997B'};">
-        <div style="font-size:12px;font-weight:600;color:${ok?'#3B6D11':'#993C1D'};margin-bottom:6px;display:flex;align-items:center;gap:6px;">
-          <i class="ti ti-${ok?'check':'x'}"></i>${ok?'¡Correcto!':` Incorrecto — Respuesta: ${q.correct}`}</div>
-        <p style="margin:0;font-size:13px;line-height:1.75;">${q.explanation}</p>
-      </div>`;
-    }
-
-    if(p.selAns){
-      const dominated=scPct>=70&&sc.t>3;
-      html+=`<div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn-primary" onclick="nextPractice()"><i class="ti ti-arrow-right"></i>${dominated?'¡Dominado! Siguiente →':'Siguiente →'}</button>
-        ${p.selAns!==q.correct?`<button class="btn-secondary" style="color:#185FA5;border-color:#85B7EB;" onclick="studyTopic('${state.practice.domId}','${q.task.replace(/'/g,"\\'")}')">
-          <i class="ti ti-book"></i>Estudiar este tema</button>`:''}
-      </div>`;
-    } else {
-      html+=`<button class="btn-secondary" onclick="nextPractice()"><i class="ti ti-refresh"></i>Nueva pregunta</button>`;
-    }
-  }
-  el.innerHTML=html;
-}
-
-function renderDomainPicker(el){
-  let html=`<h2 style="font-size:21px;font-weight:600;margin-bottom:1rem;">Selecciona un dominio</h2>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">`;
-  D.forEach(d=>{
-    const ds=state.stats.byDomain[d.id];
-    const dp=ds?.total>0?Math.round((ds.correct/ds.total)*100):null;
-    html+=`<button onclick="startPractice('${d.id}')" style="background:#fff;border:1px solid ${d.border};border-radius:12px;padding:.875rem;cursor:pointer;text-align:left;border-left:3px solid ${d.border};">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-        <i class="ti ${d.icon}" style="font-size:16px;color:${d.color};"></i>
-        <span style="font-size:11px;font-weight:600;color:${d.color};">Dom. ${d.id}</span>
-        <span style="font-size:10px;color:#888;margin-left:auto;">${d.pct}%</span>
-      </div>
-      <div style="font-size:12px;font-weight:500;margin-bottom:4px;line-height:1.3;">${d.label}</div>
-      ${dp!==null?`<div style="font-size:11px;color:${pctColor(dp)};font-weight:600;">${dp}% (${ds.correct}/${ds.total})</div>`:''}
-    </button>`;
-  });
-  html+='</div>';
-  el.innerHTML=html;
-}
-
-async function startPractice(domId,diff){
-  state.practice={...state.practice,domId,q:null,loading:true,selAns:null,showExp:false,err:null};
-  state.view='practice';
-  render();
-  try{const q=await genQuestion(domId,diff||'standard');state.practice.q=q;state.practice.loading=false;}
-  catch(e){state.practice.loading=false;state.practice.err='Error al generar pregunta. Verifica tu API key e intenta de nuevo.';}
-  render();
-}
-
-async function handlePracticeAnswer(letter){
-  if(state.practice.selAns||!state.practice.q)return;
-  const ok=letter===state.practice.q.correct;
-  const domId=state.practice.domId;
-  state.stats.allTime.correct+=ok?1:0;
-  state.stats.allTime.total+=1;
-  state.stats.byDomain[domId].correct+=(ok?1:0);
-  state.stats.byDomain[domId].total+=1;
-  state.stats.history=[{domId,task:state.practice.q.task,correct:ok,ts:Date.now()},...state.stats.history].slice(0,50);
-  saveStats();
-  state.practice.selAns=letter;
-  state.practice.showExp=true;
-  state.practice.sc.c+=(ok?1:0);
-  state.practice.sc.t+=1;
-  render();
-}
-
-async function nextPractice(){
-  const domId=state.practice.domId;
-  const ds=state.stats.byDomain[domId];
-  const p=ds?.total>4?Math.round((ds.correct/ds.total)*100):50;
-  const diff=p>=70?'hard':'standard';
-  state.practice={...state.practice,q:null,loading:true,selAns:null,showExp:false,err:null};
-  render();
-  try{const q=await genQuestion(domId,diff);state.practice.q=q;state.practice.loading=false;}
-  catch(e){state.practice.loading=false;state.practice.err='Error. Intenta de nuevo.';}
-  render();
-}
-
-async function studyTopic(domId,task){
-  const d=D.find(x=>x.id===domId);
-  const idx=d.tasks.indexOf(task);
-  state.notes={domId,taskIdx:idx>=0?idx:0,notes:null,loading:true,err:null};
-  state.view='notes';
-  render();
-  try{const notes=await genNotes(domId,task);state.notes.notes=notes;state.notes.loading=false;}
-  catch{state.notes.loading=false;state.notes.err='Error. Intenta de nuevo.';}
-  render();
-}
-
-// ============================================================
-// EXAM
-// ============================================================
-function renderExam(el){
-  const ex=state.exam;
-  if(!ex.active&&!ex.done){
-    el.innerHTML=`
-    <div style="max-width:600px;">
-      <h2 style="font-size:21px;font-weight:600;margin-bottom:.75rem;">Examen Simulado</h2>
-      <p style="font-size:13px;color:#888;margin-bottom:1.25rem;">25 preguntas · distribución proporcional al TCO · 35 minutos · sin retroalimentación hasta el final</p>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem;">
-        ${[['25','Preguntas'],['35 min','Tiempo'],['72%','Aprobación']].map(([v,l])=>
-          `<div class="metric"><div class="metric-val">${v}</div><div class="metric-label">${l}</div></div>`).join('')}
-      </div>
-      <div style="background:#FAEEDA;border:1px solid #FAC775;border-radius:8px;padding:.875rem 1rem;margin-bottom:1.25rem;font-size:13px;color:#854F0B;">
-        <i class="ti ti-alert-triangle" style="margin-right:6px;"></i>Sin retroalimentación hasta completar todas las preguntas.
-      </div>
-      <button class="btn-primary" style="font-size:14px;padding:11px 22px;" onclick="startExam()">
-        <i class="ti ti-player-play"></i>Iniciar examen
-      </button>
-    </div>`;
-    return;
-  }
-
-  if(ex.active&&!ex.done){
-    let html=`
-    <div style="max-width:660px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding:.75rem 1rem;background:#fff;border-radius:8px;border:1px solid #e5e5e3;">
-      <div style="font-size:13px;font-weight:600;">Pregunta ${ex.curr+1} / ${EXAM_PLAN.length}</div>
-      <div style="display:flex;gap:12px;align-items:center;">
-        <div style="height:3px;width:100px;background:#e5e5e3;border-radius:2px;">
-          <div style="height:100%;width:${(ex.curr/EXAM_PLAN.length)*100}%;background:#0F6E56;border-radius:2px;"></div></div>
-        <div style="font-size:14px;font-weight:600;color:${ex.timer<300?'#A32D2D':'#1a1a18'};min-width:58px;display:flex;align-items:center;gap:4px;" id="exam-timer">
-          <i class="ti ti-clock" style="font-size:13px;"></i>${fmtTime(ex.timer)}</div>
-      </div>
-    </div>`;
-
-    if(ex.loading){
-      html+=`<div class="loading"><i class="ti ti-brain"></i><div>Cargando pregunta ${ex.curr+1}...</div></div>`;
-    } else if(ex.q){
-      const q=ex.q;
-      html+=`
-      <div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.09em;margin-bottom:9px;">Dominio ${q.domain}</div>
-      <div class="scenario" style="border-left:3px solid #d1d5db;">
-        <div class="scenario-label">Escenario clínico</div>
-        <p style="margin:0;font-size:13px;line-height:1.75;">${q.scenario}</p>
-      </div>
-      <p style="font-size:14px;font-weight:600;margin-bottom:.875rem;line-height:1.55;">${q.question}</p>
-      <div style="display:flex;flex-direction:column;gap:7px;">`;
-      Object.entries(q.options).forEach(([l,t])=>{
-        html+=`<button class="opt-btn" onclick="handleExamAnswer('${l}')">
-          <span style="font-weight:600;min-width:18px;font-size:14px;flex-shrink:0;">${l}.</span>
-          <span style="font-size:14px;line-height:1.65;">${t}</span></button>`;
-      });
-      html+='</div>';
-    }
-    html+='</div>';
-    el.innerHTML=html;
-    return;
-  }
-
-  if(ex.done&&ex.results){
-    const r=ex.results;
-    const pct=Math.round((r.correct/r.total)*100);
-    const pass=pct>=72;
-    let html=`
-    <div style="max-width:600px;">
-    <div style="text-align:center;margin-bottom:1.5rem;padding:1.5rem;background:#fff;border-radius:12px;border:1px solid #e5e5e3;">
-      <div style="font-size:52px;font-weight:700;color:${pass?'#3B6D11':'#A32D2D'};">${pct}%</div>
-      <div style="font-size:15px;font-weight:600;margin-bottom:4px;">${pass?'Excelente desempeño — ¡Sigue así! 🎯':'Sigue practicando — ¡Tú puedes! 💪'}</div>
-      <div style="font-size:13px;color:#888;">${r.correct} de ${r.total} correctas · ${fmtTime(2100-ex.timer)} utilizados</div>
-    </div>
-    <h3 style="font-size:15px;font-weight:600;margin:0 0 .75rem;">Resultados por dominio</h3>
-    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:1.5rem;">`;
-    D.filter(d=>r.byDomain[d.id]).forEach(d=>{
-      const dr=r.byDomain[d.id];const p=Math.round((dr.correct/dr.total)*100);
-      html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #e5e5e3;">
-        <div style="background:${d.bg};border-radius:5px;padding:4px;display:flex;flex-shrink:0;">
-          <i class="ti ${d.icon}" style="font-size:13px;color:${d.color};"></i></div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:500;">Dom. ${d.id}: ${d.short}</div>
-          <div class="prog-track" style="margin-top:4px;"><div class="prog-fill" style="width:${p}%;background:${p>=70?'#639922':'#D85A30'};"></div></div>
-        </div>
-        <span style="font-size:12px;font-weight:600;color:${pctColor(p)};flex-shrink:0;">${p}% (${dr.correct}/${dr.total})</span>
-        ${p<70?`<button style="font-size:10px;padding:3px 7px;background:${d.bg};color:${d.color};border:1px solid ${d.border};border-radius:6px;cursor:pointer;" onclick="startPractice('${d.id}')">Reforzar</button>`:''}
-      </div>`;
-    });
-    html+=`</div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn-secondary" onclick="resetExam()">Nuevo examen</button>
-      <button class="btn-primary" onclick="setView('analytics')">Ver analíticas →</button>
-    </div></div>`;
-    el.innerHTML=html;
-  }
-}
-
-async function startExam(){
-  clearInterval(examTimer);
-  state.exam={active:true,plan:[...EXAM_PLAN],curr:0,q:null,loading:true,answers:[],timer:2100,done:false,results:null};
-  examTimer=setInterval(()=>{
-    if(!state.exam.active||state.exam.done){clearInterval(examTimer);return;}
-    state.exam.timer--;
-    if(state.exam.timer<=0){
-      clearInterval(examTimer);
-      state.exam.done=true;
-      state.exam.results=calcExamResults(state.exam.answers);
-      render();return;
-    }
-    const t=document.getElementById('exam-timer');
-    if(t){t.style.color=state.exam.timer<300?'#A32D2D':'#1a1a18';t.innerHTML=`<i class="ti ti-clock" style="font-size:13px;"></i>${fmtTime(state.exam.timer)}`;}
-  },1000);
-  render();
-  try{const q=await genQuestion(state.exam.plan[0]);state.exam.q=q;state.exam.loading=false;}
-  catch{state.exam.loading=false;}
-  render();
-}
-
-function calcExamResults(answers){
-  const r={total:answers.length,correct:answers.filter(a=>a.ok).length,byDomain:{}};
-  D.forEach(d=>{const da=answers.filter(a=>a.domId===d.id);if(da.length)r.byDomain[d.id]={correct:da.filter(a=>a.ok).length,total:da.length};});
-  return r;
-}
-
-async function handleExamAnswer(letter){
-  if(!state.exam.q)return;
-  const ok=letter===state.exam.q.correct;
-  const newAns=[...state.exam.answers,{domId:state.exam.plan[state.exam.curr],q:state.exam.q,answer:letter,ok}];
-  const ni=state.exam.curr+1;
-  if(ni>=state.exam.plan.length){
-    clearInterval(examTimer);
-    const results=calcExamResults(newAns);
-    state.exam={...state.exam,answers:newAns,done:true,results};
-    // Save to stats
-    state.stats.allTime.correct+=results.correct;
-    state.stats.allTime.total+=results.total;
-    D.forEach(d=>{if(results.byDomain[d.id]){state.stats.byDomain[d.id].correct+=results.byDomain[d.id].correct;state.stats.byDomain[d.id].total+=results.byDomain[d.id].total;}});
-    saveStats();
-    render();
-  } else {
-    state.exam={...state.exam,answers:newAns,curr:ni,q:null,loading:true};
-    render();
-    try{const q=await genQuestion(state.exam.plan[ni]);state.exam.q=q;state.exam.loading=false;}
-    catch{state.exam.loading=false;}
-    render();
-  }
-}
-
-function resetExam(){state.exam={active:false,plan:null,curr:0,q:null,loading:false,answers:[],timer:2100,done:false,results:null};render();}
-
-// ============================================================
-// NOTES
-// ============================================================
-function renderNotes(el){
-  const nx=state.notes;
-  const d=D.find(x=>x.id===nx.domId);
-  let html=`
-  <div style="max-width:660px;">
-  <h2 style="font-size:21px;font-weight:600;margin-bottom:.25rem;">Notas de Estudio</h2>
-  <p style="font-size:12px;color:#888;margin-bottom:1rem;">Selecciona dominio y tarea — la IA genera notas clínicas de alto rendimiento</p>
-  <div style="display:flex;gap:6px;margin-bottom:.875rem;flex-wrap:wrap;">`;
-  D.forEach(dd=>html+=`<button onclick="state.notes.domId='${dd.id}';state.notes.taskIdx=0;state.notes.notes=null;render();" 
-    style="padding:5px 10px;background:${nx.domId===dd.id?dd.bg:'#f5f5f4'};color:${nx.domId===dd.id?dd.color:'#666'};border:1px solid ${nx.domId===dd.id?dd.border:'#e5e5e3'};border-radius:20px;cursor:pointer;font-size:11px;font-weight:${nx.domId===dd.id?600:400};">Dom. ${dd.id}</button>`);
-  html+=`</div>
-  <select onchange="state.notes.taskIdx=Number(this.value);state.notes.notes=null;render();" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:13px;margin-bottom:.875rem;">
-    ${d.tasks.map((t,i)=>`<option value="${i}" ${nx.taskIdx===i?'selected':''}>${t}</option>`).join('')}
-  </select>
-  <button onclick="doGenNotes()" ${nx.loading?'disabled':''} style="display:flex;align-items:center;gap:7px;padding:9px 18px;background:${nx.loading?'#f5f5f4':'#0F6E56'};color:${nx.loading?'#888':'#fff'};border:none;border-radius:8px;cursor:${nx.loading?'default':'pointer'};font-size:13px;font-weight:600;margin-bottom:1.25rem;">
-    <i class="ti ti-${nx.loading?'loader':'sparkles'}"></i>${nx.loading?'Generando notas clínicas...':'Generar Notas con IA'}
-  </button>`;
-
-  if(nx.err)html+=`<div style="background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:.875rem;color:#A32D2D;margin-bottom:1rem;font-size:13px;">${nx.err}</div>`;
-
-  if(nx.notes){
-    html+=`<div style="font-size:10px;font-weight:600;color:#0F6E56;text-transform:uppercase;letter-spacing:.09em;margin-bottom:.875rem;">Dom. ${nx.domId} · ${d.tasks[nx.taskIdx]}</div>`;
-    const sections=[
-      {key:'definition',label:'Definición clínica',icon:'ti-book-2',bg:'#E6F1FB',color:'#185FA5',border:'#85B7EB'},
-      {key:'clinical_application',label:'Aplicación clínica',icon:'ti-stethoscope',bg:'#E1F5EE',color:'#0F6E56',border:'#5DCAA5'},
-      {key:'key_distinctions',label:'Distinciones clave para el examen',icon:'ti-arrows-diff',bg:'#EEEDFE',color:'#534AB7',border:'#AFA9EC'},
-      {key:'example',label:'Ejemplo clínico',icon:'ti-user-check',bg:'#FAECE7',color:'#993C1D',border:'#F0997B'},
-      {key:'common_exam_errors',label:'Errores comunes en el examen',icon:'ti-alert-triangle',bg:'#FAEEDA',color:'#854F0B',border:'#FAC775'},
-      {key:'exam_tip',label:'Tip de examen',icon:'ti-bulb',bg:'#EAF3DE',color:'#3B6D11',border:'#97C459'},
-    ];
-    sections.forEach(({key,label,icon,bg,color,border})=>{
-      if(nx.notes[key])html+=`
-      <div class="note-section" style="background:${bg};border-left:3px solid ${border};">
-        <div class="note-label" style="color:${color};"><i class="ti ${icon}" style="font-size:14px;"></i>${label}</div>
-        <p style="margin:0;font-size:13px;line-height:1.75;color:#1a1a18;">${nx.notes[key]}</p>
-      </div>`;
-    });
-    html+=`<button class="btn-primary" style="margin-top:.75rem;" onclick="startPractice('${nx.domId}')">
-      <i class="ti ti-brain"></i>Practicar este dominio</button>`;
-  }
-  html+='</div>';
-  el.innerHTML=html;
-}
-
-async function doGenNotes(){
-  const nx=state.notes;
-  const d=D.find(x=>x.id===nx.domId);
-  const task=d.tasks[nx.taskIdx];
-  state.notes.notes=null;state.notes.loading=true;state.notes.err=null;
-  render();
-  try{const notes=await genNotes(nx.domId,task);state.notes.notes=notes;state.notes.loading=false;}
-  catch{state.notes.loading=false;state.notes.err='Error al generar notas. Verifica tu API key e intenta de nuevo.';}
-  render();
-}
-
-// ============================================================
-// ANALYTICS
-// ============================================================
-function renderAnalytics(el){
-  const s=state.stats;
-  const allPct=s.allTime.total>0?Math.round((s.allTime.correct/s.allTime.total)*100):0;
-  const weak=weakDomains();
-
-  let html=`
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px;">
-    <h2 style="font-size:21px;font-weight:600;margin:0;">Analíticas</h2>
-    <button onclick="if(confirm('¿Resetear todos los datos?')){localStorage.removeItem('${STOR_KEY}');state.stats={byDomain:Object.fromEntries(D.map(d=>[d.id,{correct:0,total:0}])),allTime:{correct:0,total:0},history:[]};render();updateSidebar();}"
-      style="font-size:11px;padding:5px 10px;color:#A32D2D;background:#FCEBEB;border:1px solid #F09595;border-radius:6px;cursor:pointer;">
-      Resetear datos</button>
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem;">
-    ${[['Total respondidas',s.allTime.total,''],['Correctas',s.allTime.correct,''],['Desempeño global',s.allTime.total>0?allPct+'%':'—',pctColor(allPct)]].map(([l,v,c])=>
-      `<div class="metric"><div class="metric-val" style="${c?'color:'+c:''}">${v}</div><div class="metric-label">${l}</div></div>`).join('')}
-  </div>`;
-
-  if(s.allTime.total===0){
-    html+=`<div style="text-align:center;padding:3rem;color:#888;">
-      <i class="ti ti-chart-bar" style="font-size:32px;display:block;margin-bottom:10px;"></i>
-      <div style="font-size:14px;margin-bottom:12px;">Responde preguntas para ver tus analíticas</div>
-      <button class="btn-primary" style="display:inline-flex;" onclick="setView('dash')">Ir a practicar</button>
-    </div>`;
-  } else {
-    if(weak.length>0){
-      html+=`<div style="background:#FAEEDA;border:1px solid #FAC775;border-radius:8px;padding:.875rem 1rem;margin-bottom:1.25rem;">
-        <div style="font-size:11px;font-weight:600;color:#854F0B;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-          <i class="ti ti-alert-triangle"></i>Áreas prioritarias de refuerzo</div>
-        ${weak.map(d=>`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:13px;">
-          <span>Dom. ${d.id}: ${d.label}</span>
-          <button onclick="startPractice('${d.id}')" style="font-size:11px;padding:3px 8px;background:#854F0B;color:#fff;border:none;border-radius:6px;cursor:pointer;">Practicar</button>
-        </div>`).join('')}
-      </div>`;
-    }
-    html+=`<h3 style="font-size:15px;font-weight:600;margin:0 0 .75rem;">Desempeño por dominio</h3>
-    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:1.25rem;">`;
-    D.forEach(d=>{
-      const ds=s.byDomain[d.id];
-      const dp=ds?.total>0?Math.round((ds.correct/ds.total)*100):null;
-      html+=`<div style="padding:9px 0;border-bottom:1px solid #e5e5e3;">
-        <div style="display:flex;align-items:center;gap:9px;margin-bottom:${dp!==null?'5px':'0'};">
-          <div style="background:${d.bg};border-radius:5px;padding:4px;display:flex;flex-shrink:0;">
-            <i class="ti ${d.icon}" style="font-size:13px;color:${d.color};"></i></div>
-          <div style="flex:1;min-width:0;overflow:hidden;">
-            <span style="font-size:10px;font-weight:600;color:${d.color};">Dom. ${d.id} · </span>
-            <span style="font-size:12px;">${d.label}</span>
-            <span style="font-size:10px;color:#888;margin-left:5px;">(${d.pct}% examen)</span>
-          </div>
-          ${dp!==null?`<span style="font-size:12px;font-weight:600;color:${pctColor(dp)};flex-shrink:0;">${dp}% (${ds.correct}/${ds.total})</span>`:
-            `<span style="font-size:11px;color:#888;flex-shrink:0;">Sin datos</span>`}
-          <button onclick="startPractice('${d.id}')" style="font-size:10px;padding:3px 7px;background:${d.bg};color:${d.color};border:1px solid ${d.border};border-radius:6px;cursor:pointer;flex-shrink:0;">Practicar</button>
-        </div>
-        ${dp!==null?`<div class="prog-track" style="margin-left:36px;"><div class="prog-fill" style="width:${dp}%;background:${dp>=70?'#639922':dp>=50?'#EF9F27':'#D85A30'};"></div></div>`:''}
-      </div>`;
-    });
-    html+='</div>';
-
-    if(s.history.length>0){
-      html+=`<h3 style="font-size:15px;font-weight:600;margin:0 0 .75rem;">Historial reciente</h3><div>`;
-      s.history.slice(0,15).forEach((item,i)=>{
-        const d=D.find(x=>x.id===item.domId);
-        html+=`<div class="history-row">
-          <i class="ti ti-${item.correct?'check':'x'}" style="color:${item.correct?'#3B6D11':'#A32D2D'};flex-shrink:0;"></i>
-          <span style="font-weight:600;color:${d?d.color:'#888'};flex-shrink:0;">Dom. ${item.domId}</span>
-          <span style="color:#666;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.task}</span>
-          <span style="color:#aaa;flex-shrink:0;font-size:11px;">${new Date(item.ts).toLocaleDateString('es-ES',{month:'short',day:'numeric'})}</span>
-        </div>`;
-      });
-      html+='</div>';
-    }
-  }
-  el.innerHTML=html;
-}
-
-// ============================================================
-// INIT
-// ============================================================
-function init(){
-  loadStats();
-  loadMastered();
-  state.view='dash';
-  render();
-}
-
-// Check if key exists on load
-window.addEventListener('load',()=>{
-  if(getKey()){
-    document.getElementById('setup').classList.remove('active');
-    document.getElementById('app').classList.add('active');
-    init();
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='a'){
+    document.getElementById('adminPanel').classList.toggle('active');
   }
 });
+document.getElementById('saveKeyBtn').onclick=()=>{
+  localStorage.setItem('bcba_admin_key_local',document.getElementById('apiKeyInput').value.trim());
+  document.getElementById('adminPanel').classList.remove('active');
+};
+document.getElementById('closeAdminBtn').onclick=()=>document.getElementById('adminPanel').classList.remove('active');
+
+function runTests(){
+  console.assert(typeof window.top!=='function','window.top was not overwritten');
+  console.assert(typeof appHeader==='function','appHeader exists');
+  console.assert(T.en.dashboard==='Dashboard','English dictionary exists');
+  const old=lang; lang='es'; console.assert(L('continue')==='Continuar Sesión','Spanish dictionary works'); lang=old;
+}
+runTests();
+render();
+
+})();
 </script>
 </body>
 </html>
