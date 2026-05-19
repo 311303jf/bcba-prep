@@ -161,6 +161,22 @@ aside{width:300px}
 @media(max-width:920px){.impact-grid{grid-template-columns:1fr}}
 
 
+
+/* Smart Guided Tour v25 */
+.tour-btn{background:var(--white);color:var(--green-dark);border:1.5px solid var(--border);border-radius:999px;padding:8px 13px;font-size:12px;font-weight:900;display:inline-flex;gap:7px;align-items:center;box-shadow:var(--shadow-sm)}
+.tour-btn:hover{border-color:var(--green-mid);background:var(--green-light)}
+.tour-overlay{position:fixed;inset:0;background:rgba(20,20,18,.52);backdrop-filter:blur(2px);z-index:9998;display:none;align-items:center;justify-content:center;padding:18px}
+.tour-overlay.active{display:flex}
+.tour-card{width:min(520px,94vw);background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);padding:24px;position:relative;animation:tourIn .22s ease-out}
+@keyframes tourIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.tour-step-pill{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border:1px solid var(--green-mid);border-radius:999px;padding:5px 10px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.tour-title{font-family:var(--font-display);font-size:27px;font-weight:900;line-height:1.15;margin-bottom:8px;color:var(--ink)}
+.tour-copy{font-size:14px;line-height:1.7;color:var(--ink-mid);margin-bottom:16px;font-weight:600}
+.tour-visual{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-md);padding:14px;margin:14px 0;color:var(--ink-mid);font-size:13px;line-height:1.65}
+.tour-dots{display:flex;gap:6px;align-items:center;margin-right:auto}.tour-dot{width:8px;height:8px;border-radius:999px;background:var(--border)}.tour-dot.active{background:var(--green);width:22px}
+.tour-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}.tour-actions .btn{padding:9px 14px}.tour-skip{border:none;background:transparent;color:var(--ink-soft);font-weight:900;font-size:12px;padding:8px}.tour-skip:hover{color:var(--ink)}
+.tour-close{position:absolute;right:14px;top:12px;border:none;background:transparent;font-size:22px;line-height:1;color:var(--ink-soft);font-weight:800}.tour-close:hover{color:var(--ink)}
+
 </style>
 </head>
 <body>
@@ -1493,12 +1509,60 @@ function selfDirectedPanelHtml(){
   if(!lastDomain){lastDomain=DOMAINS.find(d=>d.id===currentDomain)||DOMAINS[0];lastTask=lastDomain.tasks.find(t=>t.title===currentConcept)||lastDomain.tasks[0];}
   return `<div class="panel" style="margin-bottom:16px"><div class="panel-title">${isEs?'Espacio de estudio libre':'Self-directed workspace'}</div><div class="panel-sub">${isEs?'Sin recomendaciones automáticas. Usa el navegador oficial de tasks a la izquierda o continúa exactamente donde estabas.':'No automatic recommendations. Use the official task navigator on the left or continue exactly where you left off.'}</div><div class="focus-card" style="background:var(--surface);border-color:var(--border)"><div class="focus-concept">${isEs?'Continuar':'Continue'}: ${lastTask.id} · ${shortTaskTitleDisplay(lastTask.title)}</div><div class="focus-reason" style="color:var(--ink-soft)">${isEs?'Tu progreso de la tarea se mantiene guardado hasta que uses Reset Task.':'Your task progress stays saved unless you use Reset Task.'}</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" id="resumeSelfTask">${isEs?'Continuar tarea':'Continue Task'}</button><button class="btn btn-secondary" id="browseSelfTasks">${isEs?'Ver dominios':'Browse Domains'}</button></div></div>`;
 }
+
+// ── Smart Guided Tour v25 ──
+const TOUR_STORAGE='bcba_quick_tour_seen_v25';
+let tourIndex=0;
+function tourSteps(){
+  const isEs=lang==='es';
+  const guided=guidedPathEnabled();
+  return [
+    {icon:'🧭',title:isEs?'Bienvenido a tu mapa BCBA':'Welcome to your BCBA map',copy:isEs?'Este tour rápido te muestra cómo usar la app sin sentirte abrumado. Puedes saltarlo y volver a abrirlo desde el botón Tour.':'This quick tour shows you how to use the app without feeling overwhelmed. You can skip it and reopen it from the Tour button.',visual:isEs?'Meta: estudiar con claridad, practicar con precisión y avanzar task por task.':'Goal: study clearly, practice precisely, and progress task by task.'},
+    {icon:'📚',title:isEs?'Navegador oficial BACB':'Official BACB navigator',copy:isEs?'A la izquierda verás los dominios y tasks oficiales A.1–I.7. Selecciona cualquier task para estudiar exactamente ese contenido.':'On the left, you will see the official A.1–I.7 domains and tasks. Select any task to study that exact content.',visual:'DOM. A → A.1, A.2, A.3 · DOM. B → B.1, B.2, B.3…'},
+    {icon:'🎓',title:isEs?'Learn primero':'Learn first',copy:isEs?'Learn explica el task en capas: definición clara, lenguaje oficial, ejemplos clínicos, trampas del examen y mini-sessions.':'Learn explains each task in layers: clear definition, official language, clinical examples, exam traps, and mini-sessions.',visual:isEs?'Primero entiendes. Luego practicas.':'Understand first. Practice second.'},
+    {icon:'🧩',title:isEs?'Mini-sessions':'Mini-sessions',copy:isEs?'Antes de la práctica global, la app separa definiciones o subskills para que puedas dominar cada parte individualmente.':'Before global practice, the app separates definitions or subskills so you can master each piece individually.',visual:isEs?'Ejemplo A.1: Description → Prediction → Control':'Example A.1: Description → Prediction → Control'},
+    {icon:'🎯',title:isEs?'Práctica task-locked':'Task-locked practice',copy:isEs?'Las preguntas deben coincidir con el task seleccionado. Puedes salir, ver reporte, continuar después o resetear solo esa task.':'Questions should match the selected task. You can exit, view a report, continue later, or reset only that task.',visual:isEs?'Exit guarda progreso · Reset empieza esa task desde cero':'Exit saves progress · Reset starts that task from zero'},
+    {icon:'🛣️',title:isEs?'Modo guiado o libre':'Guided or self-directed',copy:guided?(isEs?'Tienes la ruta guiada activa: verás recomendaciones, roadmap y prioridades personalizadas.':'Guided Path is on: you will see recommendations, roadmap, and personalized priorities.'):(isEs?'Tienes modo libre activo: el panel se mantiene limpio y tú decides qué estudiar.':'Self-directed mode is on: the dashboard stays clean and you decide what to study.'),visual:isEs?'Puedes cambiarlo en el dashboard cuando quieras.':'You can change it on the dashboard anytime.'}
+  ];
+}
+function ensureTourOverlay(){
+  let ov=document.getElementById('quickTourOverlay');
+  if(ov)return ov;
+  ov=document.createElement('div');
+  ov.id='quickTourOverlay';
+  ov.className='tour-overlay';
+  ov.innerHTML='<div class="tour-card"><button class="tour-close" id="tourCloseBtn" aria-label="Close">×</button><div id="tourContent"></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',e=>{if(e.target===ov)closeQuickTour();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ov.classList.contains('active'))closeQuickTour();});
+  return ov;
+}
+function openQuickTour(startAt=0){tourIndex=startAt;ensureTourOverlay().classList.add('active');renderQuickTourStep();}
+function closeQuickTour(){const ov=document.getElementById('quickTourOverlay');if(ov)ov.classList.remove('active');localStorage.setItem(TOUR_STORAGE,'1');}
+function renderQuickTourStep(){
+  const steps=tourSteps();
+  if(tourIndex<0)tourIndex=0;if(tourIndex>=steps.length)tourIndex=steps.length-1;
+  const s=steps[tourIndex];
+  const dots=steps.map((_,i)=>`<span class="tour-dot ${i===tourIndex?'active':''}"></span>`).join('');
+  const isLast=tourIndex===steps.length-1;
+  const isEs=lang==='es';
+  const c=document.getElementById('tourContent');
+  if(!c)return;
+  c.innerHTML=`<div class="tour-step-pill"><span>${s.icon}</span><span>${isEs?'Paso':'Step'} ${tourIndex+1}/${steps.length}</span></div><div class="tour-title">${s.title}</div><div class="tour-copy">${s.copy}</div><div class="tour-visual">${s.visual}</div><div class="tour-actions"><div class="tour-dots">${dots}</div><button class="tour-skip" id="tourSkipBtn">${isEs?'Saltar':'Skip'}</button>${tourIndex>0?`<button class="btn btn-secondary" id="tourBackBtn">${isEs?'Atrás':'Back'}</button>`:''}<button class="btn btn-primary" id="tourNextBtn">${isLast?(isEs?'Terminar':'Finish'):(isEs?'Siguiente':'Next')}</button></div>`;
+  const close=document.getElementById('tourCloseBtn');if(close)close.onclick=closeQuickTour;
+  const skip=document.getElementById('tourSkipBtn');if(skip)skip.onclick=closeQuickTour;
+  const back=document.getElementById('tourBackBtn');if(back)back.onclick=()=>{tourIndex--;renderQuickTourStep();};
+  const next=document.getElementById('tourNextBtn');if(next)next.onclick=()=>{if(isLast)closeQuickTour();else{tourIndex++;renderQuickTourStep();}};
+}
+function bindQuickTourButton(){const b=document.getElementById('quickTourBtn');if(b)b.onclick=()=>openQuickTour(0);}
+function maybeAutoShowQuickTour(){try{if(state.onboarded&&!localStorage.getItem(TOUR_STORAGE)){setTimeout(()=>openQuickTour(0),650)}}catch(e){}}
+
 function renderDashboard(){
   state.currentView='dashboard';bindNav();updateSide();
   const rec=recommendedTarget();const atRisk=atRiskConcepts();const isGuided=guidedPathEnabled();
   const guidedPanels=isGuided?`<div class="panel-grid"><div class="panel"><div class="panel-title">${L('recommendedFocus')}</div><div class="panel-sub">${L('recommendedSub')}</div><div class="focus-card"><div class="focus-concept">DOM. ${rec.domain} · ${tConcept(rec.concept)}</div><div class="focus-reason">${L('reasonFocus')}</div></div><button class="btn btn-primary" id="startFocus">${L('startFocus')}</button></div><div class="panel"><div class="panel-title">${L('todaysSession')}</div><div class="panel-sub">${L('todaySub')}</div><div class="session-list">${calcTodaySession().map(s=>`<div class="session-block"><div style="display:flex;align-items:center"><div class="session-dot" style="background:${s.dot}"></div><div><div style="font-weight:700;font-size:13px">${s.name}</div><div style="font-size:11px;color:var(--ink-soft)">${s.desc}</div></div></div><strong style="color:var(--green);font-size:13px;flex-shrink:0">${s.min} min</strong></div>`).join('')}</div></div></div><div class="panel" style="margin-bottom:16px"><div class="panel-title">${L('atRisk')}</div><div class="panel-sub">${L('atRiskSub')}</div>${atRisk.length?atRisk.map(x=>`<span class="status-pill review" style="margin:3px">${tConcept(x)}</span>`).join(''):'<span class="status-pill stable">'+L('noRisk')+'</span>'}</div>`:selfDirectedPanelHtml();
-  qs('main').innerHTML=`<div class="topbar"><div></div><div class="topbar-right">${langSwitch()}${guidedPathControlsHtml()}</div></div><div class="hero-dash"><div><div class="hero-kicker">${L('welcomeBack')}</div><div class="hero-title">${isGuided?L('todayPurpose'):(lang==='es'?'Tu espacio de estudio':'Your study workspace')}</div><div class="hero-copy">${isGuided?L('pathBalance'):(lang==='es'?'Modo libre activado: estudia los dominios y tasks oficiales a tu ritmo, sin recomendaciones automáticas en el panel.':'Self-directed mode is on: study the official domains and tasks at your own pace, without automatic recommendations on the dashboard.')}<br><br><strong>Official coverage:</strong> 104 BACB 6th Edition tasks across 9 domains.</div><button class="btn btn-gold" id="continueBtn" style="margin-top:14px">${isGuided?L('continueStudy'):(lang==='es'?'Continuar estudio':'Continue Studying')}</button></div><div class="readiness-ring" style="--p:${state.readiness}"><div class="readiness-content"><div class="readiness-num">${state.readiness}%</div><div class="readiness-lbl">${L('examReadiness')}</div></div></div></div>${guidedPathSectionHtml()}<div class="metrics"><div class="metric"><div class="metric-value">${DOMAINS.length}</div><div class="metric-label">${L('domainsMonitored')}</div></div><div class="metric"><div class="metric-value">${state.queue.length}</div><div class="metric-label">${L('itemsReady')}</div></div><div class="metric"><div class="metric-value">${state.history.length}</div><div class="metric-label">${L('responsesAnalyzed')}</div></div><div class="metric"><div class="metric-value">${state.streak}</div><div class="metric-label">${L('dayStudyStreak')}</div></div></div>${guidedPanels}<div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0 12px"><div style="font-family:var(--font-display);font-size:21px;font-weight:900">${L('domainStability')}</div><button class="btn btn-secondary" id="resetBtn">${L('resetPrototype')}</button></div><div class="domain-grid">${DOMAINS.map(domainCard).join('')}</div>`;
-  bindLang();bindGuidedPathControls();if(isGuided)bindRoadmap();
+  qs('main').innerHTML=`<div class="topbar"><div></div><div class="topbar-right"><button class="tour-btn" id="quickTourBtn">${lang==='es'?'🧭 Tour rápido':'🧭 Quick Tour'}</button>${langSwitch()}${guidedPathControlsHtml()}</div></div><div class="hero-dash"><div><div class="hero-kicker">${L('welcomeBack')}</div><div class="hero-title">${isGuided?L('todayPurpose'):(lang==='es'?'Tu espacio de estudio':'Your study workspace')}</div><div class="hero-copy">${isGuided?L('pathBalance'):(lang==='es'?'Modo libre activado: estudia los dominios y tasks oficiales a tu ritmo, sin recomendaciones automáticas en el panel.':'Self-directed mode is on: study the official domains and tasks at your own pace, without automatic recommendations on the dashboard.')}<br><br><strong>Official coverage:</strong> 104 BACB 6th Edition tasks across 9 domains.</div><button class="btn btn-gold" id="continueBtn" style="margin-top:14px">${isGuided?L('continueStudy'):(lang==='es'?'Continuar estudio':'Continue Studying')}</button></div><div class="readiness-ring" style="--p:${state.readiness}"><div class="readiness-content"><div class="readiness-num">${state.readiness}%</div><div class="readiness-lbl">${L('examReadiness')}</div></div></div></div>${guidedPathSectionHtml()}<div class="metrics"><div class="metric"><div class="metric-value">${DOMAINS.length}</div><div class="metric-label">${L('domainsMonitored')}</div></div><div class="metric"><div class="metric-value">${state.queue.length}</div><div class="metric-label">${L('itemsReady')}</div></div><div class="metric"><div class="metric-value">${state.history.length}</div><div class="metric-label">${L('responsesAnalyzed')}</div></div><div class="metric"><div class="metric-value">${state.streak}</div><div class="metric-label">${L('dayStudyStreak')}</div></div></div>${guidedPanels}<div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0 12px"><div style="font-family:var(--font-display);font-size:21px;font-weight:900">${L('domainStability')}</div><button class="btn btn-secondary" id="resetBtn">${L('resetPrototype')}</button></div><div class="domain-grid">${DOMAINS.map(domainCard).join('')}</div>`;
+  bindLang();bindGuidedPathControls();bindQuickTourButton();if(isGuided)bindRoadmap();
   const continueBtn=qs('continueBtn');if(continueBtn)continueBtn.onclick=()=>{if(isGuided){renderPractice();}else{const last=state.selectedTask||'';if(last&&last.includes(':')){const [did,title]=last.split(':');currentDomain=did;currentConcept=title;state.currentView='study';save();renderStudy();}else{currentDomain='A';currentConcept=DOMAINS[0].tasks[0].title;state.currentView='study';save();renderStudy();}}};
   const startFocus=qs('startFocus');if(startFocus)startFocus.onclick=()=>{currentDomain=rec.domain;currentConcept=rec.concept;renderStudy()};
   const resumeSelf=qs('resumeSelfTask');if(resumeSelf)resumeSelf.onclick=()=>{const last=state.selectedTask||'';if(last&&last.includes(':')){const [did,title]=last.split(':');currentDomain=did;currentConcept=title;}else{currentDomain='A';currentConcept=DOMAINS[0].tasks[0].title;}state.currentView='study';save();renderStudy();};
@@ -2301,7 +2365,7 @@ function submitSetupKey(){
   if(e.ctrlKey&&e.shiftKey&&key==='a')adminModal();
   if(e.ctrlKey&&e.shiftKey&&key==='k')showSetupScreen();
 });window.renderDashboard=renderDashboard;
-renderLanding(); if(state.onboarded){render();} startPreload();
+renderLanding(); if(state.onboarded){render();maybeAutoShowQuickTour();} startPreload();
 })();
 </script>
 
