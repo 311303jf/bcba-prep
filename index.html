@@ -720,8 +720,22 @@ const CONCEPT_ES={
 function tDomainTitle(d){return lang==='es'?(DOMAIN_ES[d.id]?.title||d.title):d.title}
 function tDomainShort(d){return lang==='es'?(DOMAIN_ES[d.id]?.short||d.short):d.short}
 function tConcept(c){return lang==='es'?(CONCEPT_ES[c]||c):c}
-function qText(q,k){if(lang==='es')return q[k+'_es']||q[k]||'';return q[k]||''}
-function qOptions(q){return (lang==='es'&&q.options_es)?q.options_es:q.options}
+function translateLocalText(text){
+  let out=String(text||'');
+  const reps=[
+    [/Behavior analysis/g,'El análisis de conducta'],[/behavior analysis/g,'el análisis de conducta'],[/behavior analyst/g,'analista de conducta'],[/A behavior analyst/g,'Un analista de conducta'],[/BCBA/g,'BCBA'],[/supervisor/g,'supervisor'],[/trainee/g,'aprendiz'],[/client/g,'cliente'],[/learner/g,'estudiante'],
+    [/description/g,'description'],[/Description/g,'Description'],[/prediction/g,'prediction'],[/Prediction/g,'Prediction'],[/control/g,'control'],[/Control/g,'Control'],[/scientific goals/g,'metas científicas'],[/science/g,'ciencia'],[/behavior/g,'conducta'],[/Behavior/g,'Conducta'],[/accurately/g,'con precisión'],[/observe/g,'observar'],[/observes/g,'observa'],[/observing/g,'observando'],[/measure/g,'medir'],[/measuring/g,'midiendo'],[/define/g,'definir'],[/operational definition/g,'definición operacional'],[/data/g,'datos'],[/graph/g,'gráfica'],[/patterns/g,'patrones'],[/pattern/g,'patrón'],[/environmental variables/g,'variables ambientales'],[/environmental variable/g,'variable ambiental'],[/functional relations/g,'relaciones funcionales'],[/functional environmental relations/g,'relaciones funcionales ambientales'],[/manipulating/g,'manipular'],[/manipulate/g,'manipular'],[/changes/g,'cambia'],[/change/g,'cambio'],[/intervention procedures/g,'procedimientos de intervención'],
+    [/Which statement best represents/g,'¿Cuál declaración representa mejor'],[/Which answer is most consistent with/g,'¿Qué respuesta es más consistente con'],[/Which goals are being described/g,'¿Qué metas se están describiendo'],[/Which scientific goal/g,'¿Qué meta científica'],[/Which revision is best/g,'¿Cuál revisión es mejor'],[/Which sequence best shows/g,'¿Qué secuencia muestra mejor'],[/Which interpretation best matches/g,'¿Qué interpretación coincide mejor con'],[/Which response is most accurate/g,'¿Qué respuesta es más precisa'],[/Which option best labels/g,'¿Qué opción etiqueta mejor'],[/Which option/g,'¿Qué opción'],[/best represents/g,'representa mejor'],[/best matches/g,'coincide mejor con'],[/most directly/g,'más directamente'],
+    [/The correct answer/g,'La respuesta correcta'],[/The correct response/g,'La respuesta correcta'],[/Option A/g,'Opción A'],[/Option B/g,'Opción B'],[/Option C/g,'Opción C'],[/Option D/g,'Opción D'],[/The other options/g,'Las otras opciones'],[/The distractors/g,'Los distractores'],[/correct option/g,'opción correcta'],[/is about/g,'trata sobre'],[/requires/g,'requiere'],[/means/g,'significa'],[/because/g,'porque'],[/rather than/g,'en vez de'],[/not just/g,'no solo'],[/not/g,'no'],[/first/g,'primero'],[/then/g,'luego'],[/finally/g,'finalmente'],[/during/g,'durante'],[/when/g,'cuando'],[/under certain conditions/g,'bajo ciertas condiciones'],
+    [/Task/g,'Tarea'],[/Official task focus/g,'Enfoque oficial de la tarea'],[/Study this task/g,'Estudia esta tarea'],[/using the exact wording/g,'usando el wording exacto'],[/practice questions/g,'las preguntas de práctica'],[/should be locked/g,'deben estar bloqueadas'],[/target skill/g,'habilidad objetivo']
+  ];
+  reps.forEach(([a,b])=>{out=out.replace(a,b)});
+  return out;
+}
+function taskTitleDisplay(task){return lang==='es'?translateLocalText(task?.title||''):(task?.title||'')}
+function shortTaskTitleDisplay(title){return lang==='es'?shortTaskTitle(translateLocalText(title)):shortTaskTitle(title)}
+function qText(q,k){if(lang==='es')return q[k+'_es']||translateLocalText(q[k]||'');return q[k]||''}
+function qOptions(q){if(lang==='es'){if(q.options_es)return q.options_es;const opts={};Object.entries(q.options||{}).forEach(([k,v])=>opts[k]=translateLocalText(v));return opts;}return q.options}
 function translatedDifficulty(x){if(lang!=='es')return x||'guided';return {guided:'guiada',exam:'examen'}[x]||x||'guiada'}
 const STATIC_LEARN={
 'Positive Reinforcement':{def:'Positive reinforcement occurs when a stimulus is added after a behavior and the future frequency of that behavior increases.',example:'A learner completes a task and receives a token. Over time, task completion increases.',strategy:'Look for something added after the response and behavior increasing in the future.',def_es:'El reforzamiento positivo ocurre cuando se añade un estímulo después de una conducta y la frecuencia futura de esa conducta aumenta.',example_es:'Un estudiante completa una tarea y recibe una ficha. Con el tiempo, completar tareas aumenta.',strategy_es:'Busca algo añadido después de la respuesta y confirma que la conducta aumenta en el futuro.'},
@@ -770,6 +784,7 @@ function bindLang(){document.querySelectorAll('.lang-btn').forEach(b=>b.onclick=
   }
   if(qs('landing').classList.contains('active')){renderLanding();return}
   if(qs('onboarding').classList.contains('active')){renderOnboarding();return}
+  if(state.currentView==='study'){renderStudy();return}
   render()
 })}
 function showToast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .25s';setTimeout(()=>t.remove(),260)},2300)}
@@ -1152,8 +1167,8 @@ function deepFallbackLearn(dom,task){
   };
 }
 // Helper — get the right language field from bilingual content
-function lc(content,field){return content[field+'_'+lang]||content[field+'_en']||content[field]||'';}
-function lcArr(content,field){return content[field+'_'+lang]||content[field+'_en']||content[field]||[];}
+function lc(content,field){const direct=content[field+'_'+lang]; if(direct)return direct; const en=content[field+'_en']||content[field]||''; return lang==='es'?translateLocalText(en):en;}
+function lcArr(content,field){const direct=content[field+'_'+lang]; if(direct)return direct; const en=content[field+'_en']||content[field]||[]; return lang==='es'&&Array.isArray(en)?en.map(x=>translateLocalText(x)):en;}
 
 async function generateQuestion(target){
   const dom=DOMAINS.find(d=>d.id===target.domain)||DOMAINS[1];
@@ -1247,13 +1262,13 @@ function taskMasteryClass(domId,title){
   if(days>7||acc<60)return 'review';
   return 'learning';
 }
-function taskMasteryLabel(cls){return {new:'New',learning:'Learning',review:'Review',stable:'Stable',mastered:'Mastered'}[cls]||'New'}
+function taskMasteryLabel(cls){const en={new:'New',learning:'Learning',review:'Review',stable:'Stable',mastered:'Mastered'};const es={new:'Nuevo',learning:'Aprendiendo',review:'Repaso',stable:'Estable',mastered:'Dominado'};return (lang==='es'?es:en)[cls]||(lang==='es'?'Nuevo':'New')}
 function navHtml(){
   const items=[['dashboard','🏠','dashboard'],['study','🎓','learn'],['practice','🧩','practice'],['challenge','⏱','challenge'],['analytics','📊','analytics']];
   const main=`<div class="nav-section">${L('study')}</div>${items.map(i=>`<button class="nav-btn ${state.currentView===i[0]?'active':''}" data-view="${i[0]}"><span>${i[1]}</span>${L(i[2])}</button>`).join('')}<div class="nav-section">Official TCO Tasks</div>`;
   const tree=DOMAINS.map(d=>{
     const open=(state.expandedDomains||[]).includes(d.id);
-    const rows=open?`<div class="task-tree">${d.tasks.map(t=>{const cls=taskMasteryClass(d.id,t.title);const active=currentDomain===d.id&&currentConcept===t.title;return `<button class="nav-task ${active?'active':''}" data-task-domain="${d.id}" data-task-title="${encodeURIComponent(t.title)}" title="${t.id} ${t.title}"><span class="task-dot ${cls}"></span><span class="task-id">${t.id}</span><span class="task-title-small">${shortTaskTitle(t.title)}</span></button>`}).join('')}</div>`:'';
+    const rows=open?`<div class="task-tree">${d.tasks.map(t=>{const cls=taskMasteryClass(d.id,t.title);const active=currentDomain===d.id&&currentConcept===t.title;return `<button class="nav-task ${active?'active':''}" data-task-domain="${d.id}" data-task-title="${encodeURIComponent(t.title)}" title="${t.id} ${taskTitleDisplay(t)}"><span class="task-dot ${cls}"></span><span class="task-id">${t.id}</span><span class="task-title-small">${shortTaskTitleDisplay(t.title)}</span></button>`}).join('')}</div>`:'';
     return `<button class="nav-btn nav-domain-toggle ${currentDomain===d.id?'active':''}" data-toggle-domain="${d.id}"><span>DOM. ${d.id}</span><span>${tDomainShort(d)}</span><span class="nav-caret">${open?'▾':'▸'}</span></button>${rows}`;
   }).join('');
   return main+tree;
@@ -1432,7 +1447,7 @@ function renderCurrentPracticeShell(){
   const task=findTaskByTitle(currentQuestion.domain||currentDomain,currentQuestion.concept||currentConcept);
   currentDomain=currentQuestion.domain||currentDomain;
   currentConcept=currentQuestion.concept||currentConcept;
-  qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${L('clinicalPractice')}</div><div class="page-sub">Task-locked adaptive practice · ${task.id} · ${task.title} · ${practiceCycleLabel(task.id)}</div></div><div class="topbar-right"><div class="task-panel-controls">${langSwitch()}<button class="btn btn-exit" id="exitTaskBtn">${lang==='es'?'Salir':'Exit Task'}</button><button class="btn btn-danger" id="resetTaskBtn">${lang==='es'?'Resetear':'Reset Task'}</button><button class="btn btn-secondary" id="toDash">${L('backDashboard')}</button></div></div></div><div class="practice-wrap" id="practiceMount"></div>`;
+  qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${L('clinicalPractice')}</div><div class="page-sub">Task-locked adaptive practice · ${task.id} · ${taskTitleDisplay(task)} · ${practiceCycleLabel(task.id)}</div></div><div class="topbar-right"><div class="task-panel-controls">${langSwitch()}<button class="btn btn-exit" id="exitTaskBtn">${lang==='es'?'Salir':'Exit Task'}</button><button class="btn btn-danger" id="resetTaskBtn">${lang==='es'?'Resetear':'Reset Task'}</button><button class="btn btn-secondary" id="toDash">${L('backDashboard')}</button></div></div></div><div class="practice-wrap" id="practiceMount"></div>`;
   bindLang();
   const toDashEl=document.getElementById('toDash');
   if(toDashEl)toDashEl.onclick=()=>exitTask(task.id);
@@ -1452,7 +1467,7 @@ async function renderPractice(target){
   const dom=DOMAINS.find(d=>d.id===currentDomain)||DOMAINS[1];
   const task=findTaskByTitle(currentDomain,currentConcept);
 
-  qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${L('clinicalPractice')}</div><div class="page-sub">Task-locked adaptive practice · ${task.id} · ${task.title} · ${practiceCycleLabel(task.id,true)}</div></div><div class="topbar-right"><div class="task-panel-controls">${langSwitch()}<button class="btn btn-exit" id="exitTaskBtn">${lang==='es'?'Salir':'Exit Task'}</button><button class="btn btn-danger" id="resetTaskBtn">${lang==='es'?'Resetear':'Reset Task'}</button><button class="btn btn-secondary" id="toDash">${L('backDashboard')}</button></div></div></div><div class="practice-wrap" id="practiceMount"></div>`;
+  qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${L('clinicalPractice')}</div><div class="page-sub">Task-locked adaptive practice · ${task.id} · ${taskTitleDisplay(task)} · ${practiceCycleLabel(task.id,true)}</div></div><div class="topbar-right"><div class="task-panel-controls">${langSwitch()}<button class="btn btn-exit" id="exitTaskBtn">${lang==='es'?'Salir':'Exit Task'}</button><button class="btn btn-danger" id="resetTaskBtn">${lang==='es'?'Resetear':'Reset Task'}</button><button class="btn btn-secondary" id="toDash">${L('backDashboard')}</button></div></div></div><div class="practice-wrap" id="practiceMount"></div>`;
   bindLang();
   const toDashEl=document.getElementById('toDash');
   if(toDashEl)toDashEl.onclick=()=>exitTask(task.id);
@@ -1549,7 +1564,11 @@ function prepareDisplayQuestion(q){
 }
 function displayOptions(q){
   prepareDisplayQuestion(q);
-  return (lang==='es'&&q._displayOptions_es)?q._displayOptions_es:q._displayOptions;
+  if(lang==='es'){
+    if(q._displayOptions_es)return q._displayOptions_es;
+    const opts={};Object.entries(q._displayOptions||{}).forEach(([k,v])=>opts[k]=translateLocalText(v));return opts;
+  }
+  return q._displayOptions;
 }
 function displayCorrect(q){
   prepareDisplayQuestion(q);
@@ -1587,7 +1606,7 @@ function renderQuestion(renderOpts={}){
   if(timer)clearInterval(timer);
   timer=setInterval(()=>{seconds++;const el=qs('timePill');if(el)el.textContent=`⏱ ${seconds}s`},1000);
   const task=findTaskByTitle(q.domain,q.concept);
-  qs('practiceMount').innerHTML=`<div class="question-card"><div class="question-head"><div><div class="question-meta">${task.id} · ${practiceCycleLabel(task.id)} · ${q.concept||'Clinical Reasoning'} · ${translatedDifficulty(q.difficulty)}</div><div style="font-size:10px;color:var(--ink-soft);font-weight:800;margin-top:4px">${lang==='es'?'La posición de la respuesta correcta se randomiza.':'Correct answer position is randomized.'}</div></div><div class="timer-pill" id="timePill">⏱ ${seconds}s</div></div><div class="question-text">${qText(q,'q')}</div><div id="opts">${Object.entries(answerOptions).map(([l,t])=>`<button class="option" data-answer="${l}"><span class="option-letter">${l}</span><span>${t}</span></button>`).join('')}</div><div class="confidence-panel"><div class="conf-label">${L('confidence')}</div><div class="conf-opts"><button class="conf-btn" data-conf="low">${L('unsure')}</button><button class="conf-btn" data-conf="mid">${L('somewhat')}</button><button class="conf-btn" data-conf="high">${L('very')}</button></div></div><button class="btn btn-secondary" id="hintBtn">💡 ${L('hint')}</button><div id="hintBox" class="note-box hidden">${qText(q,'hint')||(lang==='es'?'Divide el escenario en antecedente, conducta, consecuencia y efecto futuro.':'Break the scenario into antecedent, behavior, consequence, and future effect.')}</div><div id="feedbackMount"></div></div>`;
+  qs('practiceMount').innerHTML=`<div class="question-card"><div class="question-head"><div><div class="question-meta">${task.id} · ${practiceCycleLabel(task.id)} · ${taskTitleDisplay(task)} · ${translatedDifficulty(q.difficulty)}</div><div style="font-size:10px;color:var(--ink-soft);font-weight:800;margin-top:4px">${lang==='es'?'La posición de la respuesta correcta se randomiza.':'Correct answer position is randomized.'}</div></div><div class="timer-pill" id="timePill">⏱ ${seconds}s</div></div><div class="question-text">${qText(q,'q')}</div><div id="opts">${Object.entries(answerOptions).map(([l,t])=>`<button class="option" data-answer="${l}"><span class="option-letter">${l}</span><span>${t}</span></button>`).join('')}</div><div class="confidence-panel"><div class="conf-label">${L('confidence')}</div><div class="conf-opts"><button class="conf-btn" data-conf="low">${L('unsure')}</button><button class="conf-btn" data-conf="mid">${L('somewhat')}</button><button class="conf-btn" data-conf="high">${L('very')}</button></div></div><button class="btn btn-secondary" id="hintBtn">💡 ${L('hint')}</button><div id="hintBox" class="note-box hidden">${qText(q,'hint')||(lang==='es'?'Divide el escenario en antecedente, conducta, consecuencia y efecto futuro.':'Break the scenario into antecedent, behavior, consequence, and future effect.')}</div><div id="feedbackMount"></div></div>`;
   let conf=null;
   document.querySelectorAll('[data-conf]').forEach(b=>b.onclick=()=>{conf=b.dataset.conf;document.querySelectorAll('[data-conf]').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')});
   qs('hintBtn').onclick=()=>qs('hintBox').classList.toggle('hidden');
