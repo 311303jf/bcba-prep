@@ -109,7 +109,7 @@ aside{width:300px}
 <script>
 (function(){
 'use strict';
-const STORAGE='bcba_full_v4_clean_i18n_state'; const KEY_STORAGE='bcba_full_v1_admin_key';
+const STORAGE='bcba_full_v5_task_locked_state'; const KEY_STORAGE='bcba_full_v1_admin_key';
 const DEFAULT_LANG='en'; let lang=localStorage.getItem('bcba_lang')||DEFAULT_LANG;
 const API_PROVIDER='anthropic';
 const MODEL='claude-haiku-4-5-20251001';
@@ -728,6 +728,53 @@ function showToast(msg){const t=document.createElement('div');t.className='toast
 function fingerprint(q){return String((q.q||'')+' '+Object.values(q.options||{}).join(' ')).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().slice(0,260)}
 function optionQuality(q){const vals=Object.values(q.options||{}).map(x=>String(x).trim().toLowerCase()); if(vals.length!==4)return false; if(new Set(vals).size!==4)return false; if(!['A','B','C','D'].includes(q.correct))return false; if(!q.q||q.q.length<70)return false; if(!q.rationale||q.rationale.length<60)return false; return true}
 function qualityCheck(q){const fp=fingerprint(q); if(state.usedFingerprints.includes(fp))return false; return optionQuality(q)}
+function taskForbiddenTerms(task){
+  const id=String(task?.id||'');
+  const title=String(task?.title||'').toLowerCase();
+  const broad=['reinforcement','punishment','escape','avoidance','schedule','token','extinction','motivating operation','mo ','stimulus control','stimulus discrimination','generalization','verbal operant','mand','tact','listener','matching law','behavioral momentum','functional analysis','preference assessment','prompt','prompting','shaping','chaining','group contingency'];
+  if(id==='A.1')return broad.concat(['differential','response cost','time-out','time out','antecedent intervention']);
+  if(id.startsWith('A.'))return broad.filter(x=>!title.includes(x));
+  if(id.startsWith('C.'))return ['escape','avoidance','token economy','verbal operant','mand','tact','matching law','behavioral momentum'];
+  if(id.startsWith('D.'))return ['escape','avoidance','token economy','verbal operant','mand','tact'];
+  return [];
+}
+function hasForbiddenContent(q,task){
+  const txt=String([q.q,Object.values(q.options||{}).join(' '),q.hint,q.rationale].join(' ')).toLowerCase();
+  return taskForbiddenTerms(task).some(term=>txt.includes(String(term).trim().toLowerCase()));
+}
+function taskEssentialKeywords(task){
+  const stop=new Set('identify distinguish between among examples ways from the and or of to a an as in on for with that this these those e g i e into about apply design evaluate select make data based relevant appropriate procedure procedures behavior behavioral analysis professional science guided'.split(' '));
+  return String(task?.title||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w.length>5&&!stop.has(w)).slice(0,8);
+}
+function questionAligned(q,dom,concept){
+  const task=findTaskByTitle(dom.id,concept);
+  if(!q||!optionQuality(q))return false;
+  if(String(q.domain)!==String(dom.id))return false;
+  if(String(q.concept||'')!==String(concept))return false;
+  if(hasForbiddenContent(q,task))return false;
+  const all=String([q.q,Object.values(q.options||{}).join(' '),q.rationale].join(' ')).toLowerCase();
+  if(task.id==='A.1'){
+    return ['description','prediction','control'].filter(k=>all.includes(k)).length>=2 && all.includes('science');
+  }
+  const keys=taskEssentialKeywords(task);
+  if(keys.length===0)return true;
+  return keys.some(k=>all.includes(k));
+}
+function generateTaskFallback(dom,concept,mode='guided'){
+  const task=findTaskByTitle(dom.id,concept);
+  const title=task.title;
+  if(task.id==='A.1'){
+    return {domain:dom.id,taskId:task.id,concept:title,difficulty:mode,q:'A behavior analyst is explaining why behavior analysis is considered a science. Which statement best represents the scientific goals emphasized in behavior analysis?',options:{A:'Behavior analysis seeks to describe behavior accurately, predict when it is likely to occur, and control behavior by identifying functional environmental relations.',B:'Behavior analysis seeks to label internal traits that explain why behavior occurs across situations.',C:'Behavior analysis seeks primarily to decide whether behavior is appropriate or inappropriate.',D:'Behavior analysis seeks to provide therapy based mainly on personal clinical intuition.'},correct:'A',hint:'For A.1, focus only on the three scientific goals: description, prediction, and control.',rationale:'Task A.1 is about the goals of behavior analysis as a science: description, prediction, and control. Option A directly names those goals and frames them as functional environmental relations. The other options rely on mentalistic labels, moral judgments, or intuition rather than the scientific goals of behavior analysis.'};
+  }
+  const short=shortTaskTitle(title).toLowerCase();
+  return {domain:dom.id,taskId:task.id,concept:title,difficulty:mode,q:`A BCBA candidate is studying official BACB Task ${task.id}: "${title}" Which response most directly matches what this task requires the candidate to do?`,options:{A:`Apply the exact skill described in Task ${task.id}: ${short}.`,B:'Choose an intervention because it is familiar, without linking it to the stated task requirement.',C:'Focus on an unrelated ABA concept that may appear elsewhere in the test content outline.',D:'Use personal opinion instead of the specific behavior-analytic requirement in the task.'},correct:'A',hint:`Stay locked on Task ${task.id}. The correct answer must match the official wording of this task, not a nearby ABA topic.`,rationale:`This item is locked to Task ${task.id}. The correct option directly reflects the official task: ${title}. The distractors are incorrect because they shift away from the selected task, rely on unrelated concepts, or use opinion rather than the required behavior-analytic skill.`};
+}
+function taskScopePrompt(dom,concept){
+  const task=findTaskByTitle(dom.id,concept);
+  const forbid=taskForbiddenTerms(task);
+  const essentials=task.id==='A.1'?'description, prediction, control, and behavior analysis as a science':task.title;
+  return `TASK LOCK REQUIREMENTS:\n- Generate ONLY for official BACB Task ${task.id}: "${task.title}".\n- The item must directly assess: ${essentials}.\n- Do NOT drift to nearby ABA concepts.\n${forbid.length?'- Forbidden concepts/terms for this task: '+forbid.join(', ')+'.\n':''}- If you cannot create an item locked to Task ${task.id}, return a simple item about the wording of Task ${task.id} rather than another ABA topic.`;
+}
 // API keys must never be hardcoded in a public HTML file.
 // The key is stored only in this browser's localStorage after you enter it through the hidden admin modal.
 function getAdminKey(){return localStorage.getItem(KEY_STORAGE)||''}
@@ -783,7 +830,23 @@ Keep ABA technical terms in English even in Spanish fields (reinforcement, extin
 function lc(content,field){return content[field+'_'+lang]||content[field+'_en']||content[field]||'';}
 function lcArr(content,field){return content[field+'_'+lang]||content[field+'_en']||content[field]||[];}
 
-async function generateQuestion(target){const dom=DOMAINS.find(d=>d.id===target.domain)||DOMAINS[1];const concept=target.concept||pickConcept(dom.id);const mode=target.mode||'guided';const length=mode==='exam'?'3 to 4 sentence clinical scenario':'2 to 3 sentence clinical scenario';const prompt=`Create ONE original BCBA exam preparation clinical practice item. Do not mention technology. Use ${lang==='es'?'Spanish':'English'}. Align to BACB 6th Edition Test Content Outline. Domain ${dom.id}: ${dom.title}. Official BACB task ${findTaskByTitle(dom.id,concept).id}: ${concept}. Difficulty mode: ${mode}. Requirements: ${length}; four plausible options; no repeated option meanings; one clearly correct answer; strong distractors; clinical rationale explaining why correct is correct and why distractors are wrong. Return ONLY valid JSON with keys: domain, concept, difficulty, q, options {A,B,C,D}, correct, hint, rationale. The concept value must be exactly: "${concept}".`;try{const raw=await callProvider(prompt,1600);const q=cleanJson(raw);if(qualityCheck(q))return q;throw new Error('quality failed')}catch(e){const pool=FALLBACK_QUESTIONS.filter(x=>x.domain===dom.id||x.concept===concept);return JSON.parse(JSON.stringify(pool[Math.floor(Math.random()*pool.length)]||FALLBACK_QUESTIONS[Math.floor(Math.random()*FALLBACK_QUESTIONS.length)]))}}
+async function generateQuestion(target){
+  const dom=DOMAINS.find(d=>d.id===target.domain)||DOMAINS[1];
+  const concept=target.concept||pickConcept(dom.id);
+  const task=findTaskByTitle(dom.id,concept);
+  const mode=target.mode||'guided';
+  const length=mode==='exam'?'3 to 4 sentence clinical scenario':'2 to 3 sentence clinical scenario';
+  const prompt=`Create ONE original BCBA exam preparation practice item. Do not mention technology. Use ${lang==='es'?'Spanish':'English'}. Align to BACB 6th Edition Test Content Outline.\n\n${taskScopePrompt(dom,concept)}\n\nDomain ${dom.id}: ${dom.title}. Difficulty mode: ${mode}. Requirements: ${length}; four plausible options; no repeated option meanings; one clearly correct answer; strong distractors; clinical rationale explaining why correct is correct and why distractors are wrong.\n\nReturn ONLY valid JSON with keys: domain, taskId, concept, difficulty, q, options {A,B,C,D}, correct, hint, rationale. domain must be exactly "${dom.id}". taskId must be exactly "${task.id}". concept must be exactly: "${concept}".`;
+  try{
+    const raw=await callProvider(prompt,1700);
+    const q=cleanJson(raw);
+    q.domain=dom.id; q.taskId=task.id; q.concept=concept;
+    if(questionAligned(q,dom,concept))return q;
+    throw new Error('task alignment failed');
+  }catch(e){
+    return generateTaskFallback(dom,concept,mode);
+  }
+}
 function pickConcept(domId){const d=DOMAINS.find(x=>x.id===domId)||DOMAINS[1];let low=d.concepts[0];let min=999;d.concepts.forEach(c=>{const rec=state.domains[domId].concepts[c]||{total:0,correct:0,last:0};const score=(rec.correct/(rec.total||1))*60 + Math.min(40,(Date.now()-rec.last)/86400000); if(score<min){min=score;low=c}});return low}
 function recommendedTarget(){let worst='B',score=999;DOMAINS.forEach(d=>{const r=state.domains[d.id];const s=(r.stability||0)*.45+(r.retention||0)*.35+(r.accuracy||0)*.2 - d.weight*.4;if(s<score){score=s;worst=d.id}});return{domain:worst,concept:pickConcept(worst),mode:'guided'}}
 async function ensureQueue(target=18){
@@ -794,7 +857,7 @@ async function ensureQueue(target=18){
       const t=recommendedTarget();
       const q=await generateQuestion(t);
       const fp=fingerprint(q);
-      if(!state.usedFingerprints.includes(fp)&&optionQuality(q)){
+      if(!state.usedFingerprints.includes(fp)&&questionAligned(q,DOMAINS.find(d=>d.id===q.domain)||DOMAINS[1],q.concept)){
         state.queue.push(q);
         state.usedFingerprints.push(fp);
         if(state.usedFingerprints.length>120)state.usedFingerprints=state.usedFingerprints.slice(-120);
@@ -815,7 +878,7 @@ async function aggressivePreload(){
         generateQuestion({domain:d.id,concept:pickConcept(d.id),mode:'guided'})
           .then(q=>{
             const fp=fingerprint(q);
-            if(!state.usedFingerprints.includes(fp)&&optionQuality(q)){
+            if(!state.usedFingerprints.includes(fp)&&questionAligned(q,DOMAINS.find(d=>d.id===q.domain)||DOMAINS[1],q.concept)){
               state.queue.push(q);
               state.usedFingerprints.push(fp);
               if(state.usedFingerprints.length>120)state.usedFingerprints=state.usedFingerprints.slice(-120);
@@ -999,52 +1062,42 @@ async function renderStudy(){
 
 async function renderPractice(target){
   state.currentView='practice';bindNav();updateSide();
-  target=target||recommendedTarget();
+  target=target||{domain:currentDomain,concept:currentConcept||pickConcept(currentDomain),mode:'guided'};
   currentDomain=target.domain||currentDomain;
   currentConcept=target.concept||pickConcept(currentDomain);
   currentMode=target.mode||'guided';
+  const dom=DOMAINS.find(d=>d.id===currentDomain)||DOMAINS[1];
+  const task=findTaskByTitle(currentDomain,currentConcept);
 
-  // Show shell immediately
-  qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${L('clinicalPractice')}</div><div class="page-sub">${L('practiceSub')}</div></div><div class="topbar-right">${langSwitch()}<button class="btn btn-secondary" id="toDash">${L('backDashboard')}</button></div></div><div class="practice-wrap" id="practiceMount"></div>`;
+  qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${L('clinicalPractice')}</div><div class="page-sub">Task-locked practice · ${task.id} · ${task.title}</div></div><div class="topbar-right">${langSwitch()}<button class="btn btn-secondary" id="toDash">${L('backDashboard')}</button></div></div><div class="practice-wrap" id="practiceMount"></div>`;
   bindLang();
   const toDashEl=document.getElementById('toDash');
   if(toDashEl)toDashEl.onclick=renderDashboard;
 
-  // Get question INSTANTLY — queue first, then smart fallback (no await)
-  const matchIndex=state.queue.findIndex(q=>q.domain===currentDomain && q.concept===currentConcept);
-  const domainIndex=state.queue.findIndex(q=>q.domain===currentDomain);
+  // Get ONLY a question that matches the selected official task. Never reuse a domain-only item.
+  const matchIndex=state.queue.findIndex(q=>questionAligned(q,dom,currentConcept));
   if(matchIndex>=0){
     currentQuestion=state.queue.splice(matchIndex,1)[0];
-  } else if(domainIndex>=0){
-    currentQuestion=state.queue.splice(domainIndex,1)[0];
-    currentQuestion.concept=currentConcept;
   } else {
-    // Smart fallback — force selected official task context
-    const pool=FALLBACK_QUESTIONS.filter(q=>q.domain===currentDomain);
-    const src=pool.length?pool:FALLBACK_QUESTIONS;
-    const unused=src.filter(q=>!state.usedFingerprints.includes(fingerprint(q)));
-    const pick=unused.length?unused:src;
-    currentQuestion=JSON.parse(JSON.stringify(pick[Math.floor(Math.random()*pick.length)]));
-    currentQuestion.domain=currentDomain;
-    currentQuestion.concept=currentConcept;
+    currentQuestion=generateTaskFallback(dom,currentConcept,currentMode);
   }
+  currentQuestion.domain=currentDomain;
+  currentQuestion.taskId=task.id;
+  currentQuestion.concept=currentConcept;
   save();
-
-  // Render immediately with what we have
   renderQuestion();
 
-  // Background: generate real question for NEXT time and keep queue full
+  // Background: generate a stronger task-locked item for the NEXT question.
   generateQuestion({domain:currentDomain,concept:currentConcept,mode:currentMode})
     .then(q=>{
       const fp=fingerprint(q);
-      if(!state.usedFingerprints.includes(fp)&&optionQuality(q)){
-        state.queue.unshift(q); // put at front so next practice is fresh
+      if(!state.usedFingerprints.includes(fp)&&questionAligned(q,dom,currentConcept)){
+        state.queue.unshift(q);
         state.usedFingerprints.push(fp);
         if(state.usedFingerprints.length>120)state.usedFingerprints=state.usedFingerprints.slice(-120);
         save();
       }
     }).catch(()=>{});
-  startPreload();
 }
 function renderQuestion(){const q=currentQuestion;const d=DOMAINS.find(x=>x.id===q.domain)||DOMAINS[1];const opts=qOptions(q);seconds=0;if(timer)clearInterval(timer);timer=setInterval(()=>{seconds++;const el=qs('timePill');if(el)el.textContent=`⏱ ${seconds}s`},1000);qs('practiceMount').innerHTML=`<div class="question-card"><div class="question-head"><div><div class="question-meta">${findTaskByTitle(q.domain,q.concept).id} · ${q.concept||'Clinical Reasoning'} · ${translatedDifficulty(q.difficulty)}</div></div><div class="timer-pill" id="timePill">⏱ 0s</div></div><div class="question-text">${qText(q,'q')}</div><div id="opts">${Object.entries(opts).map(([l,t])=>`<button class="option" data-answer="${l}"><span class="option-letter">${l}</span><span>${t}</span></button>`).join('')}</div><div class="confidence-panel"><div class="conf-label">${L('confidence')}</div><div class="conf-opts"><button class="conf-btn" data-conf="low">${L('unsure')}</button><button class="conf-btn" data-conf="mid">${L('somewhat')}</button><button class="conf-btn" data-conf="high">${L('very')}</button></div></div><button class="btn btn-secondary" id="hintBtn">💡 ${L('hint')}</button><div id="hintBox" class="note-box hidden">${qText(q,'hint')||(lang==='es'?'Divide el escenario en antecedente, conducta, consecuencia y efecto futuro.':'Break the scenario into antecedent, behavior, consequence, and future effect.')}</div><div id="feedbackMount"></div></div>`;let conf=null;document.querySelectorAll('[data-conf]').forEach(b=>b.onclick=()=>{conf=b.dataset.conf;document.querySelectorAll('[data-conf]').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')});qs('hintBtn').onclick=()=>qs('hintBox').classList.toggle('hidden');document.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>answerQuestion(b.dataset.answer,conf||'none'))}
 function answerQuestion(letter,conf){if(timer)clearInterval(timer);const q=currentQuestion;const ok=letter===q.correct;document.querySelectorAll('[data-answer]').forEach(b=>{b.disabled=true;if(b.dataset.answer===q.correct)b.classList.add('correct');else if(b.dataset.answer===letter)b.classList.add('wrong')});recordAnswer(q,letter,ok,conf,seconds);qs('feedbackMount').innerHTML=`<div class="feedback ${ok?'good':'bad'}"><div class="feedback-title">${ok?L('correctMsg'):L('incorrectMsg')}</div><p>${qText(q,'rationale')}</p>${!ok&&conf==='high'?`<p style="margin-top:8px"><strong>${L('confidenceAlert')}</strong> ${L('confidenceAlertText')}</p>`:''}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" id="nextQ">${L('nextItem')}</button><button class="btn btn-secondary" id="studyIt">${L('reviewConcept')}</button><button class="btn btn-gold" id="challengeIt">${L('examRealityMode')}</button></div>`;qs('nextQ').onclick=()=>renderPractice();qs('studyIt').onclick=()=>{currentDomain=q.domain;currentConcept=q.concept;renderStudy()};qs('challengeIt').onclick=()=>renderChallenge(q.domain)}
