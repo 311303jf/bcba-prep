@@ -1,597 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>BCBA Study Hub — Full Version Prototype</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900&family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --green:#0B6B52;--green-dark:#084D3B;--green-light:#E0F3EC;--green-mid:#5CC9A0;
+  --green:#0B6B52;--green-light:#E0F3EC;--green-mid:#5CC9A0;--green-dark:#084D3B;
   --gold:#C9860B;--gold-light:#FEF3DC;--gold-border:#F5C76A;
   --blue:#2460A7;--blue-light:#E8F0FB;--blue-border:#8AB4E8;
+  --red:#C0392B;--red-light:#FDECEA;--red-border:#F0A099;
   --purple:#6D28D9;--purple-light:#F3EEFF;--purple-border:#C4B5FD;
   --pink:#BE185D;--pink-light:#FFF0F6;--pink-border:#F9A8D4;
-  --red:#C0392B;--red-light:#FDECEA;--red-border:#F0A099;
-  --ok:#3B6D11;--ok-light:#EDF7E0;--ok-border:#97C459;
   --ink:#141412;--ink-mid:#444440;--ink-soft:#777772;--ink-faint:#ADADAA;
   --surface:#FAFAF8;--white:#FFFFFF;--border:#E4E4E0;--border-soft:#EFEFEC;
-  --radius-sm:10px;--radius-md:16px;--radius-lg:22px;--radius-xl:30px;
-  --shadow-sm:0 2px 8px rgba(0,0,0,.06);
-  --shadow-md:0 10px 28px rgba(0,0,0,.10);
-  --shadow-lg:0 22px 68px rgba(0,0,0,.14);
-  --font-display:'Fraunces',Georgia,serif;
-  --font-body:'DM Sans',system-ui,sans-serif;
+  --radius-sm:8px;--radius-md:14px;--radius-lg:20px;--radius-xl:28px;
+  --shadow-sm:0 2px 8px rgba(0,0,0,.06);--shadow-md:0 8px 28px rgba(0,0,0,.09);--shadow-lg:0 20px 60px rgba(0,0,0,.13);
+  --font-display:'Fraunces',Georgia,serif;--font-body:'DM Sans',system-ui,sans-serif;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:var(--font-body);background:var(--surface);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
-button,input,select{font-family:var(--font-body)}
-button{cursor:pointer}
-.screen{display:none}
-.screen.active{display:block}
-
-/* LANDING */
-#landing.screen.active{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:
-  radial-gradient(circle at 15% 15%, rgba(224,243,236,.9), transparent 32%),
-  radial-gradient(circle at 85% 25%, rgba(254,243,220,.85), transparent 28%),
-  var(--surface);}
-.land-card{background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:var(--radius-xl);padding:38px;max-width:680px;width:100%;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;backdrop-filter:blur(8px)}
-.land-card::before{content:'';position:absolute;top:-70px;right:-70px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle,var(--green-light) 0%,transparent 70%);pointer-events:none;z-index:0}
-.land-card>*{position:relative;z-index:1}
-.brand-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
-.brand-left{display:flex;align-items:center;gap:14px}
-.brand-icon{background:var(--green-light);border-radius:19px;width:62px;height:62px;display:flex;align-items:center;justify-content:center;font-size:31px;flex-shrink:0;border:2px solid var(--green-mid)}
-.brand-name{font-family:var(--font-display);font-size:32px;font-weight:900;line-height:1;color:var(--ink)}
-.brand-tagline{font-size:12px;color:var(--ink-soft);margin-top:4px;font-weight:700}
-.hero-box{background:linear-gradient(135deg,var(--green-dark),var(--green));border-radius:var(--radius-lg);padding:22px 24px;margin:18px 0;color:white}
-.hero-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.13em;font-weight:900;opacity:.8;margin-bottom:8px}
-.hero-heading{font-family:var(--font-display);font-size:27px;font-weight:900;line-height:1.18;margin-bottom:8px}
-.hero-sub{font-size:13.5px;opacity:.88;line-height:1.75}
-.position-box{background:var(--gold-light);border:1px solid var(--gold-border);border-radius:var(--radius-md);padding:15px 16px;margin:14px 0;font-size:13px;color:#6f4703;font-weight:700;line-height:1.65}
-.trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}
-.trust-item{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:11px 12px;font-size:12px;color:var(--ink-mid);display:flex;align-items:center;gap:8px;font-weight:800}
-.cta-btn{width:100%;background:linear-gradient(135deg,var(--green-dark),var(--green));color:white;border:none;border-radius:var(--radius-md);padding:17px;font-size:16px;font-weight:900;letter-spacing:.01em;transition:all .2s;box-shadow:0 4px 22px rgba(11,107,82,.34);margin-top:7px}
-.cta-btn:hover{transform:translateY(-2px);box-shadow:0 9px 30px rgba(11,107,82,.42)}
-.checklist{display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}
-.check-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft);font-weight:700}
-.check-dot{width:17px;height:17px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--green);flex-shrink:0;font-weight:900}
-
-/* language */
-.lang-switch{display:flex;gap:4px;background:var(--border-soft);border-radius:999px;padding:3px}
-.lang-btn{border:none;background:transparent;color:var(--ink-soft);border-radius:999px;padding:6px 11px;font-size:11px;font-weight:900;cursor:pointer;transition:all .15s}
-.lang-btn.active{background:var(--white);color:var(--green);box-shadow:var(--shadow-sm)}
-
-/* APP */
-#app.screen.active{display:block}
-.layout{display:flex;height:100vh;overflow:hidden}
-aside{width:255px;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
-.sidebar-logo{padding:20px;border-bottom:1px solid var(--border-soft)}
-.sidebar-badge{font-size:9px;color:var(--green);font-weight:900;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px}
-.sidebar-title{font-family:var(--font-display);font-size:23px;font-weight:900;color:var(--ink)}
-.sidebar-sub{font-size:11px;color:var(--ink-soft);margin-top:3px;font-weight:700}
-.sidebar-user{padding:13px 16px;background:var(--green-light);border-bottom:1px solid var(--border-soft);display:flex;align-items:center;gap:10px}
-.user-avatar{width:35px;height:35px;border-radius:50%;background:linear-gradient(135deg,var(--green-dark),var(--green));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:white;flex-shrink:0}
-.user-info{font-size:12px;color:var(--green-dark);font-weight:900;line-height:1.35}
-.user-plan{font-size:10px;color:var(--ink-soft);font-weight:700}
-nav{padding:10px 0;flex:1;overflow-y:auto}
-.nav-section{font-size:9px;font-weight:900;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);padding:12px 16px 4px}
-.nav-btn{width:100%;padding:11px 16px;text-align:left;border:none;background:transparent;color:var(--ink-soft);font-size:13px;cursor:pointer;border-left:3px solid transparent;display:flex;gap:10px;align-items:center;font-weight:700;transition:all .15s}
-.nav-btn:hover{background:var(--surface);color:var(--ink)}
-.nav-btn.active{background:var(--green-light);color:var(--green-dark);border-left-color:var(--green);font-weight:900}
-.sidebar-footer{border-top:1px solid var(--border-soft);padding:15px 16px}
-.prog-label{font-size:10px;font-weight:900;color:var(--ink-soft);margin-bottom:7px;display:flex;justify-content:space-between}
-.progress-bar{height:7px;background:var(--border-soft);border-radius:999px;margin-bottom:8px;overflow:hidden}
-.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green-mid));border-radius:999px;width:73%;transition:width .5s cubic-bezier(.4,0,.2,1)}
-.streak-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--gold);font-weight:900;margin-top:10px}
-main{flex:1;overflow-y:auto;padding:28px;background:var(--surface)}
-
-.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:22px;flex-wrap:wrap}
-.page-title{font-family:var(--font-display);font-size:31px;font-weight:900;color:var(--ink);margin-bottom:4px;line-height:1.16}
-.page-sub{font-size:13px;color:var(--ink-soft);line-height:1.65;font-weight:700}
-.topbar-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.btn{border:none;border-radius:var(--radius-sm);padding:10px 16px;font-size:13px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;letter-spacing:.01em}
-.btn-primary{background:linear-gradient(135deg,var(--green-dark),var(--green));color:white;box-shadow:0 3px 13px rgba(11,107,82,.28)}
-.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(11,107,82,.38)}
-.btn-secondary{background:var(--white);color:var(--ink-mid);border:1.5px solid var(--border)}
-.btn-secondary:hover{border-color:var(--ink-soft);color:var(--ink)}
-.btn-gold{background:linear-gradient(135deg,var(--gold),#E8A030);color:white;box-shadow:0 3px 12px rgba(201,134,11,.26)}
-.btn-purple{background:linear-gradient(135deg,#4C1D95,var(--purple));color:white}
-.btn-pink{background:linear-gradient(135deg,#831843,var(--pink));color:white}
-
-/* DASHBOARD */
-.dash-hero{display:grid;grid-template-columns:1.35fr .65fr;gap:20px;align-items:center;background:linear-gradient(135deg,var(--green-dark),var(--green));color:white;border-radius:var(--radius-xl);padding:26px;box-shadow:var(--shadow-md);margin-bottom:18px;overflow:hidden;position:relative}
-.dash-hero:after{content:'';position:absolute;right:-40px;bottom:-70px;width:210px;height:210px;border-radius:50%;background:rgba(255,255,255,.08)}
-.dash-hero>*{position:relative;z-index:1}
-.hero-dash-label{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.13em;opacity:.75;margin-bottom:7px}
-.hero-dash-title{font-family:var(--font-display);font-size:30px;font-weight:900;line-height:1.15;margin-bottom:8px}
-.hero-dash-sub{font-size:13px;line-height:1.75;opacity:.88}
-.readiness-ring{--p:73;width:150px;height:150px;border-radius:50%;margin-left:auto;background:conic-gradient(var(--gold) calc(var(--p)*1%),rgba(255,255,255,.18) 0);display:flex;align-items:center;justify-content:center;position:relative}
-.readiness-ring:after{content:'';position:absolute;inset:12px;border-radius:50%;background:var(--green-dark)}
-.ring-content{position:relative;z-index:1;text-align:center}
-.ring-num{font-family:var(--font-display);font-size:39px;font-weight:900;line-height:1}
-.ring-label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;opacity:.78;font-weight:900;margin-top:4px}
-.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:18px}
-.metric{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-md);padding:17px;position:relative;overflow:hidden}
-.metric::after{content:'';position:absolute;bottom:-22px;right:-22px;width:68px;height:68px;border-radius:50%;background:var(--green-light);opacity:.55}
-.metric-value{font-family:var(--font-display);font-size:29px;font-weight:900;color:var(--green);line-height:1}
-.metric-label{font-size:11px;color:var(--ink-soft);margin-top:4px;font-weight:800}
-.dash-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;margin-bottom:20px}
-.panel{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.03)}
-.panel-label{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px}
-.focus-title{font-family:var(--font-display);font-size:24px;font-weight:900;margin-bottom:7px;color:var(--ink)}
-.reason{background:var(--blue-light);border:1px solid var(--blue-border);border-left:4px solid var(--blue);border-radius:var(--radius-sm);padding:13px;font-size:13px;line-height:1.72;color:#184b84;margin:12px 0}
-.session-list{display:flex;flex-direction:column;gap:8px}
-.session-item{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--ink-mid);font-weight:800;display:flex;justify-content:space-between;gap:12px}
-.session-item strong{color:var(--green-dark)}
-.domain-title-row{font-family:var(--font-display);font-size:22px;font-weight:900;margin:22px 0 12px;color:var(--ink)}
-.domain-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px}
-.domain-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:17px;transition:all .2s}
-.domain-card:hover{border-color:var(--green-mid);box-shadow:var(--shadow-md);transform:translateY(-2px)}
-.pill{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:4px 10px;font-size:10px;font-weight:900;letter-spacing:.05em;margin-bottom:10px;text-transform:uppercase}
-.pill.green{background:var(--green-light);color:var(--green)}
-.pill.gold{background:var(--gold-light);color:var(--gold);border:1px solid var(--gold-border)}
-.pill.purple{background:var(--purple-light);color:var(--purple);border:1px solid var(--purple-border)}
-.pill.pink{background:var(--pink-light);color:var(--pink);border:1px solid var(--pink-border)}
-.dom-name{font-size:15px;font-weight:900;line-height:1.32;color:var(--ink)}
-.dom-meta{font-size:11px;color:var(--ink-soft);margin-top:3px;font-weight:700}
-.dom-bars{margin-top:12px;display:flex;flex-direction:column;gap:7px}
-.mini-label{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-soft);font-weight:900}
-.mini-track{height:6px;background:var(--border-soft);border-radius:99px;overflow:hidden}
-.mini-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green-mid));border-radius:99px}
-
-/* Learn/Practice */
-.learn-wrap,.practice-wrap{max-width:860px}
-.learn-card,.question-card,.complete-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:26px;box-shadow:var(--shadow-sm)}
-.module-label{font-size:11px;font-weight:900;color:var(--green);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
-.module-title{font-family:var(--font-display);font-size:29px;font-weight:900;margin-bottom:10px;color:var(--ink)}
-.definition{background:var(--surface);border-left:4px solid var(--green);border-radius:var(--radius-sm);padding:16px;margin:14px 0;font-size:14px;line-height:1.8;color:var(--ink-mid)}
-.note-box{background:var(--blue-light);border:1px solid var(--blue-border);border-radius:var(--radius-sm);padding:14px;font-size:13px;line-height:1.75;margin:12px 0;color:#184b84}
-.path-strip{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
-.path-chip{font-size:11px;font-weight:900;border-radius:999px;padding:6px 11px;border:1px solid var(--border);background:#fff;color:var(--ink-soft)}
-.path-chip.done{background:var(--ok-light);border-color:var(--ok-border);color:var(--ok)}
-.path-chip.active{background:var(--green-light);border-color:var(--green-mid);color:var(--green-dark)}
-.question-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.question-meta{font-size:12px;color:var(--ink-soft);font-weight:800}
-.timer-pill{font-size:12px;font-weight:900;border-radius:999px;padding:6px 12px;display:flex;align-items:center;gap:5px;color:var(--green);background:var(--green-light);border:1px solid var(--green-mid)}
-.timer-pill.exam{color:var(--gold);background:var(--gold-light);border-color:var(--gold-border)}
-.question-text{font-size:15px;line-height:1.75;font-weight:600;margin-bottom:16px;background:var(--surface);border-radius:var(--radius-sm);padding:16px;color:var(--ink);border-left:4px solid var(--border)}
-.option{width:100%;text-align:left;background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 15px;margin-bottom:8px;cursor:pointer;font-size:13.5px;line-height:1.6;font-weight:700;transition:all .15s;display:flex;align-items:flex-start;gap:10px}
-.option-letter{width:25px;height:25px;border-radius:50%;background:var(--surface);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:var(--ink-soft);flex-shrink:0;margin-top:1px;transition:all .15s}
-.option:hover:not(:disabled){border-color:var(--green);background:var(--green-light)}
-.option:hover:not(:disabled) .option-letter{background:var(--green);border-color:var(--green);color:white}
-.option.correct{background:var(--ok-light);border-color:var(--ok-border)}
-.option.correct .option-letter{background:var(--ok);border-color:var(--ok);color:white}
-.option.wrong{background:var(--red-light);border-color:var(--red-border)}
-.option.wrong .option-letter{background:var(--red);border-color:var(--red);color:white}
-.option:disabled{cursor:default}
-.confidence-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin:12px 0}
-.conf-label{font-size:11px;font-weight:900;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
-.conf-opts{display:flex;gap:8px}
-.conf-btn{flex:1;border:1.5px solid var(--border);background:var(--white);border-radius:var(--radius-sm);padding:10px 6px;font-size:12px;font-weight:800;color:var(--ink-mid);transition:all .15s;text-align:center}
-.conf-btn.active{border-color:var(--green);background:var(--green-light);color:var(--green)}
-.feedback{border-radius:var(--radius-md);padding:16px;font-size:13px;line-height:1.75;margin:14px 0}
-.feedback.good{background:var(--ok-light);border:1px solid var(--ok-border)}
-.feedback.bad{background:var(--red-light);border:1px solid var(--red-border)}
-.feedback-title{font-size:15px;font-weight:900;margin-bottom:6px}
-.feedback.good .feedback-title{color:var(--ok)}
-.feedback.bad .feedback-title{color:var(--red)}
-.exam-rules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
-.rule-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:15px;text-align:center}
-.rule-value{font-family:var(--font-display);font-size:28px;font-weight:900;color:var(--gold)}
-.rule-label{font-size:11px;color:var(--ink-soft);font-weight:800;margin-top:3px}
-.analytics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:13px}
-.insight-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px}
-.insight-value{font-family:var(--font-display);font-size:31px;font-weight:900;color:var(--green)}
-.insight-title{font-size:13px;font-weight:900;margin-top:3px}
-.insight-copy{font-size:12px;color:var(--ink-soft);line-height:1.6;margin-top:6px;font-weight:700}
-
-/* Admin */
-.admin-panel{display:none;position:fixed;right:18px;bottom:18px;z-index:50;background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-lg);padding:16px;width:min(410px,calc(100vw - 36px))}
-.admin-panel.active{display:block}
-.admin-panel h3{font-family:var(--font-display);font-size:20px;margin-bottom:8px}
-.admin-panel p{font-size:12px;color:var(--ink-soft);line-height:1.5;margin-bottom:10px;font-weight:700}
-.admin-input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px;font-size:12px;margin-bottom:9px}
-.admin-row{display:flex;gap:8px;flex-wrap:wrap}
-
-@media(max-width:840px){
-  .layout{display:block;height:auto}
-  aside{width:100%}
-  nav{display:flex;overflow-x:auto;padding:0}
-  .nav-section{display:none}
-  .nav-btn{white-space:nowrap;border-left:none;border-bottom:3px solid transparent;padding:10px 12px}
-  .nav-btn.active{border-left:none;border-bottom-color:var(--green)}
-  main{padding:16px}
-  .dash-hero,.dash-grid{grid-template-columns:1fr}
-  .readiness-ring{margin:0}
-  .trust-grid,.exam-rules{grid-template-columns:1fr}
-  .land-card{padding:26px}
-}
+*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{font-family:var(--font-body);background:var(--surface);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}button,input,select,textarea{font-family:var(--font-body)}button{cursor:pointer}.hidden{display:none!important}
+.screen{display:none}.screen.active{display:block}.center-screen.active{display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;background:var(--surface)}
+.land-card,.onboard-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);padding:36px;max-width:620px;width:100%;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}.land-card::before{content:'';position:absolute;top:-70px;right:-70px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,var(--green-light) 0%,transparent 70%);pointer-events:none}.brand-row{display:flex;align-items:center;gap:14px;margin-bottom:20px}.brand-icon{background:var(--green-light);border-radius:18px;width:60px;height:60px;display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0;border:2px solid var(--green-mid)}.brand-name{font-family:var(--font-display);font-size:30px;font-weight:900;line-height:1;color:var(--ink)}.brand-tagline{font-size:12px;color:var(--ink-soft);margin-top:4px;font-weight:600}.hero-box{background:linear-gradient(135deg,var(--green-dark),var(--green));border-radius:var(--radius-md);padding:20px;margin:18px 0;color:white}.hero-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.12em;font-weight:800;opacity:.8;margin-bottom:6px}.hero-heading{font-family:var(--font-display);font-size:22px;font-weight:800;line-height:1.25;margin-bottom:7px}.hero-sub{font-size:13px;opacity:.86;line-height:1.65}.trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:15px 0}.trust-item{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:11px 12px;font-size:12px;color:var(--ink-mid);display:flex;align-items:center;gap:8px;font-weight:600}.cta-btn{width:100%;background:linear-gradient(135deg,var(--green-dark),var(--green));color:white;border:none;border-radius:var(--radius-md);padding:16px;font-size:16px;font-weight:800;letter-spacing:.01em;transition:all .2s;box-shadow:0 4px 20px rgba(11,107,82,.35);margin-top:8px}.cta-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(11,107,82,.45)}.checklist{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.check-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft);font-weight:600}.check-dot{width:16px;height:16px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--green);flex-shrink:0}
+.progress-dots{display:flex;gap:6px;margin-bottom:20px}.pdot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:all .3s}.pdot.active{background:var(--green);width:24px;border-radius:4px}.onboard-step{font-size:11px;font-weight:800;color:var(--green);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}.onboard-q{font-family:var(--font-display);font-size:25px;font-weight:800;color:var(--ink);margin-bottom:7px;line-height:1.25}.onboard-sub{font-size:13px;color:var(--ink-soft);margin-bottom:22px;line-height:1.6}.onboard-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}.onboard-opt{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius-md);padding:14px;font-size:13px;font-weight:700;color:var(--ink-mid);transition:all .15s;text-align:left}.onboard-opt:hover,.onboard-opt.selected{border-color:var(--green);color:var(--green);background:var(--green-light)}.onboard-opt .opt-emoji{display:block;font-size:22px;margin-bottom:6px}
+.layout{display:flex;height:100vh;overflow:hidden}aside{width:248px;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}.sidebar-logo{padding:20px;border-bottom:1px solid var(--border-soft)}.sidebar-badge{font-size:9px;color:var(--green);font-weight:900;letter-spacing:.16em;text-transform:uppercase;margin-bottom:4px}.sidebar-title{font-family:var(--font-display);font-size:22px;font-weight:900}.sidebar-sub{font-size:11px;color:var(--ink-soft);margin-top:3px;font-weight:600}.sidebar-user{padding:12px 16px;background:var(--green-light);border-bottom:1px solid var(--border-soft);display:flex;align-items:center;gap:10px}.user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--green-dark),var(--green));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:white}.user-info{font-size:11px;color:var(--green-dark);font-weight:800;line-height:1.4}.user-plan{font-size:10px;color:var(--ink-soft);font-weight:600}nav{padding:10px 0;flex:1;overflow-y:auto}.nav-section{font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);padding:12px 16px 4px}.nav-btn{width:100%;padding:10px 16px;text-align:left;border:none;background:transparent;color:var(--ink-soft);font-size:13px;border-left:3px solid transparent;display:flex;gap:10px;align-items:center;font-weight:600;transition:all .15s}.nav-btn:hover{background:var(--surface);color:var(--ink)}.nav-btn.active{background:var(--green-light);color:var(--green-dark);border-left-color:var(--green);font-weight:800}.sidebar-footer{border-top:1px solid var(--border-soft);padding:14px 16px}.prog-label{font-size:10px;font-weight:800;color:var(--ink-soft);margin-bottom:6px;display:flex;justify-content:space-between}.progress-bar{height:6px;background:var(--border-soft);border-radius:999px;margin-bottom:8px;overflow:hidden}.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green-mid));border-radius:999px;width:0%;transition:width .5s cubic-bezier(.4,0,.2,1)}main{flex:1;overflow-y:auto;padding:28px;background:var(--surface)}
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:22px;flex-wrap:wrap}.page-title{font-family:var(--font-display);font-size:30px;font-weight:900;color:var(--ink);margin-bottom:4px;line-height:1.15}.page-sub{font-size:13px;color:var(--ink-soft);line-height:1.65;font-weight:600}.topbar-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.lang-switch{display:flex;gap:4px;background:var(--border-soft);border-radius:999px;padding:3px}.lang-btn{border:none;background:transparent;color:var(--ink-soft);border-radius:999px;padding:5px 10px;font-size:11px;font-weight:800;transition:all .15s}.lang-btn.active{background:var(--white);color:var(--green);box-shadow:var(--shadow-sm)}.btn{border:none;border-radius:var(--radius-sm);padding:10px 16px;font-size:13px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:all .15s}.btn-primary{background:linear-gradient(135deg,var(--green-dark),var(--green));color:white;box-shadow:0 3px 12px rgba(11,107,82,.3)}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(11,107,82,.4)}.btn-secondary{background:var(--white);color:var(--ink-mid);border:1.5px solid var(--border)}.btn-secondary:hover{border-color:var(--ink-soft);color:var(--ink)}.btn-gold{background:linear-gradient(135deg,var(--gold),#E8A030);color:white;box-shadow:0 3px 12px rgba(201,134,11,.3)}
+.hero-dash{background:linear-gradient(135deg,var(--green-dark),var(--green));border-radius:var(--radius-xl);padding:24px;color:white;margin-bottom:18px;box-shadow:var(--shadow-md);display:grid;grid-template-columns:1.35fr .65fr;gap:18px;align-items:center}.hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.13em;font-weight:900;opacity:.75;margin-bottom:6px}.hero-title{font-family:var(--font-display);font-size:28px;font-weight:900;margin-bottom:7px}.hero-copy{font-size:13px;line-height:1.65;opacity:.85}.readiness-ring{width:142px;height:142px;border-radius:50%;background:conic-gradient(var(--gold) calc(var(--p)*1%),rgba(255,255,255,.22) 0);display:flex;align-items:center;justify-content:center;margin-left:auto;position:relative}.readiness-ring::after{content:'';position:absolute;inset:10px;border-radius:50%;background:var(--green-dark)}.readiness-content{position:relative;z-index:1;text-align:center}.readiness-num{font-family:var(--font-display);font-size:36px;font-weight:900;color:white;line-height:1}.readiness-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;opacity:.75;font-weight:800}.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px}.metric{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;position:relative;overflow:hidden}.metric-value{font-family:var(--font-display);font-size:28px;font-weight:900;color:var(--green);line-height:1}.metric-label{font-size:11px;color:var(--ink-soft);margin-top:4px;font-weight:700}.panel-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:14px;margin-bottom:16px}.panel{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow-sm)}.panel-title{font-size:14px;font-weight:900;color:var(--ink);margin-bottom:6px}.panel-sub{font-size:12px;color:var(--ink-soft);line-height:1.55;margin-bottom:13px}.focus-card{background:var(--gold-light);border:1px solid var(--gold-border);border-radius:var(--radius-md);padding:14px;margin-bottom:12px}.focus-concept{font-family:var(--font-display);font-size:21px;font-weight:900;color:var(--ink);margin-bottom:4px}.focus-reason{font-size:12px;line-height:1.65;color:var(--gold);font-weight:700}.session-list{display:flex;flex-direction:column;gap:8px}.session-item{display:flex;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;font-weight:700;color:var(--ink-mid)}
+.domain-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:12px}.domain-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;transition:all .2s}.domain-card:hover{border-color:var(--green-mid);box-shadow:var(--shadow-md);transform:translateY(-2px)}.domain-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:12px}.domain-code{font-size:10px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--green)}.domain-title{font-size:14px;font-weight:900;line-height:1.25;color:var(--ink)}.domain-meta{font-size:11px;color:var(--ink-soft);font-weight:700;margin-top:3px}.status-pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 9px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.stable{background:#EDF7E0;color:#3B6D11;border:1px solid #97C459}.review{background:var(--gold-light);color:var(--gold);border:1px solid var(--gold-border)}.risk{background:var(--red-light);color:var(--red);border:1px solid var(--red-border)}.bar-label{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-soft);font-weight:800;margin:10px 0 5px}.mini-bar{height:5px;background:var(--border-soft);border-radius:999px;overflow:hidden}.mini-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green-mid));border-radius:999px}.domain-actions{display:flex;gap:8px;margin-top:12px}.domain-actions .btn{flex:1;padding:8px 10px;font-size:12px}
+.learn-wrap,.practice-wrap{max-width:880px}.learn-card,.question-card,.complete-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:26px;box-shadow:var(--shadow-sm)}.module-label{font-size:11px;font-weight:900;color:var(--green);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}.module-title{font-family:var(--font-display);font-size:29px;font-weight:900;margin-bottom:10px;color:var(--ink)}.definition{background:var(--surface);border-left:4px solid var(--green);border-radius:var(--radius-sm);padding:16px;margin:14px 0;font-size:14px;line-height:1.8;color:var(--ink-mid)}.section-label{font-size:11px;font-weight:900;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px}.note-box{background:var(--blue-light);border:1px solid var(--blue-border);border-radius:var(--radius-sm);padding:14px;font-size:13px;line-height:1.75;margin:12px 0;color:var(--blue)}.question-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}.question-meta{font-size:12px;color:var(--ink-soft);font-weight:800}.timer-pill{font-size:12px;font-weight:900;border-radius:999px;padding:6px 12px;display:flex;align-items:center;gap:5px;color:var(--gold);background:var(--gold-light);border:1px solid var(--gold-border)}.question-text{font-size:15px;line-height:1.75;font-weight:600;margin-bottom:16px;background:var(--surface);border-radius:var(--radius-sm);padding:16px;color:var(--ink);border-left:3px solid var(--border)}.option{width:100%;text-align:left;background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 15px;margin-bottom:8px;font-size:13.5px;line-height:1.6;font-weight:600;transition:all .15s;display:flex;align-items:flex-start;gap:10px}.option-letter{width:24px;height:24px;border-radius:50%;background:var(--surface);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:var(--ink-soft);flex-shrink:0;margin-top:1px}.option:hover:not(:disabled){border-color:var(--green);background:var(--green-light)}.option.correct{background:#EDF7E0;border-color:#639922}.option.correct .option-letter{background:#639922;border-color:#639922;color:white}.option.wrong{background:var(--red-light);border-color:var(--red-border)}.option.wrong .option-letter{background:var(--red);border-color:var(--red);color:white}.feedback{border-radius:var(--radius-md);padding:16px;font-size:13px;line-height:1.75;margin:14px 0}.feedback.good{background:#EDF7E0;border:1px solid #97C459}.feedback.bad{background:var(--red-light);border:1px solid var(--red-border)}.feedback-title{font-size:15px;font-weight:900;margin-bottom:6px}.confidence-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin:12px 0}.conf-label{font-size:11px;font-weight:900;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}.conf-opts{display:flex;gap:8px}.conf-btn{flex:1;border:1.5px solid var(--border);background:var(--white);border-radius:var(--radius-sm);padding:10px 6px;font-size:12px;font-weight:800;color:var(--ink-mid);transition:all .15s;text-align:center}.conf-btn.selected{border-color:var(--green);background:var(--green-light);color:var(--green)}.loader{display:flex;align-items:center;justify-content:center;min-height:260px;text-align:center;color:var(--ink-soft);flex-direction:column;gap:10px}.spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--green);animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);border-radius:var(--radius-md);padding:14px 22px;font-size:14px;font-weight:800;box-shadow:var(--shadow-lg);z-index:200;display:flex;align-items:center;gap:10px;animation:toastIn .35s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;pointer-events:none;background:linear-gradient(135deg,var(--green-dark),var(--green));color:white}@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(16px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:50;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}.modal-bg.active{display:flex}.modal{background:var(--white);border-radius:var(--radius-xl);padding:28px;max-width:520px;width:100%;box-shadow:var(--shadow-lg)}.form-input{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;margin:8px 0 12px}.form-input:focus{outline:2px solid var(--green-light);border-color:var(--green)}
+@media(max-width:820px){.layout{display:block;height:auto}aside{width:100%;height:auto}nav{display:flex;overflow-x:auto;padding:0}.nav-section{display:none}.nav-btn{white-space:nowrap;border-left:none;border-bottom:3px solid transparent;padding:10px 12px}.nav-btn.active{border-left:none;border-bottom-color:var(--green)}main{padding:16px}.hero-dash{grid-template-columns:1fr}.readiness-ring{margin:auto}.panel-grid{grid-template-columns:1fr}.onboard-opts,.trust-grid{grid-template-columns:1fr}.land-card,.onboard-card{padding:24px}}
 </style>
 </head>
 <body>
-
-<section id="landing" class="screen active">
-  <div class="land-card">
-    <div class="brand-row">
-      <div class="brand-left">
-        <div class="brand-icon">🧠</div>
-        <div>
-          <div class="brand-name">BCBA Study Hub</div>
-          <div class="brand-tagline">Adaptive Mastery Learning System</div>
-        </div>
-      </div>
-      <div id="landingLang"></div>
-    </div>
-    <div class="hero-box">
-      <div class="hero-eyebrow" data-i="landEyebrow"></div>
-      <div class="hero-heading" data-i="landHeading"></div>
-      <div class="hero-sub" data-i="landSub"></div>
-    </div>
-    <div class="position-box" data-i="landPosition"></div>
-    <div class="trust-grid">
-      <div class="trust-item" data-i="trust1"></div>
-      <div class="trust-item" data-i="trust2"></div>
-      <div class="trust-item" data-i="trust3"></div>
-      <div class="trust-item" data-i="trust4"></div>
-    </div>
-    <button type="button" class="cta-btn" id="startBtn" data-i="startDemo"></button>
-    <div class="checklist">
-      <div class="check-item"><span class="check-dot">✓</span><span data-i="check1"></span></div>
-      <div class="check-item"><span class="check-dot">✓</span><span data-i="check2"></span></div>
-      <div class="check-item"><span class="check-dot">✓</span><span data-i="check3"></span></div>
-      <div class="check-item"><span class="check-dot">✓</span><span data-i="check4"></span></div>
-      <div class="check-item"><span class="check-dot">✓</span><span data-i="check5"></span></div>
-    </div>
-  </div>
-</section>
-
-<section id="app" class="screen">
-  <div class="layout">
-    <aside>
-      <div class="sidebar-logo">
-        <div class="sidebar-badge">BCBA PREP</div>
-        <div class="sidebar-title">Study Hub</div>
-        <div class="sidebar-sub">6th Edition TCO · Full Prototype</div>
-      </div>
-      <div class="sidebar-user">
-        <div class="user-avatar">J</div>
-        <div>
-          <div class="user-info">Demo Learner</div>
-          <div class="user-plan" data-i="guidedPlan"></div>
-        </div>
-      </div>
-      <nav>
-        <div class="nav-section" data-i="main"></div>
-        <button type="button" class="nav-btn active" data-view="dashboard">🏠 <span data-i="dashboard"></span></button>
-        <button type="button" class="nav-btn" data-view="learn">🎓 <span data-i="learn"></span></button>
-        <button type="button" class="nav-btn" data-view="practice">🧩 <span data-i="practice"></span></button>
-        <button type="button" class="nav-btn" data-view="domainExam">⏱ <span data-i="domainExam"></span></button>
-        <button type="button" class="nav-btn" data-view="analytics">📊 <span data-i="analytics"></span></button>
-      </nav>
-      <div class="sidebar-footer">
-        <div class="prog-label"><span data-i="readiness"></span><span id="sideProgressPct">73%</span></div>
-        <div class="progress-bar"><div class="progress-bar-fill"></div></div>
-        <div class="streak-badge">🔥 <span data-i="streak"></span></div>
-      </div>
-    </aside>
-    <main id="main"></main>
-  </div>
-</section>
-
-<div class="admin-panel" id="adminPanel">
-  <h3>Admin Settings</h3>
-  <p>This prototype keeps the key local only. For public release, move this to a secure backend.</p>
-  <input class="admin-input" id="apiKeyInput" type="password" placeholder="Admin API key (local prototype only)"/>
-  <div class="admin-row">
-    <button class="btn btn-primary" id="saveKeyBtn">Save Key</button>
-    <button class="btn btn-secondary" id="closeAdminBtn">Close</button>
-  </div>
-</div>
-
+<section id="landing" class="screen center-screen active"><div class="land-card" id="landCard"></div></section>
+<section id="onboarding" class="screen center-screen"><div class="onboard-card" id="onboardCard"></div></section>
+<section id="app" class="screen"><div class="layout"><aside><div class="sidebar-logo"><div class="sidebar-badge">BCBA PREP</div><div class="sidebar-title">Study Hub</div><div class="sidebar-sub">Clinical Mastery Platform</div></div><div class="sidebar-user"><div class="user-avatar" id="userAvatar">S</div><div><div class="user-info" id="userName">Student</div><div class="user-plan">Full Prototype</div></div></div><nav id="nav"></nav><div class="sidebar-footer"><div class="prog-label"><span>Readiness</span><span id="sidePct">0%</span></div><div class="progress-bar"><div class="progress-bar-fill" id="sideProgress"></div></div><div style="font-size:11px;color:var(--ink-soft);font-weight:600" id="sideText">Starting profile</div></div></aside><main id="main"></main></div></section>
+<div id="adminModal" class="modal-bg"><div class="modal"><h2 style="font-family:var(--font-display);font-size:25px;margin-bottom:8px">Admin Content Engine</h2><p class="page-sub">This prototype can use a private admin key stored only in this browser. Do not embed private keys in public files.</p><input id="adminKeyInput" type="password" class="form-input" placeholder="Paste admin API key"/><button class="btn btn-primary" id="saveAdminKey" style="width:100%">Save Locally</button><button class="btn btn-secondary" id="closeAdmin" style="width:100%;margin-top:8px">Close</button></div></div>
 <script>
 (function(){
 'use strict';
-
-const TX={
-  en:{
-    landEyebrow:'BCBA Exam Preparation · 6th Edition TCO',
-    landHeading:'Build exam readiness. Trust your reasoning.',
-    landSub:'Clinical scenarios, dynamic study paths, retention checks, and exam-style practice designed to help you feel real progress from day one.',
-    landPosition:'Designed for candidates who want to understand the material, not just memorize it — because the BCBA exam tests clinical reasoning, retention, and decision-making under pressure.',
-    trust1:'📘 6th Edition TCO aligned',
-    trust2:'🧩 Real clinical scenarios',
-    trust3:'🎯 Dynamic mastery path',
-    trust4:'🇺🇸🇪🇸 English + Spanish support',
-    startDemo:'▶ Start Full Preview',
-    check1:'Learn Mode',check2:'Clinical practice',check3:'Exam Reality Mode',check4:'Retention checks',check5:'No card required',
-    guidedPlan:'Guided Study Plan',main:'Main',dashboard:'Dashboard',learn:'Learn Mode',practice:'Clinical Practice',domainExam:'Domain Exam',analytics:'Insights',readiness:'Exam Readiness',streak:'Day 1 of studying',
-    dashTitle:'Dashboard',dashSub:'Your study plan protects retention, closes weak links, and keeps all domains stable.',
-    welcome:'Good evening, Joany',dashHero:'Today’s plan is designed to prevent the “peaks and valleys” problem: improving one domain while previously mastered areas decay.',
-    continue:'Continue Study Session',recommended:'Recommended Focus',focusTitle:'Motivating Operations vs Stimulus Control',
-    focusReason:'Your accuracy is improving, but retention is still unstable. Today’s session combines short review, guided discrimination, and applied clinical cases.',
-    startFocus:'Start Focus Session',today:'Today’s Session',domains:'Domain Stability',
-    metric1:'Stable Domains',metric2:'Retention Alerts',metric3:'Integrated Cases',metric4:'Confidence Alerts',
-    learnTitle:'Understand → Practice → Apply',learnSub:'A concept is not mastered until you can recognize it across different clinical situations.',
-    concept:'Motivating Operations vs SD',definition:'Motivating Operations temporarily change the value of a consequence and alter the current frequency of behavior related to that consequence. Discriminative stimuli signal the availability of reinforcement for a response.',
-    example:'If a learner has not had access to water for several hours, water becomes more valuable and requesting water is more likely. The sight of a water bottle may also signal that asking can produce water.',
-    strategy:'Ask: Is the stimulus changing the VALUE of the reinforcer, or is it signaling that reinforcement is available?',
-    practiceConcept:'Practice This Concept',back:'Back to Dashboard',
-    clinicalPractice:'Clinical Practice',practiceSub:'Scenario-based items with immediate teaching feedback.',
-    confidence:'How confident were you before answering?',low:'Unsure / guessed',mid:'Somewhat sure',high:'Very confident',
-    hint:'Hint / Strategy',correct:'Correct',incorrect:'Incorrect',next:'Next Item',review:'Review Concept',
-    qStem:'A learner has not had access to water for several hours. During a session, the learner is more likely to request water, and access to water functions as a stronger reinforcer than usual. Which interpretation is most accurate?',
-    optA:'Water functions as the SD because it always signals reinforcement.',
-    optB:'Water deprivation functions as an MO because it increases the value of water.',
-    optC:'The water bottle is a conditioned punisher.',
-    optD:'Requesting water is respondent behavior.',
-    feedbackGood:'Water deprivation changes the value of water as a reinforcer and evokes behavior that has historically produced water. That is a Motivating Operation, not merely stimulus control.',
-    feedbackBad:'The key distinction is value change. Water deprivation increases the effectiveness of water as a reinforcer and evokes water-seeking behavior. That is a Motivating Operation.',
-    examTitle:'Exam Reality Mode',examSub:'Final domain items use longer clinical stems, plausible distractors, and delayed feedback.',
-    masteryAssessment:'Domain Mastery Assessment',examDesc:'This stage should feel closer to the real exam: 3–4 sentence clinical stems, cumulative reasoning, no hints, and review only after completion.',
-    startChallenge:'Start 5-Item Challenge',questions:'Questions',time:'Minutes',feedback:'Feedback at end',
-    analyticsTitle:'Performance Insights',analyticsSub:'Track readiness, retention, stability, confidence, and drift across domains.',
-    recentSignals:'Recent Learning Signals'
-  },
-  es:{
-    landEyebrow:'Preparación BCBA · 6th Edition TCO',
-    landHeading:'Construye preparación. Confía en tu razonamiento.',
-    landSub:'Escenarios clínicos, rutas dinámicas de estudio, chequeos de retención y práctica estilo examen para que sientas progreso real desde el primer día.',
-    landPosition:'Diseñado para candidatos que quieren entender el material, no solo memorizarlo — porque el examen BCBA evalúa razonamiento clínico, retención y toma de decisiones bajo presión.',
-    trust1:'📘 Alineado al 6th Edition TCO',
-    trust2:'🧩 Escenarios clínicos reales',
-    trust3:'🎯 Ruta dinámica de maestría',
-    trust4:'🇺🇸🇪🇸 English + apoyo en Español',
-    startDemo:'▶ Comenzar Preview Completo',
-    check1:'Learn Mode',check2:'Práctica clínica',check3:'Exam Reality Mode',check4:'Chequeos de retención',check5:'Sin tarjeta requerida',
-    guidedPlan:'Plan de Estudio Guiado',main:'Principal',dashboard:'Dashboard',learn:'Modo Aprender',practice:'Práctica Clínica',domainExam:'Examen de Dominio',analytics:'Insights',readiness:'Preparación para el Examen',streak:'Día 1 de estudio',
-    dashTitle:'Dashboard',dashSub:'Tu plan protege la retención, cierra puntos débiles y mantiene todos los dominios estables.',
-    welcome:'Buenas noches, Joany',dashHero:'El plan de hoy está diseñado para prevenir el problema de “picos y valles”: mejorar un dominio mientras áreas previamente dominadas decaen.',
-    continue:'Continuar Sesión',recommended:'Foco Recomendado',focusTitle:'Motivating Operations vs Stimulus Control',
-    focusReason:'Tu precisión está mejorando, pero la retención todavía está inestable. La sesión de hoy combina repaso breve, discriminación guiada y casos clínicos aplicados.',
-    startFocus:'Comenzar Sesión Focalizada',today:'Sesión de Hoy',domains:'Estabilidad por Dominio',
-    metric1:'Dominios Estables',metric2:'Alertas de Retención',metric3:'Casos Integrados',metric4:'Alertas de Confianza',
-    learnTitle:'Entender → Practicar → Aplicar',learnSub:'Un concepto no está dominado hasta que puedes reconocerlo en diferentes situaciones clínicas.',
-    concept:'Motivating Operations vs SD',definition:'Las Motivating Operations cambian temporalmente el valor de una consecuencia y alteran la frecuencia actual de la conducta relacionada con esa consecuencia. Los discriminative stimuli señalan la disponibilidad de reinforcement para una respuesta.',
-    example:'Si un learner no ha tenido acceso a agua por varias horas, el agua se vuelve más valiosa y pedir agua es más probable. Ver una botella de agua también puede señalar que pedir puede producir agua.',
-    strategy:'Pregunta: ¿El estímulo cambia el VALOR del reinforcer, o señala que reinforcement está disponible?',
-    practiceConcept:'Practicar Este Concepto',back:'Volver al Dashboard',
-    clinicalPractice:'Práctica Clínica',practiceSub:'Ítems basados en escenarios con feedback instructivo inmediato.',
-    confidence:'¿Qué tan seguro estabas antes de responder?',low:'No seguro / adiviné',mid:'Algo seguro',high:'Muy seguro',
-    hint:'Pista / Estrategia',correct:'Correcto',incorrect:'Incorrecto',next:'Siguiente Ítem',review:'Repasar Concepto',
-    qStem:'A learner has not had access to water for several hours. During a session, the learner is more likely to request water, and access to water functions as a stronger reinforcer than usual. Which interpretation is most accurate?',
-    optA:'El agua funciona como SD porque siempre señala reinforcement.',
-    optB:'La privación de agua funciona como MO porque aumenta el valor del agua.',
-    optC:'La botella de agua es un punisher condicionado.',
-    optD:'Pedir agua es respondent behavior.',
-    feedbackGood:'La privación de agua cambia el valor del agua como reinforcer y evoca conducta que históricamente produjo agua. Eso es Motivating Operation, no simplemente stimulus control.',
-    feedbackBad:'La distinción clave es cambio de valor. La privación de agua aumenta la efectividad del agua como reinforcer y evoca conducta para obtener agua. Eso es Motivating Operation.',
-    examTitle:'Modo Realidad de Examen',examSub:'Los ítems finales del dominio usan escenarios clínicos largos, distractores plausibles y feedback al final.',
-    masteryAssessment:'Evaluación de Maestría del Dominio',examDesc:'Esta etapa debe sentirse más cercana al examen real: escenarios clínicos de 3–4 oraciones, razonamiento acumulativo, sin pistas y revisión solo al finalizar.',
-    startChallenge:'Comenzar Reto de 5 Ítems',questions:'Preguntas',time:'Minutos',feedback:'Feedback al final',
-    analyticsTitle:'Insights de Desempeño',analyticsSub:'Monitorea preparación, retención, estabilidad, confianza y drift entre dominios.',
-    recentSignals:'Señales Recientes de Aprendizaje'
-  }
-};
-
-const domains=[
-  ['A','Behaviorism & Philosophical Foundations',62,54],
-  ['B','Concepts and Principles',78,67],
-  ['C','Measurement, Data Display & Interpretation',71,58],
-  ['D','Experimental Design',59,44],
-  ['E','Ethical and Professional Issues',82,74],
-  ['F','Behavior Assessment',69,57],
-  ['G','Behavior-Change Procedures',64,49],
-  ['H','Selecting and Implementing Interventions',73,61],
-  ['I','Personnel Supervision and Management',68,55]
+const STORAGE='bcba_full_v1_state'; const KEY_STORAGE='bcba_full_v1_admin_key';
+const DEFAULT_LANG='en'; let lang=localStorage.getItem('bcba_lang')||DEFAULT_LANG;
+const API_PROVIDER='anthropic';
+const MODEL='claude-haiku-4-5-20251001';
+const qs=id=>document.getElementById(id);
+const UI={en:{start:'Begin My Study Path',heroEye:'BCBA Exam Preparation · 6th Edition TCO',heroHead:'Build readiness that stays stable.',heroSub:'A clinical mastery platform that teaches concepts, strengthens retention, and prepares you for exam-level reasoning.',trust1:'📘 6th Edition TCO aligned',trust2:'🧩 Clinical scenarios',trust3:'🎯 Guided study path',trust4:'🇺🇸🇪🇸 English + Spanish support',check1:'Learn Mode',check2:'Adaptive review',check3:'Domain challenges',check4:'Retention checks',check5:'Exam-level cases',obNext:'Next →',obStart:'Start Dashboard →'},es:{start:'Comenzar Mi Ruta de Estudio',heroEye:'Preparación BCBA · 6th Edition TCO',heroHead:'Construye preparación que se mantiene estable.',heroSub:'Una plataforma de dominio clínico que enseña conceptos, fortalece retención y prepara para razonamiento nivel examen.',trust1:'📘 Alineado al 6th Edition TCO',trust2:'🧩 Escenarios clínicos',trust3:'🎯 Ruta guiada',trust4:'🇺🇸🇪🇸 Inglés + Español',check1:'Aprendizaje',check2:'Repaso adaptativo',check3:'Retos por dominio',check4:'Chequeos de retención',check5:'Casos nivel examen',obNext:'Siguiente →',obStart:'Ir al Dashboard →'}};
+const L=k=>(UI[lang]&&UI[lang][k])||UI.en[k]||k;
+const DOMAINS=[
+{id:'A',title:'Behaviorism & Philosophical Foundations',short:'Behaviorism',weight:5,concepts:['Goals of behavior analysis','Selectionism','Determinism','Empiricism','Parsimony','Pragmatism','Radical behaviorism','Dimensions of ABA'],color:'#444441',bg:'#F1EFE8'},
+{id:'B',title:'Concepts and Principles',short:'Concepts',weight:14,concepts:['Positive Reinforcement','Negative Reinforcement','Escape','Avoidance','Punishment','Automatic vs Socially Mediated Contingencies','Schedules of Reinforcement','Stimulus Control','Motivating Operations vs SD','Verbal Operants','Matching Law','Behavioral Momentum'],color:'#185FA5',bg:'#E6F1FB'},
+{id:'C',title:'Measurement, Data Display & Interpretation',short:'Measurement',weight:12,concepts:['Frequency, Rate, Count','Duration, Latency, IRT','Continuous Measurement','Discontinuous Measurement','IOA','Validity, Accuracy, Reliability','Graphing','Trend, Level, Variability'],color:'#0F6E56',bg:'#E1F5EE'},
+{id:'D',title:'Experimental Design',short:'Design',weight:7,concepts:['Independent vs Dependent Variables','Internal Validity','External Validity','Reversal Design','Multiple Baseline Design','Multielement Design','Changing Criterion Design'],color:'#534AB7',bg:'#EEEDFE'},
+{id:'E',title:'Ethical and Professional Issues',short:'Ethics',weight:13,concepts:['Core Ethics Principles','Confidentiality','Public Statements','Multiple Relationships','Cultural Humility','Legal Requirements','Discontinuing Services'],color:'#A32D2D',bg:'#FCEBEB'},
+{id:'F',title:'Behavior Assessment',short:'Assessment',weight:13,concepts:['Records Review','Skills Assessment','Preference Assessment','Descriptive Assessment','Functional Analysis','Goal Prioritization'],color:'#854F0B',bg:'#FAEEDA'},
+{id:'G',title:'Behavior-Change Procedures',short:'Procedures',weight:14,concepts:['Differential Reinforcement','Token Economies','Prompting','Prompt Fading','Shaping','Chaining','Group Contingencies','Generalization','Maintenance','Punishment Procedures'],color:'#993C1D',bg:'#FAECE7'},
+{id:'H',title:'Selecting and Implementing Interventions',short:'Interventions',weight:11,concepts:['Intervention Goals','Evidence-Based Selection','Social Validity','Relapse Prevention','Procedural Integrity','Collaboration'],color:'#3B6D11',bg:'#EAF3DE'},
+{id:'I',title:'Personnel Supervision and Management',short:'Supervision',weight:11,concepts:['Supervision Contracts','Equity in Supervision','Performance Management','BST','Performance Feedback','Self-Care'],color:'#72243E',bg:'#FBEAF0'}
 ];
-
-let lang=localStorage.getItem('bcba_full_lang') || 'en';
-let view='dashboard';
-let answered=null;
-let confidence='';
-
-function L(k){ return (TX[lang]&&TX[lang][k]) || TX.en[k] || k; }
-function langSwitch(){
-  return `<div class="lang-switch">
-    <button type="button" class="lang-btn ${lang==='en'?'active':''}" data-lang="en">🇺🇸 EN</button>
-    <button type="button" class="lang-btn ${lang==='es'?'active':''}" data-lang="es">🇪🇸 ES</button>
-  </div>`;
-}
-function setLang(v){ lang=v; localStorage.setItem('bcba_full_lang',v); render(); }
-function setScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  const el=document.getElementById(id);
-  if(el){ el.classList.add('active'); }
-}
-function go(v){ view=v; answered=null; confidence=''; render(); }
-function applyText(){
-  document.documentElement.lang=lang;
-  document.querySelectorAll('[data-i]').forEach(el=>{ el.textContent=L(el.dataset.i); });
-  const ll=document.getElementById('landingLang'); if(ll) ll.innerHTML=langSwitch();
-}
-function bindClicks(){
-  document.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
-  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>go(b.dataset.view));
-  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
-  document.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{answered=b.dataset.answer; render();});
-  document.querySelectorAll('[data-conf]').forEach(b=>b.onclick=()=>{confidence=b.dataset.conf; render();});
-  const start=document.getElementById('startBtn'); if(start) start.onclick=()=>{setScreen('app');go('dashboard');};
-}
-function activateNav(){
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
-}
-function appHeader(title,sub,showBack=true){
-  return `<div class="topbar">
-    <div><div class="page-title">${title}</div><div class="page-sub">${sub}</div></div>
-    <div class="topbar-right">${langSwitch()}${showBack?`<button class="btn btn-secondary" data-go="dashboard">${L('back')}</button>`:''}</div>
-  </div>`;
-}
-
-function dashboard(){
-  return `${appHeader(L('dashTitle'),L('dashSub'),false)}
-  <section class="dash-hero">
-    <div>
-      <div class="hero-dash-label">${L('readiness')}</div>
-      <div class="hero-dash-title">${L('welcome')}</div>
-      <div class="hero-dash-sub">${L('dashHero')}</div>
-      <button class="btn btn-gold" style="margin-top:16px" data-go="practice">${L('continue')}</button>
-    </div>
-    <div class="readiness-ring" style="--p:73"><div class="ring-content"><div class="ring-num">73%</div><div class="ring-label">${L('readiness')}</div></div></div>
-  </section>
-  <div class="metrics">
-    <div class="metric"><div class="metric-value">4</div><div class="metric-label">${L('metric1')}</div></div>
-    <div class="metric"><div class="metric-value">3</div><div class="metric-label">${L('metric2')}</div></div>
-    <div class="metric"><div class="metric-value">12</div><div class="metric-label">${L('metric3')}</div></div>
-    <div class="metric"><div class="metric-value">2</div><div class="metric-label">${L('metric4')}</div></div>
-  </div>
-  <div class="dash-grid">
-    <div class="panel">
-      <div class="panel-label">${L('recommended')}</div>
-      <div class="focus-title">${L('focusTitle')}</div>
-      <div class="reason">${L('focusReason')}</div>
-      <button class="btn btn-primary" data-go="practice">${L('startFocus')}</button>
-    </div>
-    <div class="panel">
-      <div class="panel-label">${L('today')}</div>
-      <div class="session-list">
-        <div class="session-item"><span>8 min retention review</span><strong>MO vs SD</strong></div>
-        <div class="session-item"><span>12 min weak-link practice</span><strong>DOM. D</strong></div>
-        <div class="session-item"><span>10 min integrated cases</span><strong>B + C</strong></div>
-        <div class="session-item"><span>1 cumulative challenge</span><strong>Final</strong></div>
-      </div>
-    </div>
-  </div>
-  <div class="domain-title-row">${L('domains')}</div>
-  <div class="domain-grid">
-    ${domains.map((d,i)=>`
-      <div class="domain-card">
-        <span class="pill ${i%4===0?'gold':i%4===1?'green':i%4===2?'purple':'pink'}">DOM. ${d[0]}</span>
-        <div class="dom-name">${d[1]}</div>
-        <div class="dom-meta">Accuracy ${d[2]}% · Stability ${d[3]}%</div>
-        <div class="dom-bars">
-          <div><div class="mini-label"><span>Accuracy</span><span>${d[2]}%</span></div><div class="mini-track"><div class="mini-fill" style="width:${d[2]}%"></div></div></div>
-          <div><div class="mini-label"><span>Stability</span><span>${d[3]}%</span></div><div class="mini-track"><div class="mini-fill" style="width:${d[3]}%;background:linear-gradient(90deg,var(--gold),#E8A030)"></div></div></div>
-        </div>
-      </div>`).join('')}
-  </div>`;
-}
-
-function learn(){
-  return `${appHeader(L('learnTitle'),L('learnSub'))}
-  <div class="learn-wrap">
-    <div class="path-strip">
-      <span class="path-chip done">✓ Concept</span><span class="path-chip active">● Discrimination</span><span class="path-chip">○ Application</span><span class="path-chip">○ Retention</span>
-    </div>
-    <div class="learn-card">
-      <div class="module-label">DOM. B · Concepts and Principles</div>
-      <div class="module-title">${L('concept')}</div>
-      <div class="definition"><strong>Definition:</strong> ${L('definition')}</div>
-      <div class="note-box"><strong>Clinical example:</strong> ${L('example')}</div>
-      <div class="note-box"><strong>Exam strategy:</strong> ${L('strategy')}</div>
-      <button class="btn btn-primary" data-go="practice">${L('practiceConcept')}</button>
-    </div>
-  </div>`;
-}
-
-function practice(){
-  const opts={A:L('optA'),B:L('optB'),C:L('optC'),D:L('optD')};
-  return `${appHeader(L('clinicalPractice'),L('practiceSub'))}
-  <div class="practice-wrap">
-    <div class="question-card">
-      <div class="question-head">
-        <div class="question-meta">DOM. B · Motivating Operations · Guided Discrimination</div>
-        <div class="timer-pill">Study Mode</div>
-      </div>
-      <div class="question-text">${L('qStem')}</div>
-      ${Object.entries(opts).map(([k,v])=>`<button class="option ${answered&&k==='B'?'correct':''} ${answered&&k===answered&&k!=='B'?'wrong':''}" ${answered?'disabled':''} data-answer="${k}"><span class="option-letter">${k}</span><span>${v}</span></button>`).join('')}
-      <div class="confidence-panel">
-        <div class="conf-label">${L('confidence')}</div>
-        <div class="conf-opts">
-          <button class="conf-btn ${confidence==='low'?'active':''}" data-conf="low">${L('low')}</button>
-          <button class="conf-btn ${confidence==='mid'?'active':''}" data-conf="mid">${L('mid')}</button>
-          <button class="conf-btn ${confidence==='high'?'active':''}" data-conf="high">${L('high')}</button>
-        </div>
-      </div>
-      ${answered?feedback():`<button class="btn btn-secondary">${L('hint')}</button>`}
-    </div>
-  </div>`;
-}
-function feedback(){
-  const ok=answered==='B';
-  return `<div class="feedback ${ok?'good':'bad'}"><div class="feedback-title">${ok?L('correct'):L('incorrect')}</div>${ok?L('feedbackGood'):L('feedbackBad')}</div>
-  <button class="btn btn-primary" data-go="practice">${L('next')}</button>
-  <button class="btn btn-secondary" data-go="learn">${L('review')}</button>
-  <button class="btn btn-gold" data-go="domainExam">${L('examTitle')}</button>`;
-}
-
-function domainExam(){
-  return `${appHeader(L('examTitle'),L('examSub'))}
-  <div class="complete-card">
-    <div class="module-label">DOM. B · Final Domain Phase</div>
-    <div class="module-title">${L('masteryAssessment')}</div>
-    <p class="page-sub">${L('examDesc')}</p>
-    <div class="exam-rules">
-      <div class="rule-item"><div class="rule-value">5</div><div class="rule-label">${L('questions')}</div></div>
-      <div class="rule-item"><div class="rule-value">8</div><div class="rule-label">${L('time')}</div></div>
-      <div class="rule-item"><div class="rule-value">End</div><div class="rule-label">${L('feedback')}</div></div>
-    </div>
-    <button class="btn btn-gold">${L('startChallenge')}</button>
-  </div>`;
-}
-
-function analytics(){
-  return `${appHeader(L('analyticsTitle'),L('analyticsSub'))}
-  <div class="analytics-grid">
-    <div class="insight-card"><div class="insight-value">73%</div><div class="insight-title">${L('readiness')}</div><div class="insight-copy">Improving toward stable passing range.</div></div>
-    <div class="insight-card"><div class="insight-value">68%</div><div class="insight-title">Retention Stability</div><div class="insight-copy">Some previously learned areas need short review.</div></div>
-    <div class="insight-card"><div class="insight-value">+14%</div><div class="insight-title">Trend Improvement</div><div class="insight-copy">Recent sessions show stronger clinical discrimination.</div></div>
-    <div class="insight-card"><div class="insight-value">2</div><div class="insight-title">Confidence Alerts</div><div class="insight-copy">High confidence errors need targeted correction.</div></div>
-  </div>
-  <div class="panel" style="margin-top:14px">
-    <div class="panel-label">${L('recentSignals')}</div>
-    <div class="session-list">
-      <div class="session-item"><span>✓ MO vs SD</span><strong>Stable</strong></div>
-      <div class="session-item"><span>✗ Multiple Baseline Design</span><strong>Review</strong></div>
-      <div class="session-item"><span>✓ Preference Assessment</span><strong>Improving</strong></div>
-    </div>
-  </div>`;
-}
-
-function render(){
-  applyText();
-  const app=document.getElementById('app');
-  const main=document.getElementById('main');
-  if(app.classList.contains('active') && main){
-    const views={dashboard,learn,practice,domainExam,analytics};
-    main.innerHTML=(views[view]||dashboard)();
-  }
-  applyText();
-  activateNav();
-  bindClicks();
-}
-
-document.addEventListener('keydown',e=>{
-  if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='a'){
-    document.getElementById('adminPanel').classList.toggle('active');
-  }
-});
-document.getElementById('saveKeyBtn').onclick=()=>{
-  localStorage.setItem('bcba_admin_key_local',document.getElementById('apiKeyInput').value.trim());
-  document.getElementById('adminPanel').classList.remove('active');
+const STATIC_LEARN={
+'Positive Reinforcement':{def:'Positive reinforcement occurs when a stimulus is added after a behavior and the future frequency of that behavior increases.',example:'A learner completes a task and receives a token. Over time, task completion increases.',strategy:'Look for something added after the response and behavior increasing in the future.'},
+'Negative Reinforcement':{def:'Negative reinforcement occurs when a stimulus is removed, reduced, or avoided after a behavior and the future frequency of that behavior increases.',example:'A student asks for a break, the task is removed briefly, and appropriate break requests increase.',strategy:'Negative means removal, not bad. Confirm that behavior increases.'},
+'Escape':{def:'Escape is a form of negative reinforcement in which behavior terminates an aversive stimulus that is already present.',example:'A demand is presented, the learner screams, and the demand is removed. Screaming increases.',strategy:'If the aversive condition already started, the behavior escaped it.'},
+'Avoidance':{def:'Avoidance is a form of negative reinforcement in which behavior prevents or postpones an aversive stimulus before it occurs.',example:'Before independent work begins, a student asks for help and avoids working alone.',strategy:'If the response happens before the aversive event and prevents it, think avoidance.'},
+'Motivating Operations vs SD':{def:'Motivating operations alter the value of a consequence and evoke or abate related behavior. Discriminative stimuli signal that reinforcement is available for a response.',example:'Deprivation makes water more valuable; a water fountain signals where requesting or drinking may produce water.',strategy:'Ask whether the stimulus changes value or signals availability.'}
 };
-document.getElementById('closeAdminBtn').onclick=()=>document.getElementById('adminPanel').classList.remove('active');
-
-function runTests(){
-  console.assert(typeof window.top!=='function','window.top was not overwritten');
-  console.assert(typeof appHeader==='function','appHeader exists');
-  console.assert(T.en.dashboard==='Dashboard','English dictionary exists');
-  const old=lang; lang='es'; console.assert(L('continue')==='Continuar Sesión','Spanish dictionary works'); lang=old;
-}
-runTests();
-render();
-
+const FALLBACK_QUESTIONS=[
+{domain:'B',concept:'Positive Reinforcement',difficulty:'guided',q:'During a session, a learner completes three instructional trials and immediately receives praise and access to a preferred toy. Over the next week, the learner completes more instructional trials. Which contingency is most directly demonstrated?',options:{A:'Positive reinforcement',B:'Negative reinforcement',C:'Positive punishment',D:'Extinction'},correct:'A',hint:'Identify whether something was added or removed after the behavior.',rationale:'Praise and toy access were added after the behavior, and the future frequency of the behavior increased. That is positive reinforcement.'},
+{domain:'B',concept:'Escape',difficulty:'exam',q:'A therapist presents a difficult matching task. The learner pushes the materials away, and the therapist removes the task for two minutes. Across sessions, pushing materials away occurs more often when difficult tasks are presented. What is the best classification?',options:{A:'Avoidance-maintained negative reinforcement',B:'Escape-maintained negative reinforcement',C:'Positive reinforcement',D:'Response cost'},correct:'B',hint:'Ask whether the aversive stimulus was already present.',rationale:'The task was already present when the behavior occurred. The behavior removed the task and increased in the future, so this is escape-maintained negative reinforcement.'},
+{domain:'B',concept:'Avoidance',difficulty:'exam',q:'Before group instruction begins, a student asks to use the restroom. The teacher allows the student to leave, and the student misses the first ten minutes of group work. This pattern increases on days when group tasks are difficult. What is the most precise interpretation?',options:{A:'Escape because the group task was removed after it started',B:'Avoidance because the request postponed the difficult task',C:'Positive reinforcement because attention was delivered',D:'Extinction because the task was delayed'},correct:'B',hint:'Notice the behavior occurred before the difficult task started.',rationale:'The request occurred before the aversive group task began and postponed it. That pattern is avoidance-maintained negative reinforcement.'},
+{domain:'C',concept:'IOA',difficulty:'guided',q:'Two observers independently record the frequency of aggression during a 30-minute session. Observer 1 records 10 responses and Observer 2 records 8 responses. What is the most appropriate next step before trusting the data for decisions?',options:{A:'Evaluate interobserver agreement',B:'Switch to anecdotal recording',C:'Ignore the lower count',D:'Use only permanent product data'},correct:'A',hint:'The issue is whether two observers measured consistently.',rationale:'When two observers collect data on the same behavior, IOA helps evaluate measurement consistency before relying on the data.'},
+{domain:'D',concept:'Multiple Baseline Design',difficulty:'exam',q:'A behavior analyst introduces an intervention for hand raising in one classroom while keeping baseline in two other classrooms. Later, the intervention is introduced sequentially across the remaining classrooms, and behavior changes only after intervention begins in each setting. What does this pattern support?',options:{A:'Experimental control through staggered implementation',B:'Treatment failure due to delayed change',C:'External validity without replication',D:'Respondent conditioning'},correct:'A',hint:'Look for staggered introduction across settings, behaviors, or participants.',rationale:'Multiple baseline designs demonstrate experimental control when behavior changes only after the intervention is introduced across staggered tiers.'},
+{domain:'E',concept:'Confidentiality',difficulty:'exam',q:'A teacher asks a BCBA to email a client’s complete treatment plan to several school staff members. The BCBA has not confirmed caregiver consent for that disclosure. What is the best response?',options:{A:'Send it because all staff work at the school',B:'Share only if appropriate authorization is in place',C:'Send it without identifying information but include all goals',D:'Refuse collaboration with the school'},correct:'B',hint:'Ethics questions often hinge on authorization and minimum necessary disclosure.',rationale:'The BCBA should protect confidential information and disclose only with appropriate consent or legal/ethical authorization.'}
+];
+const obSteps=[
+{key:'examDate',q:'When is your exam?',sub:'Your path will adjust to the time you have available.',opts:[['<3mo','🔥','Less than 3 months'],['3-6mo','📅','3–6 months'],['6-12mo','🗓️','6–12 months'],['none','🤔','Not scheduled yet']]},
+{key:'hours',q:'How many hours can you study each week?',sub:'This helps build a realistic daily plan.',opts:[['<5','⏳','Less than 5'],['5-10','⏰','5–10'],['10-15','💪','10–15'],['15+','🚀','15+']]},
+{key:'attempt',q:'Have you taken the exam before?',sub:'This helps distinguish review needs from first-time learning.',opts:[['first','🌱','First attempt'],['near','🎯','Yes — close to passing'],['multiple','🔁','Yes — multiple attempts'],['prefer','📘','Prefer not to say']]},
+{key:'confidence',q:'How do you feel right now?',sub:'The platform will support confidence without hiding gaps.',opts:[['low','😟','Overwhelmed'],['medium','🤔','Somewhat ready'],['high','💪','Confident'],['uneven','📉','Strong in some areas, weak in others']]}
+];
+let state=loadState(); let obIndex=0; let currentDomain='B'; let currentConcept='Positive Reinforcement'; let currentQuestion=null; let currentMode='guided'; let timer=null; let seconds=0;
+function freshState(){const domains={};DOMAINS.forEach(d=>domains[d.id]={accuracy:0,stability:0,retention:0,total:0,correct:0,last:0,concepts:{}});return{onboarded:false,profile:{},readiness:22,streak:1,domains,history:[],queue:[],usedFingerprints:[],currentView:'dashboard',learned:{},confidenceLog:[],adminConfigured:false};}
+function loadState(){try{return JSON.parse(localStorage.getItem(STORAGE))||freshState()}catch(e){return freshState()}}
+function save(){localStorage.setItem(STORAGE,JSON.stringify(state))}
+function langSwitch(){return `<div class="lang-switch"><button class="lang-btn ${lang==='en'?'active':''}" data-lang="en">EN</button><button class="lang-btn ${lang==='es'?'active':''}" data-lang="es">ES</button></div>`}
+function bindLang(){document.querySelectorAll('.lang-btn').forEach(b=>b.onclick=()=>{lang=b.dataset.lang;localStorage.setItem('bcba_lang',lang);render()})}
+function showToast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .25s';setTimeout(()=>t.remove(),260)},2300)}
+function fingerprint(q){return String((q.q||'')+' '+Object.values(q.options||{}).join(' ')).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().slice(0,260)}
+function optionQuality(q){const vals=Object.values(q.options||{}).map(x=>String(x).trim().toLowerCase()); if(vals.length!==4)return false; if(new Set(vals).size!==4)return false; if(!['A','B','C','D'].includes(q.correct))return false; if(!q.q||q.q.length<70)return false; if(!q.rationale||q.rationale.length<60)return false; return true}
+function qualityCheck(q){const fp=fingerprint(q); if(state.usedFingerprints.includes(fp))return false; return optionQuality(q)}
+function getAdminKey(){return localStorage.getItem(KEY_STORAGE)||''}
+async function callProvider(prompt,maxTokens=1300){const key=getAdminKey(); if(!key) throw new Error('No admin key'); if(API_PROVIDER==='anthropic'){const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:MODEL,max_tokens:maxTokens,messages:[{role:'user',content:prompt}]})});const data=await res.json(); if(data.error) throw new Error(data.error.message); return data.content?.find(b=>b.type==='text')?.text||''} throw new Error('Provider not configured')}
+function cleanJson(txt){return JSON.parse(String(txt).replace(/```json|```/g,'').trim())}
+async function generateQuestion(target){const dom=DOMAINS.find(d=>d.id===target.domain)||DOMAINS[1];const concept=target.concept||pickConcept(dom.id);const mode=target.mode||'guided';const length=mode==='exam'?'3 to 4 sentence clinical scenario':'2 to 3 sentence clinical scenario';const prompt=`Create ONE original BCBA exam preparation clinical practice item. Do not mention technology. Use English. Align to BACB 6th Edition Test Content Outline. Domain ${dom.id}: ${dom.title}. Target concept: ${concept}. Difficulty mode: ${mode}. Requirements: ${length}; four plausible options; no repeated option meanings; one clearly correct answer; strong distractors; clinical rationale explaining why correct is correct and why distractors are wrong. Return ONLY valid JSON with keys: domain, concept, difficulty, q, options {A,B,C,D}, correct, hint, rationale.`;try{const raw=await callProvider(prompt,1600);const q=cleanJson(raw);if(qualityCheck(q))return q;throw new Error('quality failed')}catch(e){const pool=FALLBACK_QUESTIONS.filter(x=>x.domain===dom.id||x.concept===concept);return JSON.parse(JSON.stringify(pool[Math.floor(Math.random()*pool.length)]||FALLBACK_QUESTIONS[Math.floor(Math.random()*FALLBACK_QUESTIONS.length)]))}}
+function pickConcept(domId){const d=DOMAINS.find(x=>x.id===domId)||DOMAINS[1];let low=d.concepts[0];let min=999;d.concepts.forEach(c=>{const rec=state.domains[domId].concepts[c]||{total:0,correct:0,last:0};const score=(rec.correct/(rec.total||1))*60 + Math.min(40,(Date.now()-rec.last)/86400000); if(score<min){min=score;low=c}});return low}
+function recommendedTarget(){let worst='B',score=999;DOMAINS.forEach(d=>{const r=state.domains[d.id];const s=(r.stability||0)*.45+(r.retention||0)*.35+(r.accuracy||0)*.2 - d.weight*.4;if(s<score){score=s;worst=d.id}});return{domain:worst,concept:pickConcept(worst),mode:'guided'}}
+async function ensureQueue(){while(state.queue.length<4){const t=recommendedTarget(); const q=await generateQuestion(t); const fp=fingerprint(q); if(!state.usedFingerprints.includes(fp)&&optionQuality(q)){state.queue.push(q);state.usedFingerprints.push(fp); if(state.usedFingerprints.length>80)state.usedFingerprints=state.usedFingerprints.slice(-80); save()}else break}}
+function startPreload(){ensureQueue().catch(()=>{})}
+function renderLanding(){qs('landCard').innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div class="brand-row" style="margin-bottom:0"><div class="brand-icon">🧠</div><div><div class="brand-name">BCBA Study Hub</div><div class="brand-tagline">Clinical Mastery Platform</div></div></div>${langSwitch()}</div><div class="hero-box"><div class="hero-eyebrow">${L('heroEye')}</div><div class="hero-heading">${L('heroHead')}</div><div class="hero-sub">${L('heroSub')}</div></div><div class="trust-grid"><div class="trust-item">${L('trust1')}</div><div class="trust-item">${L('trust2')}</div><div class="trust-item">${L('trust3')}</div><div class="trust-item">${L('trust4')}</div></div><button class="cta-btn" id="startBtn">${L('start')}</button><div class="checklist">${['check1','check2','check3','check4','check5'].map(k=>`<div class="check-item"><div class="check-dot">✓</div>${L(k)}</div>`).join('')}</div>`;bindLang();qs('startBtn').onclick=()=>{qs('landing').classList.remove('active');qs('onboarding').classList.add('active');renderOnboarding()}}
+function renderOnboarding(){const step=obSteps[obIndex];const dots=obSteps.map((_,i)=>`<div class="pdot ${i===obIndex?'active':''}"></div>`).join('');qs('onboardCard').innerHTML=`<div class="progress-dots">${dots}</div><div class="onboard-step">Step ${obIndex+1} of ${obSteps.length}</div><div class="onboard-q">${step.q}</div><div class="onboard-sub">${step.sub}</div><div class="onboard-opts">${step.opts.map(o=>`<button class="onboard-opt ${state.profile[step.key]===o[0]?'selected':''}" data-val="${o[0]}"><span class="opt-emoji">${o[1]}</span>${o[2]}</button>`).join('')}</div><div style="display:flex;gap:8px;align-items:center">${langSwitch()}<button class="btn btn-primary" id="obNext" style="margin-left:auto;opacity:${state.profile[step.key]?1:.45}" ${state.profile[step.key]?'':'disabled'}>${obIndex===obSteps.length-1?L('obStart'):L('obNext')}</button></div>`;bindLang();document.querySelectorAll('.onboard-opt').forEach(b=>b.onclick=()=>{state.profile[step.key]=b.dataset.val;save();renderOnboarding()});qs('obNext').onclick=()=>{if(obIndex<obSteps.length-1){obIndex++;renderOnboarding()}else{state.onboarded=true;save();qs('onboarding').classList.remove('active');qs('app').classList.add('active');renderDashboard();showToast('Your study path is ready.')}}}
+function navHtml(){const items=[['dashboard','🏠','Dashboard'],['study','🎓','Learn'],['practice','🧩','Practice'],['challenge','⏱','Domain Challenge'],['analytics','📊','Analytics']];return `<div class="nav-section">Study</div>${items.map(i=>`<button class="nav-btn ${state.currentView===i[0]?'active':''}" data-view="${i[0]}"><span>${i[1]}</span>${i[2]}</button>`).join('')}<div class="nav-section">Domains</div>${DOMAINS.map(d=>`<button class="nav-btn" data-domain="${d.id}"><span>DOM. ${d.id}</span>${d.short}</button>`).join('')}`}
+function bindNav(){qs('nav').innerHTML=navHtml();document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{state.currentView=b.dataset.view;save();render()});document.querySelectorAll('[data-domain]').forEach(b=>b.onclick=()=>{currentDomain=b.dataset.domain;state.currentView='study';save();renderStudy()})}
+function calcReadiness(){let acc=0,st=0,ret=0;DOMAINS.forEach(d=>{const r=state.domains[d.id];acc+=r.accuracy*d.weight;st+=r.stability*d.weight;ret+=r.retention*d.weight});const total=DOMAINS.reduce((s,d)=>s+d.weight,0);return Math.round((acc*.35+st*.4+ret*.25)/total)||22}
+function updateSide(){state.readiness=calcReadiness();qs('sidePct').textContent=state.readiness+'%';qs('sideProgress').style.width=state.readiness+'%';qs('sideText').textContent=state.readiness<50?'Building foundation':state.readiness<72?'Improving toward readiness':'Stable readiness range'}
+function renderDashboard(){state.currentView='dashboard';bindNav();updateSide();const rec=recommendedTarget();const dom=DOMAINS.find(d=>d.id===rec.domain);const atRisk=atRiskConcepts();qs('main').innerHTML=`<div class="hero-dash"><div><div class="hero-kicker">Welcome back</div><div class="hero-title">Today has a clear purpose.</div><div class="hero-copy">Your path is balancing weak areas with retention checks so your knowledge stays stable across domains.</div><button class="btn btn-gold" id="continueBtn" style="margin-top:14px">Continue Study Session</button></div><div class="readiness-ring" style="--p:${state.readiness}"><div class="readiness-content"><div class="readiness-num">${state.readiness}%</div><div class="readiness-lbl">Exam Readiness</div></div></div></div><div class="metrics"><div class="metric"><div class="metric-value">${DOMAINS.length}</div><div class="metric-label">domains monitored</div></div><div class="metric"><div class="metric-value">${state.queue.length}</div><div class="metric-label">items ready</div></div><div class="metric"><div class="metric-value">${state.history.length}</div><div class="metric-label">responses analyzed</div></div><div class="metric"><div class="metric-value">${state.streak}</div><div class="metric-label">day study streak</div></div></div><div class="panel-grid"><div class="panel"><div class="panel-title">Recommended Focus</div><div class="panel-sub">Selected to strengthen both performance and retention.</div><div class="focus-card"><div class="focus-concept">DOM. ${rec.domain} · ${rec.concept}</div><div class="focus-reason">Reason: this area can raise readiness while preventing uneven preparation.</div></div><button class="btn btn-primary" id="startFocus">Start Focus Session</button></div><div class="panel"><div class="panel-title">Today’s Session</div><div class="panel-sub">Designed to create progress without overload.</div><div class="session-list"><div class="session-item"><span>Retention warm-up</span><strong>8 min</strong></div><div class="session-item"><span>Focused concept work</span><strong>14 min</strong></div><div class="session-item"><span>Integrated clinical cases</span><strong>12 min</strong></div><div class="session-item"><span>Reflection + next step</span><strong>3 min</strong></div></div></div></div><div class="panel" style="margin-bottom:16px"><div class="panel-title">At Risk of Forgetting</div><div class="panel-sub">Previously learned areas that need light review before they decay.</div>${atRisk.length?atRisk.map(x=>`<span class="status-pill review" style="margin:3px">${x}</span>`).join(''):'<span class="status-pill stable">No high-risk concepts yet</span>'}</div><div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0 12px"><div style="font-family:var(--font-display);font-size:21px;font-weight:900">Domain Stability</div><button class="btn btn-secondary" id="resetBtn">Reset Prototype</button></div><div class="domain-grid">${DOMAINS.map(domainCard).join('')}</div>`;qs('continueBtn').onclick=()=>renderPractice();qs('startFocus').onclick=()=>{currentDomain=rec.domain;currentConcept=rec.concept;renderStudy()};qs('resetBtn').onclick=()=>{if(confirm('Reset local prototype progress?')){localStorage.removeItem(STORAGE);state=freshState();location.reload()}};document.querySelectorAll('[data-open-domain]').forEach(b=>b.onclick=()=>{currentDomain=b.dataset.openDomain;renderStudy()})}
+function domainStatus(d){const r=state.domains[d.id];if(r.total<2)return ['review','New'];if(r.stability>=72&&r.retention>=70)return ['stable','Stable'];if(r.retention<48||r.stability<45)return ['risk','At Risk'];return ['review','Review']}
+function domainCard(d){const r=state.domains[d.id];const st=domainStatus(d);return `<div class="domain-card"><div class="domain-head"><div><div class="domain-code">DOM. ${d.id}</div><div class="domain-title">${d.title}</div><div class="domain-meta">${d.concepts.length} focus areas · ${d.weight}% exam weight</div></div><span class="status-pill ${st[0]}">${st[1]}</span></div><div class="bar-label"><span>Accuracy</span><span>${r.accuracy||0}%</span></div><div class="mini-bar"><div class="mini-fill" style="width:${r.accuracy||0}%"></div></div><div class="bar-label"><span>Stability</span><span>${r.stability||0}%</span></div><div class="mini-bar"><div class="mini-fill" style="width:${r.stability||0}%;background:linear-gradient(90deg,var(--gold),#E8A030)"></div></div><div class="bar-label"><span>Retention</span><span>${r.retention||0}%</span></div><div class="mini-bar"><div class="mini-fill" style="width:${r.retention||0}%;background:linear-gradient(90deg,var(--blue),#5EA0E5)"></div></div><div class="domain-actions"><button class="btn btn-secondary" data-open-domain="${d.id}">Learn</button><button class="btn btn-primary" onclick="event.stopPropagation();currentDomain='${d.id}';renderPractice()">Practice</button></div></div>`}
+function atRiskConcepts(){let arr=[];DOMAINS.forEach(d=>{Object.entries(state.domains[d.id].concepts).forEach(([c,r])=>{const days=(Date.now()-(r.last||0))/86400000;if(r.total>=2&&days>3)arr.push(c)})});return arr.slice(0,5)}
+function renderStudy(){state.currentView='study';bindNav();updateSide();const d=DOMAINS.find(x=>x.id===currentDomain)||DOMAINS[1];currentConcept=currentConcept&&d.concepts.includes(currentConcept)?currentConcept:d.concepts[0];const content=STATIC_LEARN[currentConcept]||{def:`${currentConcept} is a high-yield BCBA concept within ${d.title}.`,example:'A behavior analyst applies this concept while making clinical decisions based on observable behavior and environmental variables.',strategy:'Identify the behavior, the environmental event, the timing, and the effect on future responding.'};qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">DOM. ${d.id} · Learn</div><div class="page-sub">${d.title}</div></div><div class="topbar-right">${langSwitch()}<button class="btn btn-secondary" id="backDash">Dashboard</button></div></div><div class="learn-wrap"><div class="learn-card"><div class="module-label" style="color:${d.color}">Guided Concept</div><div class="module-title">${currentConcept}</div><div class="definition">${content.def}</div><div class="section-label">Clinical Example</div><p style="font-size:14px;line-height:1.8;color:var(--ink-mid)">${content.example}</p><div class="note-box"><strong>Exam Strategy:</strong> ${content.strategy}</div><div class="section-label">Choose another focus area</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">${d.concepts.map(c=>`<button class="status-pill ${c===currentConcept?'stable':'review'}" data-concept="${c}">${c}</button>`).join('')}</div><button class="btn btn-primary" id="practiceConcept">Practice this concept →</button></div></div>`;bindLang();qs('backDash').onclick=renderDashboard;document.querySelectorAll('[data-concept]').forEach(b=>b.onclick=()=>{currentConcept=b.dataset.concept;renderStudy()});qs('practiceConcept').onclick=()=>renderPractice({domain:currentDomain,concept:currentConcept,mode:'guided'})}
+async function renderPractice(target){state.currentView='practice';bindNav();updateSide();target=target||recommendedTarget();currentDomain=target.domain||currentDomain;currentConcept=target.concept||pickConcept(currentDomain);currentMode=target.mode||'guided';qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">Clinical Practice</div><div class="page-sub">Original scenario-based items with guided feedback.</div></div><div class="topbar-right"><button class="btn btn-secondary" id="toDash">Dashboard</button></div></div><div class="practice-wrap" id="practiceMount"><div class="question-card"><div class="loader"><div class="spinner"></div><div><strong>Preparing your next clinical item...</strong><br><span style="font-size:12px">The next item is being checked for quality and uniqueness.</span></div></div></div></div>`;qs('toDash').onclick=renderDashboard;currentQuestion=state.queue.shift()||await generateQuestion({domain:currentDomain,concept:currentConcept,mode:currentMode});save();startPreload();renderQuestion()}
+function renderQuestion(){const q=currentQuestion;const d=DOMAINS.find(x=>x.id===q.domain)||DOMAINS[1];seconds=0;if(timer)clearInterval(timer);timer=setInterval(()=>{seconds++;const el=qs('timePill');if(el)el.textContent=`⏱ ${seconds}s`},1000);qs('practiceMount').innerHTML=`<div class="question-card"><div class="question-head"><div><div class="question-meta">DOM. ${q.domain} · ${q.concept||'Clinical Reasoning'} · ${q.difficulty||'guided'}</div></div><div class="timer-pill" id="timePill">⏱ 0s</div></div><div class="question-text">${q.q}</div><div id="opts">${Object.entries(q.options).map(([l,t])=>`<button class="option" data-answer="${l}"><span class="option-letter">${l}</span><span>${t}</span></button>`).join('')}</div><div class="confidence-panel"><div class="conf-label">How confident are you before answering?</div><div class="conf-opts"><button class="conf-btn" data-conf="low">Unsure</button><button class="conf-btn" data-conf="mid">Somewhat sure</button><button class="conf-btn" data-conf="high">Very confident</button></div></div><button class="btn btn-secondary" id="hintBtn">💡 Hint / Strategy</button><div id="hintBox" class="note-box hidden">${q.hint||'Break the scenario into antecedent, behavior, consequence, and future effect.'}</div><div id="feedbackMount"></div></div>`;let conf=null;document.querySelectorAll('[data-conf]').forEach(b=>b.onclick=()=>{conf=b.dataset.conf;document.querySelectorAll('[data-conf]').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')});qs('hintBtn').onclick=()=>qs('hintBox').classList.toggle('hidden');document.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>answerQuestion(b.dataset.answer,conf||'none'))}
+function answerQuestion(letter,conf){if(timer)clearInterval(timer);const q=currentQuestion;const ok=letter===q.correct;document.querySelectorAll('[data-answer]').forEach(b=>{b.disabled=true;if(b.dataset.answer===q.correct)b.classList.add('correct');else if(b.dataset.answer===letter)b.classList.add('wrong')});recordAnswer(q,letter,ok,conf,seconds);qs('feedbackMount').innerHTML=`<div class="feedback ${ok?'good':'bad'}"><div class="feedback-title">${ok?'✓ Correct — clinical discrimination strengthened':'✗ Not yet — this is exactly the kind of trap to learn from'}</div><p>${q.rationale}</p>${!ok&&conf==='high'?'<p style="margin-top:8px"><strong>Confidence Alert:</strong> This was a high-confidence miss. The concept will return in a future review so the misconception does not stabilize.</p>':''}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" id="nextQ">Next Item →</button><button class="btn btn-secondary" id="studyIt">Review Concept</button><button class="btn btn-gold" id="challengeIt">Exam Reality Mode</button></div>`;qs('nextQ').onclick=()=>renderPractice();qs('studyIt').onclick=()=>{currentDomain=q.domain;currentConcept=q.concept;renderStudy()};qs('challengeIt').onclick=()=>renderChallenge(q.domain)}
+function recordAnswer(q,letter,ok,conf,time){const dom=state.domains[q.domain]||state.domains.B;dom.total++;dom.correct+=ok?1:0;dom.last=Date.now();dom.accuracy=Math.round((dom.correct/dom.total)*100);const c=q.concept||'General';dom.concepts[c]=dom.concepts[c]||{total:0,correct:0,last:0,confidenceMiss:0};dom.concepts[c].total++;dom.concepts[c].correct+=ok?1:0;dom.concepts[c].last=Date.now();if(!ok&&conf==='high')dom.concepts[c].confidenceMiss++;dom.stability=Math.min(100,Math.round((dom.accuracy*.55)+((dom.total>=5?35:dom.total*7))-(recentMissPenalty(q.domain))));dom.retention=Math.min(100,Math.max(12,Math.round(dom.stability-(daysSince(dom.last)*3)+(ok?8:-4))));state.history.unshift({ts:Date.now(),domain:q.domain,concept:c,ok,conf,time,answer:letter,correct:q.correct});state.history=state.history.slice(0,120);state.readiness=calcReadiness();save();updateSide()}
+function recentMissPenalty(domId){return state.history.slice(0,6).filter(x=>x.domain===domId&&!x.ok).length*7}
+function daysSince(ts){return ts?((Date.now()-ts)/86400000):10}
+async function renderChallenge(domId){state.currentView='challenge';bindNav();updateSide();currentDomain=domId||currentDomain;qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">Domain Challenge</div><div class="page-sub">Exam Reality Mode: longer clinical stems, no hints, feedback at the end.</div></div><button class="btn btn-secondary" id="dash">Dashboard</button></div><div class="complete-card"><div class="module-label">DOM. ${currentDomain}</div><div class="module-title">Ready for a realistic challenge?</div><p class="page-sub">This mode uses 3–4 sentence scenarios and integrated clinical reasoning. It should feel closer to the exam.</p><button class="btn btn-gold" id="startChallenge" style="margin-top:16px">Start 5-Item Challenge</button></div>`;qs('dash').onclick=renderDashboard;qs('startChallenge').onclick=async()=>{let score=0,idx=0,items=[];qs('main').innerHTML='<div class="loader"><div class="spinner"></div><strong>Preparing exam-level items...</strong></div>';for(let i=0;i<5;i++)items.push(await generateQuestion({domain:currentDomain,concept:pickConcept(currentDomain),mode:'exam'}));function show(){const q=items[idx];qs('main').innerHTML=`<div class="question-card"><div class="question-head"><div class="question-meta">Domain Challenge · Item ${idx+1}/5 · DOM. ${q.domain}</div><div class="timer-pill">Exam Reality</div></div><div class="question-text">${q.q}</div>${Object.entries(q.options).map(([l,t])=>`<button class="option" data-ch="${l}"><span class="option-letter">${l}</span><span>${t}</span></button>`).join('')}</div>`;document.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>{const ok=b.dataset.ch===q.correct;score+=ok?1:0;recordAnswer(q,b.dataset.ch,ok,'exam',0);idx++;idx<items.length?show():finish()})}function finish(){qs('main').innerHTML=`<div class="complete-card"><div style="font-size:48px">${score>=4?'🏆':score>=3?'📈':'🎯'}</div><div class="module-title">Challenge Complete</div><p class="page-sub">Score: <strong>${score}/5</strong>. ${score>=4?'This domain is moving toward stable readiness.':'This domain needs another stabilization cycle.'}</p><div class="note-box">Remember: readiness is not just today’s score. The goal is stable performance across time and across mixed clinical scenarios.</div><button class="btn btn-primary" onclick="renderDashboard()">Back to Dashboard</button></div>`}show()}}
+function renderAnalytics(){state.currentView='analytics';bindNav();updateSide();qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">Performance Insights</div><div class="page-sub">Focus on stability, retention, and readiness — not just accuracy.</div></div></div><div class="metrics"><div class="metric"><div class="metric-value">${state.readiness}%</div><div class="metric-label">exam readiness</div></div><div class="metric"><div class="metric-value">${Math.round(avg('stability'))}%</div><div class="metric-label">average stability</div></div><div class="metric"><div class="metric-value">${Math.round(avg('retention'))}%</div><div class="metric-label">average retention</div></div><div class="metric"><div class="metric-value">${state.history.filter(x=>!x.ok&&x.conf==='high').length}</div><div class="metric-label">confidence alerts</div></div></div><div class="domain-grid">${DOMAINS.map(domainCard).join('')}</div><div class="panel" style="margin-top:16px"><div class="panel-title">Recent Clinical Reasoning History</div><div class="session-list">${state.history.slice(0,10).map(h=>`<div class="session-item"><span>${h.ok?'✓':'✗'} DOM. ${h.domain} · ${h.concept}</span><strong>${h.conf}</strong></div>`).join('')||'<div class="session-item"><span>No responses yet</span><strong>—</strong></div>'}</div></div>`;document.querySelectorAll('[data-open-domain]').forEach(b=>b.onclick=()=>{currentDomain=b.dataset.openDomain;renderStudy()})}
+function avg(k){return DOMAINS.reduce((s,d)=>s+(state.domains[d.id][k]||0),0)/DOMAINS.length}
+function render(){if(!qs('app').classList.contains('active')&&state.onboarded){qs('landing').classList.remove('active');qs('onboarding').classList.remove('active');qs('app').classList.add('active')}if(state.currentView==='dashboard')renderDashboard();else if(state.currentView==='study')renderStudy();else if(state.currentView==='practice')renderPractice();else if(state.currentView==='challenge')renderChallenge();else if(state.currentView==='analytics')renderAnalytics();else renderDashboard()}
+function adminModal(){qs('adminModal').classList.add('active');qs('adminKeyInput').value=getAdminKey()}qs('saveAdminKey').onclick=()=>{localStorage.setItem(KEY_STORAGE,qs('adminKeyInput').value.trim());state.adminConfigured=!!getAdminKey();save();qs('adminModal').classList.remove('active');showToast('Admin key saved locally.');startPreload()};qs('closeAdmin').onclick=()=>qs('adminModal').classList.remove('active');document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&String(e.key).toLowerCase()==='a')adminModal()});window.renderDashboard=renderDashboard;
+renderLanding(); if(state.onboarded)render(); startPreload();
 })();
 </script>
 </body>
