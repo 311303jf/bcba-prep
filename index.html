@@ -81,6 +81,35 @@ aside{width:300px}
 .domain-card-clean-note{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:10px 12px;margin-top:12px;font-size:12px;color:var(--ink-soft);line-height:1.55;font-weight:700}
 @media(max-width:820px){aside{width:100%}.task-title-small{max-width:180px}}
 
+
+/* Deep Guided Learn System */
+.deep-learn-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-sm)}
+.deep-section{border:1px solid var(--border-soft);background:var(--surface);border-radius:var(--radius-md);padding:16px;margin:14px 0}
+.deep-section.white{background:var(--white)}
+.deep-section.green{background:linear-gradient(135deg,var(--green-light),var(--white));border-color:var(--green-mid)}
+.deep-section.blue{background:var(--blue-light);border-color:var(--blue-border)}
+.deep-section.gold{background:var(--gold-light);border-color:var(--gold-border)}
+.deep-section.red{background:var(--red-light);border-color:var(--red-border)}
+.deep-label{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.deep-title{font-family:var(--font-display);font-size:20px;font-weight:900;margin-bottom:8px;color:var(--ink)}
+.deep-text{font-size:14px;line-height:1.85;color:var(--ink-mid);font-weight:600}
+.deep-list{display:grid;gap:8px;margin-top:8px}
+.deep-list-item{background:rgba(255,255,255,.72);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;line-height:1.65;color:var(--ink-mid);font-weight:700}
+.compare-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.compare-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px}
+.compare-head{font-size:12px;font-weight:900;color:var(--green);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.compare-body{font-size:12px;line-height:1.65;color:var(--ink-mid);font-weight:700}
+.quick-check{background:var(--white);border:1.5px solid var(--green-mid);border-radius:var(--radius-md);padding:14px;margin-top:12px}
+.quick-check-q{font-size:14px;font-weight:900;line-height:1.6;margin-bottom:10px;color:var(--ink)}
+.quick-check-options{display:grid;gap:7px}
+.quick-check-btn{border:1.5px solid var(--border);background:var(--white);border-radius:var(--radius-sm);padding:10px 12px;text-align:left;font-size:13px;font-weight:800;color:var(--ink-mid)}
+.quick-check-btn:hover{border-color:var(--green);background:var(--green-light)}
+.quick-check-btn.correct{border-color:#639922;background:#EDF7E0;color:#315C0E}
+.quick-check-btn.wrong{border-color:var(--red-border);background:var(--red-light);color:var(--red)}
+.quick-feedback{display:none;margin-top:10px;font-size:13px;line-height:1.65;font-weight:800;color:var(--green-dark)}
+.memory-anchor{font-family:var(--font-display);font-size:22px;font-weight:900;text-align:center;color:var(--green-dark);line-height:1.35}
+@media(max-width:820px){.compare-grid{grid-template-columns:1fr}.deep-learn-card{padding:18px}}
+
 </style>
 </head>
 <body>
@@ -857,47 +886,114 @@ function cleanJson(txt){return JSON.parse(String(txt).replace(/```json|```/g,'')
 // Returns bilingual content object — ONE API call, both languages
 // Cache key has NO language suffix so both langs share the same cache
 async function generateLearnContent(domId,concept){
-  const ck=domId+':'+concept;
+  const task=findTaskByTitle(domId,concept);
+  const ck=domId+':'+concept+':deep_v1';
   if(state.learned[ck]){return state.learned[ck];}
   const dom=DOMAINS.find(d=>d.id===domId)||DOMAINS[1];
-  const prompt=`You are an expert BCBA exam instructor (TCO 6th Edition 2025).
-Domain ${dom.id}: ${dom.title}. Official BACB Task ${findTaskByTitle(dom.id,concept).id}: "${concept}".
-Return ONLY valid JSON with BOTH English and Spanish for every field.
-Keep ABA technical terms in English even in Spanish fields (reinforcement, extinction, MO, SD, FBA, DRO, DRA, ABA, BCBA, BST, IOA).
+  const prompt=`You are an expert BCBA exam instructor and instructional designer for the BACB BCBA Test Content Outline 6th Edition.
+
+Create a DEEP GUIDED LEARN lesson for the exact official task below. The lesson must make the student feel they are truly studying, not just reading a definition.
+
+Official Task: ${task.id} — "${task.title}"
+Domain ${dom.id}: ${dom.title}
+
+STRICT ALIGNMENT:
+- Teach ONLY this task.
+- Do not drift into other ABA concepts unless needed as a contrast/trap.
+- Keep the official task wording intact.
+- Keep ABA technical terms in English even in Spanish fields when appropriate (reinforcement, extinction, MO, SD, FBA, DRO, DRA, ABA, BCBA, BST, IOA).
+
+Return ONLY valid JSON with BOTH English and Spanish fields:
 {
-  "hook_en":"Sharp clinical question in English to prime thinking (no answer).",
-  "hook_es":"Same question translated to Spanish.",
-  "def_en":"Precise 2-3 sentence definition in English using exact ABA terminology.",
-  "def_es":"Same definition in Spanish.",
-  "example_en":"3-4 sentence realistic clinical scenario in English showing this concept.",
-  "example_es":"Same scenario in Spanish.",
-  "strategy_en":"Specific actionable tip in English for identifying this concept on BCBA exam questions.",
-  "strategy_es":"Same strategy in Spanish.",
-  "key_points_en":["Critical exam point 1","Critical exam point 2","Critical exam point 3"],
-  "key_points_es":["Punto crítico 1","Punto crítico 2","Punto crítico 3"]
+  "hook_en":"A short curiosity-building question or clinical dilemma for this exact task.",
+  "hook_es":"Spanish version.",
+  "plain_en":"Plain-English explanation in 4-6 sentences. Simple, clear, clinically meaningful.",
+  "plain_es":"Spanish version.",
+  "official_en":"Precise official-style explanation using the task wording and exam language.",
+  "official_es":"Spanish version, but preserve important ABA technical terms.",
+  "example_en":"Realistic 4-5 sentence clinical scenario that demonstrates this exact task.",
+  "example_es":"Spanish version.",
+  "comparison_en":[{"label":"Part 1","meaning":"What it means","example":"Brief clinical example"},{"label":"Part 2","meaning":"What it means","example":"Brief clinical example"},{"label":"Part 3","meaning":"What it means","example":"Brief clinical example"}],
+  "comparison_es":[{"label":"Parte 1","meaning":"Qué significa","example":"Ejemplo clínico breve"},{"label":"Parte 2","meaning":"Qué significa","example":"Ejemplo clínico breve"},{"label":"Parte 3","meaning":"Qué significa","example":"Ejemplo clínico breve"}],
+  "trap_en":"One common BCBA exam trap or misconception for this task, with correction.",
+  "trap_es":"Spanish version.",
+  "strategy_en":"A concrete test-taking strategy for recognizing this task in scenario questions.",
+  "strategy_es":"Spanish version.",
+  "memory_en":"A short memorable anchor or mnemonic.",
+  "memory_es":"Spanish version.",
+  "key_points_en":["Key point 1","Key point 2","Key point 3"],
+  "key_points_es":["Punto clave 1","Punto clave 2","Punto clave 3"],
+  "quick_check_en":{"q":"One quick checkpoint question","options":{"A":"Option A","B":"Option B","C":"Option C"},"correct":"A","rationale":"Short rationale"},
+  "quick_check_es":{"q":"Pregunta rápida","options":{"A":"Opción A","B":"Opción B","C":"Opción C"},"correct":"A","rationale":"Explicación breve"}
 }`;
   try{
-    const raw=await callProvider(prompt,1400);
+    const raw=await callProvider(prompt,2400);
     const content=cleanJson(raw);
     state.learned[ck]=content;
     save();
     return content;
   }catch(e){
-    // Bilingual fallback from STATIC_LEARN or generic
-    const sl=STATIC_LEARN[concept];
-    const fb={
-      hook_en:null,hook_es:null,
-      def_en:sl?sl.def:`${concept} is a core BCBA concept within ${dom.title}.`,
-      def_es:sl?sl.def_es:`${tConcept(concept)} es un concepto clave en ${tDomainTitle(dom)}.`,
-      example_en:sl?sl.example:'A behavior analyst applies this concept while making data-based clinical decisions.',
-      example_es:sl?sl.example_es:'Un analista de conducta aplica este concepto al tomar decisiones clínicas basadas en conducta observable y variables ambientales.',
-      strategy_en:sl?sl.strategy:'Identify the behavior, the environmental event, the timing, and the effect on future responding.',
-      strategy_es:sl?sl.strategy_es:'Identifica la conducta, el evento ambiental, el momento en que ocurre y el efecto sobre la respuesta futura.',
-      key_points_en:[],key_points_es:[]
-    };
+    const fb=deepFallbackLearn(dom,task);
     state.learned[ck]=fb;save();
     return fb;
   }
+}
+function deepFallbackLearn(dom,task){
+  const isA1=task.id==='A.1';
+  if(isA1){
+    return {
+      hook_en:'How can behavior analysis be a science if every client is different?',
+      hook_es:'¿Cómo puede el análisis de conducta ser una ciencia si cada cliente es diferente?',
+      plain_en:'Behavior analysis is a science because it studies behavior in an objective, systematic, and data-based way. The first goal is description: clearly observing and defining what behavior is happening. The second goal is prediction: identifying when behavior is likely to occur based on patterns in the environment. The third goal is control: changing environmental variables and showing that behavior changes as a result. These goals help BCBAs move from guessing to evidence-based decision making.',
+      plain_es:'El análisis de conducta es una ciencia porque estudia la conducta de forma objetiva, sistemática y basada en datos. La primera meta es description: observar y definir claramente qué conducta ocurre. La segunda meta es prediction: identificar cuándo es probable que la conducta ocurra según patrones en el ambiente. La tercera meta es control: cambiar variables ambientales y demostrar que la conducta cambia como resultado. Estas metas ayudan al BCBA a pasar de “adivinar” a tomar decisiones basadas en evidencia.',
+      official_en:'Task A.1 requires you to identify the goals of behavior analysis as a science: description, prediction, and control. Description means accurately observing and measuring behavior. Prediction means discovering reliable relations between environmental events and behavior. Control means demonstrating that changing an environmental variable produces a change in behavior.',
+      official_es:'La tarea A.1 requiere identificar las metas del análisis de conducta como ciencia: description, prediction y control. Description significa observar y medir la conducta con precisión. Prediction significa descubrir relaciones confiables entre eventos ambientales y conducta. Control significa demostrar que al cambiar una variable ambiental, la conducta cambia.',
+      example_en:'A BCBA first defines and measures tantrums during math work. After several days, the BCBA notices tantrums are more likely when difficult worksheets are presented. Then the BCBA changes task difficulty and reinforcement for appropriate requests, and tantrums decrease. The first step is description, the pattern is prediction, and the demonstrated behavior change is control.',
+      example_es:'Un BCBA primero define y mide las rabietas durante tareas de matemáticas. Después de varios días, nota que las rabietas son más probables cuando se presentan hojas difíciles. Luego modifica la dificultad de la tarea y el reinforcement para pedir ayuda apropiadamente, y las rabietas disminuyen. El primer paso es description, el patrón es prediction, y el cambio demostrado en la conducta es control.',
+      comparison_en:[
+        {label:'Description',meaning:'Accurately observe, define, and measure behavior.',example:'Counting how many times aggression occurs.'},
+        {label:'Prediction',meaning:'Identify conditions under which behavior is likely or unlikely.',example:'Aggression happens more often during difficult tasks.'},
+        {label:'Control',meaning:'Manipulate environmental variables and show behavior changes.',example:'Changing task difficulty reduces aggression.'}
+      ],
+      comparison_es:[
+        {label:'Description',meaning:'Observar, definir y medir la conducta con precisión.',example:'Contar cuántas veces ocurre la agresión.'},
+        {label:'Prediction',meaning:'Identificar condiciones bajo las cuales la conducta es más o menos probable.',example:'La agresión ocurre más durante tareas difíciles.'},
+        {label:'Control',meaning:'Manipular variables ambientales y demostrar cambio en la conducta.',example:'Cambiar la dificultad de la tarea reduce la agresión.'}
+      ],
+      trap_en:'Common trap: Prediction and control are not the same. Prediction means you can anticipate behavior based on patterns. Control means you manipulated a variable and behavior changed because of it.',
+      trap_es:'Trampa común: Prediction y control no son lo mismo. Prediction significa que puedes anticipar la conducta por patrones. Control significa que manipulaste una variable y la conducta cambió por esa manipulación.',
+      strategy_en:'On the exam, ask: Are they only measuring? That is description. Are they identifying a reliable pattern? That is prediction. Are they changing a variable and demonstrating behavior change? That is control.',
+      strategy_es:'En el examen, pregunta: ¿solo están midiendo? Eso es description. ¿están identificando un patrón confiable? Eso es prediction. ¿están cambiando una variable y demostrando cambio conductual? Eso es control.',
+      memory_en:'D → P → C: Describe first, Predict patterns, Control through environmental change.',
+      memory_es:'D → P → C: Describe primero, Predict patrones, Control mediante cambio ambiental.',
+      key_points_en:['Behavior analysis is scientific because it relies on observable behavior and data.','Description, prediction, and control are progressive scientific goals.','Control requires demonstrated influence over behavior, not just correlation.'],
+      key_points_es:['El análisis de conducta es científico porque depende de conducta observable y datos.','Description, prediction y control son metas científicas progresivas.','Control requiere demostrar influencia sobre la conducta, no solo correlación.'],
+      quick_check_en:{q:'A BCBA observes that screaming occurs most often when independent work begins, but has not changed any variables yet. Which goal is best represented?',options:{A:'Prediction',B:'Control',C:'Punishment'},correct:'A',rationale:'The BCBA identified a pattern that helps anticipate when behavior is likely. No variable has been manipulated yet, so it is not control.'},
+      quick_check_es:{q:'Un BCBA observa que los gritos ocurren más cuando comienza el trabajo independiente, pero aún no ha cambiado variables. ¿Qué meta está mejor representada?',options:{A:'Prediction',B:'Control',C:'Punishment'},correct:'A',rationale:'El BCBA identificó un patrón que permite anticipar cuándo es probable la conducta. Aún no manipuló una variable, por eso no es control.'}
+    };
+  }
+  return {
+    hook_en:`Why does ${task.id} matter for real BCBA decision making?`,
+    hook_es:`¿Por qué ${task.id} importa para tomar decisiones reales como BCBA?`,
+    plain_en:`This task asks you to understand and apply: ${task.title}. In simple terms, you need to recognize what the task is asking, separate it from similar ABA concepts, and apply it to clinical scenarios. The exam will usually not ask for a memorized definition only. It will describe a situation and expect you to identify the concept through the behavior, environmental variables, timing, and effect on future responding.`,
+    plain_es:`Esta tarea requiere entender y aplicar: ${task.title}. En palabras simples, necesitas reconocer qué está preguntando la tarea, separarla de conceptos ABA parecidos y aplicarla a escenarios clínicos. El examen normalmente no preguntará solo una definición memorizada. Describirá una situación y esperará que identifiques el concepto mediante la conducta, las variables ambientales, el momento en que ocurren y el efecto en respuestas futuras.`,
+    official_en:`Official task focus: ${task.id} — ${task.title}. Study this task using the exact wording because practice questions should be locked to this target skill.`,
+    official_es:`Enfoque oficial: ${task.id} — ${task.title}. Estudia esta tarea usando el wording exacto porque las preguntas de práctica deben estar bloqueadas a esta habilidad.`,
+    example_en:'A BCBA reviews a clinical scenario, identifies the relevant behavior and environmental events, and uses the task concept to make a data-based interpretation. The correct answer depends on matching the scenario to the specific official task, not to a general ABA topic.',
+    example_es:'Un BCBA revisa un escenario clínico, identifica la conducta relevante y los eventos ambientales, y usa el concepto de la tarea para hacer una interpretación basada en datos. La respuesta correcta depende de conectar el escenario con la tarea oficial específica, no con un tema ABA general.',
+    comparison_en:[{label:'Identify',meaning:'Find the relevant behavioral relation.',example:'Notice what the scenario is really testing.'},{label:'Distinguish',meaning:'Separate this task from similar concepts.',example:'Avoid choosing a nearby but wrong concept.'},{label:'Apply',meaning:'Use the concept in a clinical decision.',example:'Select the option that best matches the task.'}],
+    comparison_es:[{label:'Identificar',meaning:'Encontrar la relación conductual relevante.',example:'Notar qué está midiendo realmente el escenario.'},{label:'Distinguir',meaning:'Separar esta tarea de conceptos similares.',example:'Evitar escoger un concepto cercano pero incorrecto.'},{label:'Aplicar',meaning:'Usar el concepto en una decisión clínica.',example:'Seleccionar la opción que mejor coincide con la tarea.'}],
+    trap_en:'Common trap: choosing an answer that is generally ABA-related but not specifically aligned to this task.',
+    trap_es:'Trampa común: escoger una respuesta relacionada con ABA en general pero no específicamente alineada con esta tarea.',
+    strategy_en:'Before answering, name the task ID in your mind and ask whether every part of the option fits that exact task.',
+    strategy_es:'Antes de responder, di mentalmente el ID de la tarea y pregunta si cada parte de la opción coincide exactamente con esa tarea.',
+    memory_en:`Task lock: ${task.id} first, answer second.`,
+    memory_es:`Bloqueo por tarea: ${task.id} primero, respuesta después.`,
+    key_points_en:['Use the official wording as your anchor.','Reject answers that drift into another task.','Apply the concept to observable behavior and environmental variables.'],
+    key_points_es:['Usa el wording oficial como ancla.','Rechaza respuestas que se desvían a otra tarea.','Aplica el concepto a conducta observable y variables ambientales.'],
+    quick_check_en:{q:`What is the safest first step when answering a question for ${task.id}?`,options:{A:'Match the scenario to the exact task wording',B:'Pick the most familiar ABA term',C:'Choose the longest answer'},correct:'A',rationale:'Task-locked reasoning starts by matching the scenario to the exact official task.'},
+    quick_check_es:{q:`¿Cuál es el primer paso más seguro al responder una pregunta de ${task.id}?`,options:{A:'Conectar el escenario con el wording exacto de la tarea',B:'Escoger el término ABA más familiar',C:'Escoger la respuesta más larga'},correct:'A',rationale:'El razonamiento task-locked comienza conectando el escenario con la tarea oficial exacta.'}
+  };
 }
 // Helper — get the right language field from bilingual content
 function lc(content,field){return content[field+'_'+lang]||content[field+'_en']||content[field]||'';}
@@ -1059,73 +1155,72 @@ async function renderStudy(){
   state.currentView='study';bindNav();updateSide();
   const d=DOMAINS.find(x=>x.id===currentDomain)||DOMAINS[1];
   currentConcept=currentConcept&&d.concepts.includes(currentConcept)?currentConcept:d.concepts[0];
-  const ck=currentDomain+':'+currentConcept;
+  const task=findTaskByTitle(d.id,currentConcept);
+  const ck=currentDomain+':'+currentConcept+':deep_v1';
   const seenKey=ck+'_seen';
 
-  function topbar(){return `<div class="topbar"><div><div class="page-title">${findTaskByTitle(d.id,currentConcept).id} · ${L('learn')}</div><div class="page-sub">${tDomainTitle(d)}</div></div><div class="topbar-right">${langSwitch()}<button class="btn btn-secondary" id="backDash">${L('backDashboard')}</button></div></div>`;}
-  function taskFocusBox(){const task=findTaskByTitle(d.id,currentConcept);const cls=taskMasteryClass(d.id,currentConcept);return `<div class="task-focus-card"><div class="task-focus-top"><div><div class="task-focus-id">${task.id} · Official BACB Task</div><div class="task-focus-title">${task.title}</div></div><span class="status-pill ${cls==='mastered'?'stable':cls==='review'?'review':cls==='new'?'review':'stable'}">${taskMasteryLabel(cls)}</span></div><div class="task-focus-meta">Domain ${d.id}: ${tDomainTitle(d)} · ${d.questions} exam questions · ${d.weight}% exam weight</div></div>`;}
-
+  function topbar(){return `<div class="topbar"><div><div class="page-title">${task.id} · ${L('learn')}</div><div class="page-sub">${tDomainTitle(d)}</div></div><div class="topbar-right">${langSwitch()}<button class="btn btn-secondary" id="backDash">${L('backDashboard')}</button></div></div>`;}
+  function taskFocusBox(){const cls=taskMasteryClass(d.id,currentConcept);return `<div class="task-focus-card"><div class="task-focus-top"><div><div class="task-focus-id">${task.id} · Official BACB Task</div><div class="task-focus-title">${task.title}</div></div><span class="status-pill ${cls==='mastered'?'stable':cls==='review'?'review':cls==='new'?'review':'stable'}">${taskMasteryLabel(cls)}</span></div><div class="task-focus-meta">Domain ${d.id}: ${tDomainTitle(d)} · ${d.questions} exam questions · ${d.weight}% exam weight</div></div>`;}
+  function quickCheckHtml(qc){
+    if(!qc||!qc.q||!qc.options)return '';
+    return `<div class="quick-check"><div class="deep-label">✅ ${lang==='es'?'Chequeo rápido':'Quick Check'}</div><div class="quick-check-q">${qc.q}</div><div class="quick-check-options">${Object.entries(qc.options).map(([k,v])=>`<button class="quick-check-btn" data-qc="${k}" data-correct="${qc.correct}"><strong>${k}.</strong> ${v}</button>`).join('')}</div><div class="quick-feedback" id="quickFeedback">${qc.rationale||''}</div></div>`;
+  }
+  function comparisonHtml(rows){
+    rows=Array.isArray(rows)?rows:[];
+    if(!rows.length)return '';
+    return `<div class="deep-section white"><div class="deep-label">🧭 ${lang==='es'?'Comparación visual':'Visual Comparison'}</div><div class="compare-grid">${rows.map(r=>`<div class="compare-card"><div class="compare-head">${r.label||''}</div><div class="compare-body"><strong>${lang==='es'?'Significa':'Means'}:</strong> ${r.meaning||''}<br><strong>${lang==='es'?'Ejemplo':'Example'}:</strong> ${r.example||''}</div></div>`).join('')}</div></div>`;
+  }
+  function keyPointsHtml(points){
+    points=Array.isArray(points)?points:[];
+    if(!points.length)return '';
+    return `<div class="deep-section blue"><div class="deep-label">🎯 ${lang==='es'?'Puntos clave para el examen':'Key Exam Points'}</div><div class="deep-list">${points.map(p=>`<div class="deep-list-item">${p}</div>`).join('')}</div></div>`;
+  }
   function buildPage(c,flipped){
-    const kp=lcArr(c,'key_points');
-    const kpHtml=kp.length?`<div class="key-pts"><div style="font-size:10px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.09em;margin-bottom:8px">${lang==='es'?'Puntos Clave para el Examen':'Key Exam Points'}</div><ul style="padding-left:16px;margin:0">${kp.map(p=>`<li style="font-size:13px;line-height:1.8">${p}</li>`).join('')}</ul></div>`:'';
     const hook=lc(c,'hook');
+    const qc=(c['quick_check_'+lang]||c.quick_check_en||c.quick_check||null);
     if(hook&&!flipped){
-      return topbar()+`<div class="learn-wrap">
-        <div class="learn-hook">
-          <div style="font-size:10px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">💭 ${lang==='es'?'Piensa antes de ver la respuesta':'Think before seeing the answer'}</div>
-          <div class="hook-q">${hook}</div>
-          <button class="btn btn-primary" id="seeAnswerBtn" style="margin-top:4px">${lang==='es'?'Ver explicación →':'See explanation →'}</button>
-        </div>
-        <div class="learn-ai-card" style="opacity:.3;pointer-events:none">${taskFocusBox()}<button class="btn btn-primary" disabled>${L('practiceConcept')}</button></div>
-      </div>`;
+      return topbar()+`<div class="learn-wrap"><div class="learn-hook"><div style="font-size:10px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">💭 ${lang==='es'?'Piensa antes de ver la explicación':'Think before the lesson'}</div><div class="hook-q">${hook}</div><button class="btn btn-primary" id="seeAnswerBtn" style="margin-top:4px">${lang==='es'?'Comenzar explicación guiada →':'Start guided lesson →'}</button></div><div class="learn-ai-card" style="opacity:.45;pointer-events:none">${taskFocusBox()}<button class="btn btn-primary" disabled>${L('practiceConcept')}</button></div></div>`;
     }
-    return topbar()+`<div class="learn-wrap"><div class="learn-ai-card">
+    return topbar()+`<div class="learn-wrap"><div class="deep-learn-card">
       ${taskFocusBox()}
-      <div class="module-label" style="color:${d.color}">${L('guidedConcept')}</div>
-      <div class="module-title">${taskLabel(d.id,currentConcept)}</div>
-      <div class="definition">${lc(c,'def')}</div>
-      <div class="section-label">${lang==='es'?'Ejemplo Clínico':'Clinical Example'}</div>
-      <p style="font-size:14px;line-height:1.8;color:var(--ink-mid);margin-bottom:12px">${lc(c,'example')}</p>
-      ${lc(c,'strategy')?`<div class="note-box"><strong>💡 ${L('examStrategy')}:</strong> ${lc(c,'strategy')}</div>`:''}
-      ${kpHtml}<div class="task-actions-row"><button class="btn btn-primary" id="practiceConcept">${L('practiceConcept')}</button><button class="btn btn-secondary" id="challengeTask">${L('examRealityMode')}</button></div>
+      <div class="deep-section green"><div class="deep-label">🧠 ${lang==='es'?'Explicación clara':'Plain-English Understanding'}</div><div class="deep-title">${lang==='es'?'Qué significa realmente':'What this really means'}</div><div class="deep-text">${lc(c,'plain')||lc(c,'def')}</div></div>
+      <div class="deep-section white"><div class="deep-label">📘 ${lang==='es'?'Lenguaje oficial BACB':'Official BACB Language'}</div><div class="deep-text">${lc(c,'official')||lc(c,'def')}</div></div>
+      ${comparisonHtml(c['comparison_'+lang]||c.comparison_en||c.comparison||[])}
+      <div class="deep-section"><div class="deep-label">🏥 ${lang==='es'?'Aplicación clínica':'Clinical Application'}</div><div class="deep-text">${lc(c,'example')}</div></div>
+      <div class="deep-section red"><div class="deep-label">⚠️ ${lang==='es'?'Trampa común del examen':'Common Exam Trap'}</div><div class="deep-text">${lc(c,'trap')}</div></div>
+      <div class="deep-section gold"><div class="deep-label">💡 ${L('examStrategy')}</div><div class="deep-text">${lc(c,'strategy')}</div></div>
+      ${keyPointsHtml(lcArr(c,'key_points'))}
+      <div class="deep-section green"><div class="deep-label">🧷 ${lang==='es'?'Ancla de memoria':'Memory Anchor'}</div><div class="memory-anchor">${lc(c,'memory')}</div></div>
+      ${quickCheckHtml(qc)}
+      <div class="task-actions-row"><button class="btn btn-primary" id="practiceConcept">${L('practiceConcept')}</button><button class="btn btn-secondary" id="challengeTask">${L('examRealityMode')}</button></div>
     </div></div>`;
   }
 
   function bind(flipped){
     const bd=document.getElementById('backDash');if(bd)bd.onclick=renderDashboard;
     const sa=document.getElementById('seeAnswerBtn');
-    if(sa)sa.onclick=()=>{state.learned[seenKey]=true;save();qs('main').innerHTML=buildPage(state.learned[ck]||{},true);bind(true);};
+    if(sa)sa.onclick=()=>{state.learned[seenKey]=true;save();qs('main').innerHTML=buildPage(state.learned[ck]||deepFallbackLearn(d,task),true);bind(true);};
     const pc=document.getElementById('practiceConcept');
     if(pc)pc.onclick=()=>renderPractice({domain:currentDomain,concept:currentConcept,mode:'guided'});
     const ct=document.getElementById('challengeTask');
     if(ct)ct.onclick=()=>renderChallenge(currentDomain);
+    document.querySelectorAll('[data-qc]').forEach(btn=>btn.onclick=()=>{
+      const correct=btn.dataset.correct;
+      document.querySelectorAll('[data-qc]').forEach(x=>{x.disabled=true;if(x.dataset.qc===correct)x.classList.add('correct')});
+      if(btn.dataset.qc!==correct)btn.classList.add('wrong');
+      const fb=document.getElementById('quickFeedback');if(fb)fb.style.display='block';
+    });
   }
 
-  // SHOW IMMEDIATELY — never block the user
   const flipped=!!state.learned[seenKey];
   const cached=state.learned[ck];
-  const sl=STATIC_LEARN[currentConcept];
-
   if(cached){
-    // Best: already generated (bilingual), instant render
     qs('main').innerHTML=buildPage(cached,flipped);bind(flipped);
   } else {
-    // Build instant fallback from static or generic (bilingual)
-    const instant={
-      hook_en:null,hook_es:null,
-      def_en:sl?sl.def:`${currentConcept} is a core BCBA concept within ${d.title}.`,
-      def_es:sl?sl.def_es:`${tConcept(currentConcept)} es un concepto clave en ${tDomainTitle(d)}.`,
-      example_en:sl?sl.example:'A behavior analyst applies this concept while making data-based clinical decisions based on observable data.',
-      example_es:sl?sl.example_es:'Un analista de conducta aplica este concepto al tomar decisiones clínicas basadas en datos observables.',
-      strategy_en:sl?sl.strategy:'Identify the behavior, the environmental event, the timing, and the effect on future responding.',
-      strategy_es:sl?sl.strategy_es:'Identifica la conducta, el evento ambiental, el momento en que ocurre y el efecto sobre la respuesta futura.',
-      key_points_en:[],key_points_es:[]
-    };
-    // Show instantly — no spinner
+    const instant=deepFallbackLearn(d,task);
     qs('main').innerHTML=buildPage(instant,true);bind(true);
-    // Generate richer content silently in background
     generateLearnContent(currentDomain,currentConcept).then(rich=>{
-      if(state.currentView==='study'){
+      if(state.currentView==='study'&&currentDomain===d.id&&currentConcept===task.title){
         qs('main').innerHTML=buildPage(rich,!!state.learned[seenKey]);
         bind(!!state.learned[seenKey]);
       }
