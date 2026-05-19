@@ -63,6 +63,24 @@
 @keyframes spin{to{transform:rotate(360deg)}}
 .setup-key-input:focus{outline:none;border-color:var(--green);background:var(--white)}
 
+
+/* Clean official task navigator refinements */
+aside{width:300px}
+.task-tree{padding:4px 8px 10px 14px}
+.nav-task{grid-template-columns:8px 42px 1fr;padding:8px 9px;align-items:center}
+.task-title-small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%}
+.nav-task.active .task-title-small{white-space:normal;overflow:visible}
+.task-focus-card{background:linear-gradient(135deg,var(--green-light),var(--white));border:1.5px solid var(--green-mid);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px}
+.task-focus-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap}
+.task-focus-id{font-size:12px;font-weight:900;color:var(--green);letter-spacing:.08em;text-transform:uppercase}
+.task-focus-title{font-family:var(--font-display);font-size:24px;font-weight:900;line-height:1.25;color:var(--ink)}
+.task-focus-meta{font-size:12px;color:var(--ink-soft);font-weight:700;line-height:1.6}
+.task-actions-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.task-actions-row .btn{min-width:150px}
+.domain-card .task-list-panel{display:none!important}
+.domain-card-clean-note{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:10px 12px;margin-top:12px;font-size:12px;color:var(--ink-soft);line-height:1.55;font-weight:700}
+@media(max-width:820px){aside{width:100%}.task-title-small{max-width:180px}}
+
 </style>
 </head>
 <body>
@@ -636,6 +654,7 @@ const DOMAINS=[
 ];
 DOMAINS.forEach(d=>{d.concepts=d.tasks.map(t=>t.title)});
 function findTaskByTitle(domId,title){const d=DOMAINS.find(x=>x.id===domId);return d?.tasks?.find(t=>t.title===title)||d?.tasks?.[0]||{id:domId+'.?',title:title||''};}
+function shortTaskTitle(title){return String(title||'').replace(/^Identify and distinguish (among|between) /i,'').replace(/^Identify and describe /i,'').replace(/^Identify examples of /i,'').replace(/^Identify ways /i,'').replace(/^Design and evaluate /i,'').replace(/^Design and implement /i,'').replace(/^Select and implement /i,'').replace(/^Create operational definitions of /i,'Operational definitions: ').replace(/\.$/,'');}
 function taskLabel(domId,title){const t=findTaskByTitle(domId,title);return t.id+' — '+t.title;}
 function taskRecord(domId,title){return (state.domains?.[domId]?.concepts?.[title])||{total:0,correct:0,last:0,confidenceMiss:0};}
 
@@ -846,7 +865,7 @@ function navHtml(){
   const main=`<div class="nav-section">${L('study')}</div>${items.map(i=>`<button class="nav-btn ${state.currentView===i[0]?'active':''}" data-view="${i[0]}"><span>${i[1]}</span>${L(i[2])}</button>`).join('')}<div class="nav-section">Official TCO Tasks</div>`;
   const tree=DOMAINS.map(d=>{
     const open=(state.expandedDomains||[]).includes(d.id);
-    const rows=open?`<div class="task-tree">${d.tasks.map(t=>{const cls=taskMasteryClass(d.id,t.title);const active=currentDomain===d.id&&currentConcept===t.title;return `<button class="nav-task ${active?'active':''}" data-task-domain="${d.id}" data-task-title="${encodeURIComponent(t.title)}" title="${t.id} ${t.title}"><span class="task-dot ${cls}"></span><span class="task-id">${t.id}</span><span class="task-title-small">${t.title}</span></button>`}).join('')}</div>`:'';
+    const rows=open?`<div class="task-tree">${d.tasks.map(t=>{const cls=taskMasteryClass(d.id,t.title);const active=currentDomain===d.id&&currentConcept===t.title;return `<button class="nav-task ${active?'active':''}" data-task-domain="${d.id}" data-task-title="${encodeURIComponent(t.title)}" title="${t.id} ${t.title}"><span class="task-dot ${cls}"></span><span class="task-id">${t.id}</span><span class="task-title-small">${shortTaskTitle(t.title)}</span></button>`}).join('')}</div>`:'';
     return `<button class="nav-btn nav-domain-toggle ${currentDomain===d.id?'active':''}" data-toggle-domain="${d.id}"><span>DOM. ${d.id}</span><span>${tDomainShort(d)}</span><span class="nav-caret">${open?'▾':'▸'}</span></button>${rows}`;
   }).join('');
   return main+tree;
@@ -897,7 +916,7 @@ function domainTaskStats(d){
   d.tasks.forEach(t=>{const r=records[t.title];if(r&&r.total>0)learned++;const cls=taskMasteryClass(d.id,t.title);if(cls==='mastered')mastered++;if(cls==='stable'||cls==='mastered')stable++;});
   return {learned,mastered,stable,total:d.tasks.length};
 }
-function domainCard(d){const r=state.domains[d.id];const st=domainStatus(d);const stats=domainTaskStats(d);return `<div class="domain-card"><div class="domain-head"><div><div class="domain-code">DOM. ${d.id}</div><div class="domain-title">${tDomainTitle(d)}</div><div class="domain-meta"><span class="official-badge">Official TCO</span> · ${d.tasks.length} tasks · ${d.questions} exam questions · ${d.weight}% weight</div></div><span class="status-pill ${st[0]}">${st[1]}</span></div><div class="bar-label"><span>${L('accuracy')}</span><span>${r.accuracy||0}%</span></div><div class="mini-bar"><div class="mini-fill" style="width:${r.accuracy||0}%"></div></div><div class="bar-label"><span>${L('stability')}</span><span>${r.stability||0}%</span></div><div class="mini-bar"><div class="mini-fill" style="width:${r.stability||0}%;background:linear-gradient(90deg,var(--gold),#E8A030)"></div></div><div class="bar-label"><span>Task Progress</span><span>${stats.learned}/${stats.total} learned · ${stats.mastered} mastered</span></div><div class="mini-bar"><div class="mini-fill" style="width:${Math.round((stats.learned/(stats.total||1))*100)}%;background:linear-gradient(90deg,var(--blue),#5EA0E5)"></div></div><details class="task-list-panel"><summary style="padding:10px 12px;font-size:12px;font-weight:900;color:var(--green);cursor:pointer">View official ${d.id} task list</summary>${d.tasks.map(t=>{const cls=taskMasteryClass(d.id,t.title);return `<div class="task-row"><strong>${t.id}</strong><button data-open-task-domain="${d.id}" data-open-task-title="${encodeURIComponent(t.title)}">${t.title}</button><span class="task-progress-chip">${taskMasteryLabel(cls)}</span></div>`}).join('')}</details><div class="domain-actions"><button class="btn btn-secondary" data-open-domain="${d.id}">${L('learn')}</button><button class="btn btn-primary" data-practice-domain="${d.id}">${L('practice')}</button></div></div>`}
+function domainCard(d){const r=state.domains[d.id];const st=domainStatus(d);const stats=domainTaskStats(d);return `<div class="domain-card"><div class="domain-head"><div><div class="domain-code">DOM. ${d.id}</div><div class="domain-title">${tDomainTitle(d)}</div><div class="domain-meta"><span class="official-badge">Official TCO</span> · ${d.tasks.length} tasks · ${d.questions} exam questions · ${d.weight}% weight</div></div><span class="status-pill ${st[0]}">${st[1]}</span></div><div class="bar-label"><span>${L('accuracy')}</span><span>${r.accuracy||0}%</span></div><div class="mini-bar"><div class="mini-fill" style="width:${r.accuracy||0}%"></div></div><div class="bar-label"><span>${L('stability')}</span><span>${r.stability||0}%</span></div><div class="mini-bar"><div class="mini-fill" style="width:${r.stability||0}%;background:linear-gradient(90deg,var(--gold),#E8A030)"></div></div><div class="bar-label"><span>Task Progress</span><span>${stats.learned}/${stats.total} learned · ${stats.mastered} mastered</span></div><div class="mini-bar"><div class="mini-fill" style="width:${Math.round((stats.learned/(stats.total||1))*100)}%;background:linear-gradient(90deg,var(--blue),#5EA0E5)"></div></div><div class="domain-card-clean-note">Use the left Official TCO Task Navigator to open any exact task in this domain.</div><div class="domain-actions"><button class="btn btn-secondary" data-open-domain="${d.id}">${L('learn')}</button><button class="btn btn-primary" data-practice-domain="${d.id}">${L('practice')}</button></div></div>`}
 function bindDomainButtons(){document.querySelectorAll('[data-open-domain]').forEach(b=>b.onclick=()=>{currentDomain=b.dataset.openDomain;const d=DOMAINS.find(x=>x.id===currentDomain);if(d&&!d.concepts.includes(currentConcept))currentConcept=d.concepts[0];state.currentView='study';save();renderStudy()});document.querySelectorAll('[data-practice-domain]').forEach(b=>b.onclick=()=>{currentDomain=b.dataset.practiceDomain;state.currentView='practice';save();renderPractice({domain:currentDomain,concept:pickConcept(currentDomain),mode:'guided'})});document.querySelectorAll('[data-open-task-domain]').forEach(b=>b.onclick=()=>{currentDomain=b.dataset.openTaskDomain;currentConcept=decodeURIComponent(b.dataset.openTaskTitle);state.currentView='study';state.selectedTask=currentDomain+':'+currentConcept;save();renderStudy()})}
 function atRiskConcepts(){let arr=[];DOMAINS.forEach(d=>{Object.entries(state.domains[d.id].concepts).forEach(([c,r])=>{const days=(Date.now()-(r.last||0))/86400000;if(r.total>=2&&days>3)arr.push(c)})});return arr.slice(0,5)}
 async function renderStudy(){
@@ -908,7 +927,7 @@ async function renderStudy(){
   const seenKey=ck+'_seen';
 
   function topbar(){return `<div class="topbar"><div><div class="page-title">${findTaskByTitle(d.id,currentConcept).id} · ${L('learn')}</div><div class="page-sub">${tDomainTitle(d)}</div></div><div class="topbar-right">${langSwitch()}<button class="btn btn-secondary" id="backDash">${L('backDashboard')}</button></div></div>`;}
-  function chips(){return `<div class="section-label">${L('chooseFocus')}</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">${d.concepts.map(c=>`<button class="status-pill ${c===currentConcept?'stable':'review'}" data-concept="${c}">${tConcept(c)}</button>`).join('')}</div>`;}
+  function taskFocusBox(){const task=findTaskByTitle(d.id,currentConcept);const cls=taskMasteryClass(d.id,currentConcept);return `<div class="task-focus-card"><div class="task-focus-top"><div><div class="task-focus-id">${task.id} · Official BACB Task</div><div class="task-focus-title">${task.title}</div></div><span class="status-pill ${cls==='mastered'?'stable':cls==='review'?'review':cls==='new'?'review':'stable'}">${taskMasteryLabel(cls)}</span></div><div class="task-focus-meta">Domain ${d.id}: ${tDomainTitle(d)} · ${d.questions} exam questions · ${d.weight}% exam weight</div></div>`;}
 
   function buildPage(c,flipped){
     const kp=lcArr(c,'key_points');
@@ -921,32 +940,29 @@ async function renderStudy(){
           <div class="hook-q">${hook}</div>
           <button class="btn btn-primary" id="seeAnswerBtn" style="margin-top:4px">${lang==='es'?'Ver explicación →':'See explanation →'}</button>
         </div>
-        <div class="learn-ai-card" style="opacity:.3;pointer-events:none">${chips()}<button class="btn btn-primary" disabled>${L('practiceConcept')}</button></div>
+        <div class="learn-ai-card" style="opacity:.3;pointer-events:none">${taskFocusBox()}<button class="btn btn-primary" disabled>${L('practiceConcept')}</button></div>
       </div>`;
     }
     return topbar()+`<div class="learn-wrap"><div class="learn-ai-card">
+      ${taskFocusBox()}
       <div class="module-label" style="color:${d.color}">${L('guidedConcept')}</div>
       <div class="module-title">${taskLabel(d.id,currentConcept)}</div>
       <div class="definition">${lc(c,'def')}</div>
       <div class="section-label">${lang==='es'?'Ejemplo Clínico':'Clinical Example'}</div>
       <p style="font-size:14px;line-height:1.8;color:var(--ink-mid);margin-bottom:12px">${lc(c,'example')}</p>
       ${lc(c,'strategy')?`<div class="note-box"><strong>💡 ${L('examStrategy')}:</strong> ${lc(c,'strategy')}</div>`:''}
-      ${kpHtml}${chips()}
-      <button class="btn btn-primary" id="practiceConcept">${L('practiceConcept')}</button>
+      ${kpHtml}<div class="task-actions-row"><button class="btn btn-primary" id="practiceConcept">${L('practiceConcept')}</button><button class="btn btn-secondary" id="challengeTask">${L('examRealityMode')}</button></div>
     </div></div>`;
   }
 
   function bind(flipped){
     const bd=document.getElementById('backDash');if(bd)bd.onclick=renderDashboard;
-    document.querySelectorAll('[data-concept]').forEach(b=>b.onclick=()=>{
-      currentConcept=b.dataset.concept;
-      Object.keys(state.learned).forEach(k=>{if(k.endsWith('_seen'))delete state.learned[k];});
-      renderStudy();
-    });
     const sa=document.getElementById('seeAnswerBtn');
     if(sa)sa.onclick=()=>{state.learned[seenKey]=true;save();qs('main').innerHTML=buildPage(state.learned[ck]||{},true);bind(true);};
     const pc=document.getElementById('practiceConcept');
     if(pc)pc.onclick=()=>renderPractice({domain:currentDomain,concept:currentConcept,mode:'guided'});
+    const ct=document.getElementById('challengeTask');
+    if(ct)ct.onclick=()=>renderChallenge(currentDomain);
   }
 
   // SHOW IMMEDIATELY — never block the user
@@ -995,15 +1011,22 @@ async function renderPractice(target){
   if(toDashEl)toDashEl.onclick=renderDashboard;
 
   // Get question INSTANTLY — queue first, then smart fallback (no await)
-  if(state.queue.length>0){
-    currentQuestion=state.queue.shift();
+  const matchIndex=state.queue.findIndex(q=>q.domain===currentDomain && q.concept===currentConcept);
+  const domainIndex=state.queue.findIndex(q=>q.domain===currentDomain);
+  if(matchIndex>=0){
+    currentQuestion=state.queue.splice(matchIndex,1)[0];
+  } else if(domainIndex>=0){
+    currentQuestion=state.queue.splice(domainIndex,1)[0];
+    currentQuestion.concept=currentConcept;
   } else {
-    // Smart fallback — pick domain/concept match from FALLBACK_QUESTIONS
+    // Smart fallback — force selected official task context
     const pool=FALLBACK_QUESTIONS.filter(q=>q.domain===currentDomain);
     const src=pool.length?pool:FALLBACK_QUESTIONS;
     const unused=src.filter(q=>!state.usedFingerprints.includes(fingerprint(q)));
     const pick=unused.length?unused:src;
     currentQuestion=JSON.parse(JSON.stringify(pick[Math.floor(Math.random()*pick.length)]));
+    currentQuestion.domain=currentDomain;
+    currentQuestion.concept=currentConcept;
   }
   save();
 
@@ -1023,7 +1046,7 @@ async function renderPractice(target){
     }).catch(()=>{});
   startPreload();
 }
-function renderQuestion(){const q=currentQuestion;const d=DOMAINS.find(x=>x.id===q.domain)||DOMAINS[1];const opts=qOptions(q);seconds=0;if(timer)clearInterval(timer);timer=setInterval(()=>{seconds++;const el=qs('timePill');if(el)el.textContent=`⏱ ${seconds}s`},1000);qs('practiceMount').innerHTML=`<div class="question-card"><div class="question-head"><div><div class="question-meta">DOM. ${q.domain} · ${tConcept(q.concept||'Clinical Reasoning')} · ${translatedDifficulty(q.difficulty)}</div></div><div class="timer-pill" id="timePill">⏱ 0s</div></div><div class="question-text">${qText(q,'q')}</div><div id="opts">${Object.entries(opts).map(([l,t])=>`<button class="option" data-answer="${l}"><span class="option-letter">${l}</span><span>${t}</span></button>`).join('')}</div><div class="confidence-panel"><div class="conf-label">${L('confidence')}</div><div class="conf-opts"><button class="conf-btn" data-conf="low">${L('unsure')}</button><button class="conf-btn" data-conf="mid">${L('somewhat')}</button><button class="conf-btn" data-conf="high">${L('very')}</button></div></div><button class="btn btn-secondary" id="hintBtn">💡 ${L('hint')}</button><div id="hintBox" class="note-box hidden">${qText(q,'hint')||(lang==='es'?'Divide el escenario en antecedente, conducta, consecuencia y efecto futuro.':'Break the scenario into antecedent, behavior, consequence, and future effect.')}</div><div id="feedbackMount"></div></div>`;let conf=null;document.querySelectorAll('[data-conf]').forEach(b=>b.onclick=()=>{conf=b.dataset.conf;document.querySelectorAll('[data-conf]').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')});qs('hintBtn').onclick=()=>qs('hintBox').classList.toggle('hidden');document.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>answerQuestion(b.dataset.answer,conf||'none'))}
+function renderQuestion(){const q=currentQuestion;const d=DOMAINS.find(x=>x.id===q.domain)||DOMAINS[1];const opts=qOptions(q);seconds=0;if(timer)clearInterval(timer);timer=setInterval(()=>{seconds++;const el=qs('timePill');if(el)el.textContent=`⏱ ${seconds}s`},1000);qs('practiceMount').innerHTML=`<div class="question-card"><div class="question-head"><div><div class="question-meta">${findTaskByTitle(q.domain,q.concept).id} · ${q.concept||'Clinical Reasoning'} · ${translatedDifficulty(q.difficulty)}</div></div><div class="timer-pill" id="timePill">⏱ 0s</div></div><div class="question-text">${qText(q,'q')}</div><div id="opts">${Object.entries(opts).map(([l,t])=>`<button class="option" data-answer="${l}"><span class="option-letter">${l}</span><span>${t}</span></button>`).join('')}</div><div class="confidence-panel"><div class="conf-label">${L('confidence')}</div><div class="conf-opts"><button class="conf-btn" data-conf="low">${L('unsure')}</button><button class="conf-btn" data-conf="mid">${L('somewhat')}</button><button class="conf-btn" data-conf="high">${L('very')}</button></div></div><button class="btn btn-secondary" id="hintBtn">💡 ${L('hint')}</button><div id="hintBox" class="note-box hidden">${qText(q,'hint')||(lang==='es'?'Divide el escenario en antecedente, conducta, consecuencia y efecto futuro.':'Break the scenario into antecedent, behavior, consequence, and future effect.')}</div><div id="feedbackMount"></div></div>`;let conf=null;document.querySelectorAll('[data-conf]').forEach(b=>b.onclick=()=>{conf=b.dataset.conf;document.querySelectorAll('[data-conf]').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')});qs('hintBtn').onclick=()=>qs('hintBox').classList.toggle('hidden');document.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>answerQuestion(b.dataset.answer,conf||'none'))}
 function answerQuestion(letter,conf){if(timer)clearInterval(timer);const q=currentQuestion;const ok=letter===q.correct;document.querySelectorAll('[data-answer]').forEach(b=>{b.disabled=true;if(b.dataset.answer===q.correct)b.classList.add('correct');else if(b.dataset.answer===letter)b.classList.add('wrong')});recordAnswer(q,letter,ok,conf,seconds);qs('feedbackMount').innerHTML=`<div class="feedback ${ok?'good':'bad'}"><div class="feedback-title">${ok?L('correctMsg'):L('incorrectMsg')}</div><p>${qText(q,'rationale')}</p>${!ok&&conf==='high'?`<p style="margin-top:8px"><strong>${L('confidenceAlert')}</strong> ${L('confidenceAlertText')}</p>`:''}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" id="nextQ">${L('nextItem')}</button><button class="btn btn-secondary" id="studyIt">${L('reviewConcept')}</button><button class="btn btn-gold" id="challengeIt">${L('examRealityMode')}</button></div>`;qs('nextQ').onclick=()=>renderPractice();qs('studyIt').onclick=()=>{currentDomain=q.domain;currentConcept=q.concept;renderStudy()};qs('challengeIt').onclick=()=>renderChallenge(q.domain)}
 function recordAnswer(q,letter,ok,conf,time){const dom=state.domains[q.domain]||state.domains.B;dom.total++;dom.correct+=ok?1:0;dom.last=Date.now();dom.accuracy=Math.round((dom.correct/dom.total)*100);const c=q.concept||'General';dom.concepts[c]=dom.concepts[c]||{total:0,correct:0,last:0,confidenceMiss:0};dom.concepts[c].total++;dom.concepts[c].correct+=ok?1:0;dom.concepts[c].last=Date.now();if(!ok&&conf==='high')dom.concepts[c].confidenceMiss++;dom.stability=Math.min(100,Math.round((dom.accuracy*.55)+((dom.total>=5?35:dom.total*7))-(recentMissPenalty(q.domain))));dom.retention=Math.min(100,Math.max(12,Math.round(dom.stability-(daysSince(dom.last)*3)+(ok?8:-4))));state.history.unshift({ts:Date.now(),domain:q.domain,concept:c,ok,conf,time,answer:letter,correct:q.correct});state.history=state.history.slice(0,120);state.readiness=calcReadiness();save();updateSide()}
 function recentMissPenalty(domId){return state.history.slice(0,6).filter(x=>x.domain===domId&&!x.ok).length*7}
