@@ -1540,10 +1540,20 @@ function renderMiniPractice(taskId,index=0,item=0){
   qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${task.id}.${index+1} · ${lang==='es'?'Mini-práctica':'Mini Practice'}</div><div class="page-sub">${taskTitleDisplay(task)} · ${lang==='es'?sub.es:sub.en} · ${lang==='es'?'Pregunta':'Item'} ${displayItem+1}${minDone?' · '+(lang==='es'?'mínimo completado':'minimum completed'):''}</div></div><div class="topbar-right"><div class="task-panel-controls">${langSwitch()}<button class="btn btn-secondary" id="exitMini">${lang==='es'?'Exit / Ver reporte':'Exit / View report'}</button></div></div></div><div class="mini-practice-card"><div class="mini-practice-top"><span class="mini-badge">${lang==='es'?'Definición individual':'Individual definition'}</span><span class="status-pill review">${rec.answered}/3 ${lang==='es'?'mínimo':'minimum'}</span></div><div class="question-text">${qText(q,'q')}</div>${Object.entries(opts).map(([l,t])=>`<button class="option" data-mini-answer="${l}"><span class="option-letter">${l}</span><span>${t}</span></button>`).join('')}<div id="miniFeedback"></div></div>`;
   bindLang();const ex=document.getElementById('exitMini');if(ex)ex.onclick=()=>renderMiniCompletion(task.id,index,{reason:'exit'});
   document.querySelectorAll('[data-mini-answer]').forEach(btn=>btn.onclick=()=>{
-    const ok=btn.dataset.miniAnswer===q.correct;document.querySelectorAll('[data-mini-answer]').forEach(b=>{b.disabled=true;if(b.dataset.miniAnswer===q.correct)b.classList.add('correct');else if(b===btn)b.classList.add('wrong')});
+    // IMPORTANT: mini-session questions are shuffled for display, so never compare
+    // against q.correct directly. q.correct is the ORIGINAL bank/AI answer letter.
+    // displayCorrect(q) is the correct letter AFTER randomization.
+    const correctLetter=displayCorrect(q);
+    const ok=btn.dataset.miniAnswer===correctLetter;
+    document.querySelectorAll('[data-mini-answer]').forEach(b=>{
+      b.disabled=true;
+      if(b.dataset.miniAnswer===correctLetter)b.classList.add('correct');
+      else if(b===btn)b.classList.add('wrong');
+    });
+    registerCorrectLetter(correctLetter);
     const rec2=subskillPracticeRec(task.id,sub.key);rec2.answered++;if(ok)rec2.correct++;if(rec2.answered>=3)rec2.done=true;state.activeMini={taskId,index,item:displayItem+1,mode:'practice'};save();
     const reachedMinimum=rec2.answered===3;
-    document.getElementById('miniFeedback').innerHTML=`<div class="feedback ${ok?'good':'bad'}"><div class="feedback-title">${ok?(lang==='es'?'Correcto':'Correct'):(lang==='es'?'Revisa la discriminación':'Review the discrimination')}</div><p>${qText(q,'rationale')}</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" id="miniNext">${reachedMinimum?(lang==='es'?'Ver mini-reporte →':'View mini-report →'):(lang==='es'?'Siguiente mini-pregunta':'Next mini item')}</button><button class="btn btn-secondary" id="miniExitNow">${lang==='es'?'Exit / Ver reporte':'Exit / View report'}</button></div>`;
+    document.getElementById('miniFeedback').innerHTML=`<div class="feedback ${ok?'good':'bad'}"><div class="feedback-title">${ok?(lang==='es'?'Correcto':'Correct'):(lang==='es'?'Revisa la discriminación':'Review the discrimination')}</div><p>${syncedRationale(q)}</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" id="miniNext">${reachedMinimum?(lang==='es'?'Ver mini-reporte →':'View mini-report →'):(lang==='es'?'Siguiente mini-pregunta':'Next mini item')}</button><button class="btn btn-secondary" id="miniExitNow">${lang==='es'?'Exit / Ver reporte':'Exit / View report'}</button></div>`;
     document.getElementById('miniNext').onclick=()=>{if(reachedMinimum)renderMiniCompletion(task.id,index,{reason:'minimum'});else renderMiniPractice(task.id,index,displayItem+1);};
     document.getElementById('miniExitNow').onclick=()=>renderMiniCompletion(task.id,index,{reason:'exit'});
   });
@@ -1778,8 +1788,15 @@ function bestCorrectLetter(){
   state.lastAnswerLetters=state.lastAnswerLetters||[];
   const letters=['A','B','C','D'];
   const last=state.lastAnswerLetters.slice(-2);
-  const sorted=letters.slice().sort((a,b)=>(state.answerDist[a]||0)-(state.answerDist[b]||0));
-  return sorted.find(l=>!last.includes(l))||sorted[0];
+  const counts=letters.map(l=>state.answerDist[l]||0);
+  const min=Math.min(...counts);
+  // Randomize among the least-used letters instead of always choosing A first.
+  // Also avoid using either of the last two correct letters when possible.
+  let candidates=letters.filter(l=>(state.answerDist[l]||0)===min && !last.includes(l));
+  if(!candidates.length)candidates=letters.filter(l=>(state.answerDist[l]||0)===min);
+  if(!candidates.length)candidates=letters.filter(l=>!last.includes(l));
+  if(!candidates.length)candidates=letters;
+  return candidates[Math.floor(Math.random()*candidates.length)];
 }
 function prepareDisplayQuestion(q){
   if(!q||q._displayPrepared)return q;
