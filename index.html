@@ -80,6 +80,12 @@ aside{width:300px}
 .domain-card .task-list-panel{display:none!important}
 .domain-card-clean-note{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:10px 12px;margin-top:12px;font-size:12px;color:var(--ink-soft);line-height:1.55;font-weight:700}
 @media(max-width:820px){aside{width:100%}.task-title-small{max-width:180px}}
+.task-panel-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn-danger{background:var(--red-light);color:var(--red);border:1.5px solid var(--red-border)}
+.btn-danger:hover{border-color:var(--red);background:#fff5f4}
+.btn-exit{background:var(--white);color:var(--ink-mid);border:1.5px solid var(--border)}
+.btn-exit:hover{border-color:var(--green);color:var(--green-dark)}
+
 
 
 /* Deep Guided Learn System */
@@ -143,6 +149,7 @@ const DEFAULT_LANG='en'; let lang=localStorage.getItem('bcba_lang')||DEFAULT_LAN
 const API_PROVIDER='anthropic';
 const MODEL='claude-haiku-4-5-20251001';
 const qs=id=>document.getElementById(id);
+const PRACTICE_CYCLE_LENGTH=5;
 const UI={
   en:{
     start:'Begin My Study Path',heroEye:'BCBA Exam Preparation · 6th Edition TCO',heroHead:'Build readiness that stays stable.',heroSub:'A clinical mastery platform that teaches concepts, strengthens retention, and prepares you for exam-level reasoning.',trust1:'📘 6th Edition TCO aligned',trust2:'🧩 Clinical scenarios',trust3:'🎯 Guided study path',trust4:'🇺🇸🇪🇸 English + Spanish support',check1:'Learn Mode',check2:'Adaptive review',check3:'Domain challenges',check4:'Retention checks',check5:'Exam-level cases',obNext:'Next →',obStart:'Start Dashboard →',
@@ -752,7 +759,19 @@ function freshState(){const domains={};DOMAINS.forEach(d=>domains[d.id]={accurac
 function loadState(){try{const raw=JSON.parse(localStorage.getItem(STORAGE));if(!raw||!raw.domains||!raw.profile)return freshState();const base=freshState();return {...base,...raw,domains:{...base.domains,...raw.domains},profile:{...base.profile,...raw.profile},queue:Array.isArray(raw.queue)?raw.queue:[],history:Array.isArray(raw.history)?raw.history:[],usedFingerprints:Array.isArray(raw.usedFingerprints)?raw.usedFingerprints:[],learned:raw.learned||{},taskPractice:raw.taskPractice||{},expandedDomains:Array.isArray(raw.expandedDomains)?raw.expandedDomains:['B'],answerDist:raw.answerDist||{A:0,B:0,C:0,D:0},lastAnswerLetters:Array.isArray(raw.lastAnswerLetters)?raw.lastAnswerLetters:[]}}catch(e){return freshState()}}
 function save(){localStorage.setItem(STORAGE,JSON.stringify(state))}
 function langSwitch(){return `<div class="lang-switch" role="group" aria-label="Language"><button type="button" class="lang-btn ${lang==='en'?'active':''}" data-lang="en">EN</button><button type="button" class="lang-btn ${lang==='es'?'active':''}" data-lang="es">ES</button></div>`}
-function bindLang(){document.querySelectorAll('.lang-btn').forEach(b=>b.onclick=()=>{const next=b.dataset.lang;if(next===lang)return;lang=next;localStorage.setItem('bcba_lang',lang);state.queue=[];save();aggressivePreload().catch(()=>{});if(qs('landing').classList.contains('active')){renderLanding();return}if(qs('onboarding').classList.contains('active')){renderOnboarding();return}render()})}
+function bindLang(){document.querySelectorAll('.lang-btn').forEach(b=>b.onclick=async()=>{const next=b.dataset.lang;if(next===lang)return;lang=next;localStorage.setItem('bcba_lang',lang);save();
+  // Critical UX rule: language toggle must NEVER advance practice, pull a new item,
+  // increment task counters, or regenerate the current question. It only re-renders
+  // the exact same active question in the selected language.
+  if(state.currentView==='practice'&&currentQuestion){
+    await ensureQuestionLanguage(currentQuestion,lang).catch(()=>{});
+    renderCurrentPracticeShell();
+    return;
+  }
+  if(qs('landing').classList.contains('active')){renderLanding();return}
+  if(qs('onboarding').classList.contains('active')){renderOnboarding();return}
+  render()
+})}
 function showToast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .25s';setTimeout(()=>t.remove(),260)},2300)}
 function fingerprint(q){return String((q.q||'')+' '+Object.values(q.options||{}).join(' ')).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().slice(0,260)}
 function optionQuality(q){const vals=Object.values(q.options||{}).map(x=>String(x).trim().toLowerCase()); if(vals.length!==4)return false; if(new Set(vals).size!==4)return false; if(!['A','B','C','D'].includes(q.correct))return false; if(!q.q||q.q.length<70)return false; if(!q.rationale||q.rationale.length<60)return false; return true}
@@ -793,8 +812,9 @@ function makeQ(dom, task, difficulty, q, options, correct, hint, rationale){
   return {domain:dom.id,taskId:task.id,concept:task.title,difficulty,q,options,correct,hint,rationale};
 }
 function adaptiveDifficultyForAttempt(n){
-  if(n<3)return 'guided';
-  if(n<7)return 'applied';
+  // Adaptive within a short 5-item cycle: quick win first, then applied, then exam-like.
+  if(n<2)return 'guided';
+  if(n<4)return 'applied';
   return 'exam';
 }
 function getTaskPracticeRec(taskId){
@@ -806,6 +826,66 @@ function getTaskPracticeRec(taskId){
 function taskPracticeCount(taskId){
   const rec=getTaskPracticeRec(taskId);
   return rec.seen.length;
+}
+function practiceCycleLabel(taskId,next=false){
+  const rec=getTaskPracticeRec(taskId);
+  const count=rec.seen.length+(next?1:0);
+  if(rec.extended){
+    return lang==='es'?`Práctica extendida · ${Math.max(1,count)} preguntas`:`Extended practice · ${Math.max(1,count)} items`;
+  }
+  return `Item ${Math.min(Math.max(1,count),PRACTICE_CYCLE_LENGTH)}/${PRACTICE_CYCLE_LENGTH}`;
+}
+
+function recomputeDomainFromHistory(domId){
+  const dom=state.domains[domId];
+  if(!dom)return;
+  const rows=(state.history||[]).filter(h=>h.domain===domId);
+  dom.total=rows.length;
+  dom.correct=rows.filter(h=>h.ok).length;
+  dom.last=rows.length?Math.max(...rows.map(h=>h.ts||0)):0;
+  dom.accuracy=dom.total?Math.round((dom.correct/dom.total)*100):0;
+  const conceptMap={};
+  rows.forEach(h=>{
+    const c=h.concept||'General';
+    conceptMap[c]=conceptMap[c]||{total:0,correct:0,last:0,confidenceMiss:0};
+    conceptMap[c].total++;
+    conceptMap[c].correct+=h.ok?1:0;
+    conceptMap[c].last=Math.max(conceptMap[c].last,h.ts||0);
+    if(!h.ok&&h.conf==='high')conceptMap[c].confidenceMiss++;
+  });
+  dom.concepts=conceptMap;
+  dom.stability=dom.total?Math.min(100,Math.round((dom.accuracy*.55)+((dom.total>=5?35:dom.total*7))-(recentMissPenalty(domId)))):0;
+  dom.retention=dom.total?Math.min(100,Math.max(12,Math.round(dom.stability-(daysSince(dom.last)*3)))):0;
+}
+function resetTaskProgress(taskId){
+  const found=findTaskById(taskId);
+  const title=found.task.title;
+  state.taskPractice=state.taskPractice||{};
+  delete state.taskPractice[taskId];
+  state.history=(state.history||[]).filter(h=>!(h.taskId===taskId||h.concept===title));
+  state.queue=(state.queue||[]).filter(q=>!(q.taskId===taskId||q.concept===title));
+  recomputeDomainFromHistory(found.domain.id);
+  state.readiness=calcReadiness();
+  save();
+}
+function exitTask(taskId){
+  const found=findTaskById(taskId);
+  state.lastExitedTask={taskId,domain:found.domain.id,concept:found.task.title,ts:Date.now(),seen:taskPracticeCount(taskId)};
+  save();
+  showToast(lang==='es'?'Progreso guardado. Puedes continuar después.':'Progress saved. You can continue later.');
+  renderDashboard();
+}
+function confirmResetTask(taskId){
+  const found=findTaskById(taskId);
+  const msg=lang==='es'
+    ?`¿Resetear ${found.task.id}? Se borrará TODO el progreso registrado para esta task y comenzarás desde cero.`
+    :`Reset ${found.task.id}? This will delete ALL recorded progress for this task and start it from zero.`;
+  if(!confirm(msg))return;
+  resetTaskProgress(taskId);
+  currentDomain=found.domain.id;
+  currentConcept=found.task.title;
+  showToast(lang==='es'?'Task reseteada. Comenzando desde cero.':'Task reset. Starting from zero.');
+  renderPractice({domain:currentDomain,concept:currentConcept,mode:'guided'});
 }
 function generateTaskFallbacks(dom,concept,mode='guided'){
   const task=findTaskByTitle(dom.id,concept);
@@ -888,8 +968,8 @@ function nextOfficialTask(taskId){
 function taskResultStats(taskId){
   const found=findTaskById(taskId);
   const title=found.task.title;
-  const rows=(state.history||[]).filter(h=>h.taskId===taskId || h.concept===title).slice(0,10);
-  const total=Math.max(rows.length, Math.min(taskPracticeCount(taskId),10));
+  const rows=(state.history||[]).filter(h=>h.taskId===taskId || h.concept===title).slice(0,PRACTICE_CYCLE_LENGTH);
+  const total=Math.max(rows.length, Math.min(taskPracticeCount(taskId),PRACTICE_CYCLE_LENGTH));
   const correct=rows.filter(h=>h.ok).length;
   const highMiss=rows.filter(h=>!h.ok&&h.conf==='high').length;
   const accuracy=total?Math.round((correct/total)*100):0;
@@ -915,8 +995,8 @@ function renderTaskCompletion(taskId){
   const next=nextOfficialTask(taskId);
   const nextIsSame=next.task.id===taskId;
   const completedText=lang==='es'?'Task completada':'Task Completed';
-  const subText=lang==='es'?'Cerraste una práctica adaptativa de 10 preguntas alineada a esta task oficial.':'You completed a 10-item adaptive practice set aligned to this official task.';
-  qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${tone.emoji} ${completedText}</div><div class="page-sub">${task.id} · ${task.title}</div></div><div class="topbar-right">${langSwitch()}<button class="btn btn-secondary" id="dashAfterComplete">${L('backDashboard')}</button></div></div>
+  const subText=lang==='es'?'Cerraste una práctica adaptativa mínima de 5 preguntas alineada a esta task oficial.':'You completed a minimum 5-item adaptive practice set aligned to this official task.';
+  qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${tone.emoji} ${completedText}</div><div class="page-sub">${task.id} · ${task.title}</div></div><div class="topbar-right"><div class="task-panel-controls">${langSwitch()}<button class="btn btn-exit" id="exitCompletedTask">${lang==='es'?'Salir':'Exit'}</button><button class="btn btn-danger" id="resetCompletedTask">${lang==='es'?'Resetear Task':'Reset Task'}</button><button class="btn btn-secondary" id="dashAfterComplete">${L('backDashboard')}</button></div></div></div>
   <div class="complete-card" style="max-width:880px">
     <div style="background:${tone.bg};border:1.5px solid ${tone.border};border-radius:var(--radius-lg);padding:20px;margin-bottom:16px">
       <div class="module-label" style="color:${tone.color}">${stats.mastery}</div>
@@ -925,23 +1005,25 @@ function renderTaskCompletion(taskId){
     </div>
     <div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:16px">
       <div class="metric"><div class="metric-value">${stats.accuracy}%</div><div class="metric-label">${lang==='es'?'Precisión':'Accuracy'}</div></div>
-      <div class="metric"><div class="metric-value">${stats.correct}/${stats.total||10}</div><div class="metric-label">${lang==='es'?'Correctas':'Correct'}</div></div>
+      <div class="metric"><div class="metric-value">${stats.correct}/${stats.total||PRACTICE_CYCLE_LENGTH}</div><div class="metric-label">${lang==='es'?'Correctas':'Correct'}</div></div>
       <div class="metric"><div class="metric-value">${stats.highMiss}</div><div class="metric-label">${lang==='es'?'Alertas de confianza':'Confidence alerts'}</div></div>
-      <div class="metric"><div class="metric-value">10</div><div class="metric-label">${lang==='es'?'Preguntas mínimas':'Minimum items'}</div></div>
+      <div class="metric"><div class="metric-value">5</div><div class="metric-label">${lang==='es'?'Preguntas mínimas':'Minimum items'}</div></div>
     </div>
     <div class="note-box" style="background:var(--surface);border-color:var(--border);color:var(--ink-mid)"><strong>${lang==='es'?'Qué significa:':'What this means:'}</strong> ${stats.accuracy>=80?(lang==='es'?'Puedes avanzar, pero esta task seguirá regresando en repasos de retención.':'You can move forward, and this task will still return later for retention review.'):(lang==='es'?'Conviene revisar el concepto antes de avanzar para evitar que una confusión se estabilice.':'Review this concept before moving on so misconceptions do not stabilize.')}</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+      <button class="btn btn-gold" id="keepPracticingTask">${lang==='es'?'Seguir practicando esta task':'Keep practicing this task'}</button>
       ${!nextIsSame?`<button class="btn btn-primary" id="continueNextTask">${lang==='es'?'Continuar a':'Continue to'} ${next.task.id}</button>`:''}
       <button class="btn btn-secondary" id="reviewCompletedConcept">${L('reviewConcept')}</button>
-      <button class="btn btn-gold" id="keepPracticingTask">${lang==='es'?'Seguir practicando esta task':'Keep practicing this task'}</button>
       <button class="btn btn-secondary" id="dashboardCompleteBtn">${L('backDashboard')}</button>
     </div>
   </div>`;
   bindLang();
   qs('dashAfterComplete').onclick=renderDashboard;
   qs('dashboardCompleteBtn').onclick=renderDashboard;
+  qs('exitCompletedTask').onclick=()=>exitTask(task.id);
+  qs('resetCompletedTask').onclick=()=>confirmResetTask(task.id);
   qs('reviewCompletedConcept').onclick=()=>{currentDomain=d.id;currentConcept=task.title;state.currentView='study';save();renderStudy();};
-  qs('keepPracticingTask').onclick=()=>{currentDomain=d.id;currentConcept=task.title;renderPractice({domain:d.id,concept:task.title,mode:'exam',forceContinue:true});};
+  qs('keepPracticingTask').onclick=()=>{currentDomain=d.id;currentConcept=task.title;const rec=getTaskPracticeRec(task.id);rec.extended=true;save();renderPractice({domain:d.id,concept:task.title,mode:'exam',forceContinue:true});};
   const nxt=qs('continueNextTask');
   if(nxt)nxt.onclick=()=>{currentDomain=next.domain.id;currentConcept=next.task.title;state.selectedTask=currentDomain+':'+currentConcept;state.currentView='study';save();renderStudy();};
 }
@@ -1079,7 +1161,7 @@ async function generateQuestion(target){
   const task=findTaskByTitle(dom.id,concept);
   const mode=target.mode||'guided';
   const length=mode==='exam'?'3 to 4 sentence clinical scenario':'2 to 3 sentence clinical scenario';
-  const prompt=`Create ONE original BCBA exam preparation practice item. Do not mention technology. Use ${lang==='es'?'Spanish':'English'}. Align to BACB 6th Edition Test Content Outline.\n\n${taskScopePrompt(dom,concept)}\n\nDomain ${dom.id}: ${dom.title}. Difficulty mode: ${mode}. Requirements: ${length}; four plausible options; no repeated option meanings; one clearly correct answer; strong distractors; clinical rationale explaining why correct is correct and why distractors are wrong.\n\nReturn ONLY valid JSON with keys: domain, taskId, concept, difficulty, q, options {A,B,C,D}, correct, hint, rationale. domain must be exactly "${dom.id}". taskId must be exactly "${task.id}". concept must be exactly: "${concept}".`;
+  const prompt=`Create ONE original BCBA exam preparation practice item. Do not mention technology. Use ${lang==='es'?'Spanish':'English'}. Align to BACB 6th Edition Test Content Outline.\n\n${taskScopePrompt(dom,concept)}\n\nDomain ${dom.id}: ${dom.title}. Difficulty mode: ${mode}. Requirements: ${length}; four plausible options; no repeated option meanings; one clearly correct answer; strong distractors; clinical rationale explaining why correct is correct and why distractors are wrong.\n\nReturn ONLY valid JSON with keys: domain, taskId, concept, difficulty, q, q_es, options {A,B,C,D}, options_es {A,B,C,D}, correct, hint, hint_es, rationale, rationale_es. The English fields must be in English. The Spanish fields must be faithful translations of the SAME question and SAME answer choices, not a different item. domain must be exactly "${dom.id}". taskId must be exactly "${task.id}". concept must be exactly: "${concept}".`;
   try{
     const raw=await callProvider(prompt,1700);
     const q=cleanJson(raw);
@@ -1302,6 +1384,65 @@ async function renderStudy(){
   }
 }
 
+async function translateQuestionInPlace(q,targetLang){
+  if(!q||targetLang!=='es'||q.q_es||!getAdminKey())return q;
+  const letters=['A','B','C','D'];
+  const prompt=`Translate this existing BCBA practice item to Spanish. Do NOT create a new question. Keep the same meaning, same option order, same correct answer letter, same taskId, and same concept. Preserve key ABA technical terms when appropriate.
+Return ONLY valid JSON with keys: q_es, options_es {A,B,C,D}, hint_es, rationale_es.
+
+Task: ${q.taskId||''} — ${q.concept||''}
+Correct answer letter: ${q.correct}
+Question: ${q.q}
+Options:
+A: ${q.options?.A||''}
+B: ${q.options?.B||''}
+C: ${q.options?.C||''}
+D: ${q.options?.D||''}
+Hint: ${q.hint||''}
+Rationale: ${q.rationale||''}`;
+  try{
+    const raw=await callProvider(prompt,1200);
+    const tr=cleanJson(raw);
+    if(tr&&tr.q_es&&tr.options_es){
+      q.q_es=tr.q_es;
+      q.options_es=tr.options_es;
+      q.hint_es=tr.hint_es||q.hint_es||q.hint;
+      q.rationale_es=tr.rationale_es||q.rationale_es||q.rationale;
+      // If answer options were already shuffled for display, build the display Spanish map
+      // using the original-to-display mapping so the same visible letters stay in place.
+      if(q._displayPrepared&&q._displayToOriginal){
+        q._displayOptions_es={};
+        letters.forEach(displayLetter=>{
+          const originalLetter=q._displayToOriginal[displayLetter]||displayLetter;
+          q._displayOptions_es[displayLetter]=q.options_es?.[originalLetter]||q._displayOptions?.[displayLetter]||'';
+        });
+      }
+      save();
+    }
+  }catch(e){}
+  return q;
+}
+async function ensureQuestionLanguage(q,targetLang){
+  if(targetLang==='es')await translateQuestionInPlace(q,targetLang);
+  return q;
+}
+function renderCurrentPracticeShell(){
+  if(!currentQuestion){renderPractice({domain:currentDomain,concept:currentConcept,mode:currentMode||'guided'});return;}
+  state.currentView='practice';bindNav();updateSide();
+  const task=findTaskByTitle(currentQuestion.domain||currentDomain,currentQuestion.concept||currentConcept);
+  currentDomain=currentQuestion.domain||currentDomain;
+  currentConcept=currentQuestion.concept||currentConcept;
+  qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${L('clinicalPractice')}</div><div class="page-sub">Task-locked adaptive practice · ${task.id} · ${task.title} · ${practiceCycleLabel(task.id)}</div></div><div class="topbar-right"><div class="task-panel-controls">${langSwitch()}<button class="btn btn-exit" id="exitTaskBtn">${lang==='es'?'Salir':'Exit Task'}</button><button class="btn btn-danger" id="resetTaskBtn">${lang==='es'?'Resetear':'Reset Task'}</button><button class="btn btn-secondary" id="toDash">${L('backDashboard')}</button></div></div></div><div class="practice-wrap" id="practiceMount"></div>`;
+  bindLang();
+  const toDashEl=document.getElementById('toDash');
+  if(toDashEl)toDashEl.onclick=()=>exitTask(task.id);
+  const exitEl=document.getElementById('exitTaskBtn');
+  if(exitEl)exitEl.onclick=()=>exitTask(task.id);
+  const resetEl=document.getElementById('resetTaskBtn');
+  if(resetEl)resetEl.onclick=()=>confirmResetTask(task.id);
+  renderQuestion({preserveTimer:true});
+}
+
 async function renderPractice(target){
   state.currentView='practice';bindNav();updateSide();
   target=target||{domain:currentDomain,concept:currentConcept||pickConcept(currentDomain),mode:'guided'};
@@ -1311,19 +1452,24 @@ async function renderPractice(target){
   const dom=DOMAINS.find(d=>d.id===currentDomain)||DOMAINS[1];
   const task=findTaskByTitle(currentDomain,currentConcept);
 
-  qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${L('clinicalPractice')}</div><div class="page-sub">Task-locked adaptive practice · ${task.id} · ${task.title} · Item ${Math.min(taskPracticeCount(task.id)+1,10)}/10 before next task</div></div><div class="topbar-right">${langSwitch()}<button class="btn btn-secondary" id="toDash">${L('backDashboard')}</button></div></div><div class="practice-wrap" id="practiceMount"></div>`;
+  qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${L('clinicalPractice')}</div><div class="page-sub">Task-locked adaptive practice · ${task.id} · ${task.title} · ${practiceCycleLabel(task.id,true)}</div></div><div class="topbar-right"><div class="task-panel-controls">${langSwitch()}<button class="btn btn-exit" id="exitTaskBtn">${lang==='es'?'Salir':'Exit Task'}</button><button class="btn btn-danger" id="resetTaskBtn">${lang==='es'?'Resetear':'Reset Task'}</button><button class="btn btn-secondary" id="toDash">${L('backDashboard')}</button></div></div></div><div class="practice-wrap" id="practiceMount"></div>`;
   bindLang();
   const toDashEl=document.getElementById('toDash');
-  if(toDashEl)toDashEl.onclick=renderDashboard;
+  if(toDashEl)toDashEl.onclick=()=>exitTask(task.id);
+  const exitEl=document.getElementById('exitTaskBtn');
+  if(exitEl)exitEl.onclick=()=>exitTask(task.id);
+  const resetEl=document.getElementById('resetTaskBtn');
+  if(resetEl)resetEl.onclick=()=>confirmResetTask(task.id);
 
-  // First 10 practice items stay inside the selected task and increase in difficulty.
-  // This guarantees concept practice before moving to another task.
+  // First 5 practice items stay inside the selected task and increase in difficulty.
+  // After 5 items, the student may continue practicing indefinitely until Exit.
   const rec=getTaskPracticeRec(task.id);
-  if(rec.seen.length>=10 && !target.forceContinue){
+  if(target.forceContinue)rec.extended=true;
+  if(rec.seen.length>=PRACTICE_CYCLE_LENGTH && !rec.extended){
     renderTaskCompletion(task.id);
     return;
   }
-  if(rec.seen.length<10){
+  if(rec.seen.length<PRACTICE_CYCLE_LENGTH){
     currentQuestion=getNextLocalTaskQuestion(dom,currentConcept);
   } else {
     const matchIndex=state.queue.findIndex(q=>questionAligned(q,dom,currentConcept)&&!state.usedFingerprints.includes(fingerprint(q)));
@@ -1434,14 +1580,14 @@ function syncedRationale(q){
   return text;
 }
 
-function renderQuestion(){
+function renderQuestion(renderOpts={}){
   const q=prepareDisplayQuestion(currentQuestion);
-  const opts=displayOptions(q);
-  seconds=0;
+  const answerOptions=displayOptions(q);
+  if(!renderOpts.preserveTimer)seconds=0;
   if(timer)clearInterval(timer);
   timer=setInterval(()=>{seconds++;const el=qs('timePill');if(el)el.textContent=`⏱ ${seconds}s`},1000);
   const task=findTaskByTitle(q.domain,q.concept);
-  qs('practiceMount').innerHTML=`<div class="question-card"><div class="question-head"><div><div class="question-meta">${task.id} · Item ${Math.min(taskPracticeCount(task.id),10)}/10 · ${q.concept||'Clinical Reasoning'} · ${translatedDifficulty(q.difficulty)}</div><div style="font-size:10px;color:var(--ink-soft);font-weight:800;margin-top:4px">${lang==='es'?'La posición de la respuesta correcta se randomiza.':'Correct answer position is randomized.'}</div></div><div class="timer-pill" id="timePill">⏱ 0s</div></div><div class="question-text">${qText(q,'q')}</div><div id="opts">${Object.entries(opts).map(([l,t])=>`<button class="option" data-answer="${l}"><span class="option-letter">${l}</span><span>${t}</span></button>`).join('')}</div><div class="confidence-panel"><div class="conf-label">${L('confidence')}</div><div class="conf-opts"><button class="conf-btn" data-conf="low">${L('unsure')}</button><button class="conf-btn" data-conf="mid">${L('somewhat')}</button><button class="conf-btn" data-conf="high">${L('very')}</button></div></div><button class="btn btn-secondary" id="hintBtn">💡 ${L('hint')}</button><div id="hintBox" class="note-box hidden">${qText(q,'hint')||(lang==='es'?'Divide el escenario en antecedente, conducta, consecuencia y efecto futuro.':'Break the scenario into antecedent, behavior, consequence, and future effect.')}</div><div id="feedbackMount"></div></div>`;
+  qs('practiceMount').innerHTML=`<div class="question-card"><div class="question-head"><div><div class="question-meta">${task.id} · ${practiceCycleLabel(task.id)} · ${q.concept||'Clinical Reasoning'} · ${translatedDifficulty(q.difficulty)}</div><div style="font-size:10px;color:var(--ink-soft);font-weight:800;margin-top:4px">${lang==='es'?'La posición de la respuesta correcta se randomiza.':'Correct answer position is randomized.'}</div></div><div class="timer-pill" id="timePill">⏱ ${seconds}s</div></div><div class="question-text">${qText(q,'q')}</div><div id="opts">${Object.entries(answerOptions).map(([l,t])=>`<button class="option" data-answer="${l}"><span class="option-letter">${l}</span><span>${t}</span></button>`).join('')}</div><div class="confidence-panel"><div class="conf-label">${L('confidence')}</div><div class="conf-opts"><button class="conf-btn" data-conf="low">${L('unsure')}</button><button class="conf-btn" data-conf="mid">${L('somewhat')}</button><button class="conf-btn" data-conf="high">${L('very')}</button></div></div><button class="btn btn-secondary" id="hintBtn">💡 ${L('hint')}</button><div id="hintBox" class="note-box hidden">${qText(q,'hint')||(lang==='es'?'Divide el escenario en antecedente, conducta, consecuencia y efecto futuro.':'Break the scenario into antecedent, behavior, consequence, and future effect.')}</div><div id="feedbackMount"></div></div>`;
   let conf=null;
   document.querySelectorAll('[data-conf]').forEach(b=>b.onclick=()=>{conf=b.dataset.conf;document.querySelectorAll('[data-conf]').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')});
   qs('hintBtn').onclick=()=>qs('hintBox').classList.toggle('hidden');
@@ -1460,8 +1606,8 @@ function answerQuestion(letter,conf){
   registerCorrectLetter(correctLetter);
   recordAnswer(q,letter,ok,conf,seconds);
   const task=findTaskByTitle(q.domain,q.concept);
-  const completedNow=taskPracticeCount(task.id)>=10;
-  qs('feedbackMount').innerHTML=`<div class="feedback ${ok?'good':'bad'}"><div class="feedback-title">${ok?L('correctMsg'):L('incorrectMsg')}</div><p>${syncedRationale(q)}</p>${!ok&&conf==='high'?`<p style="margin-top:8px"><strong>${L('confidenceAlert')}</strong> ${L('confidenceAlertText')}</p>`:''}</div><div style="display:flex;gap:8px;flex-wrap:wrap">${completedNow?`<div class="note-box" style="width:100%;margin-top:0"><strong>${lang==='es'?'Task completada:':'Task completed:'}</strong> ${lang==='es'?'Completaste las 10 preguntas adaptativas de esta task. Revisa tu resultado antes de avanzar.':'You completed the 10 adaptive questions for this task. Review your result before moving forward.'}</div>`:''}<button class="btn btn-primary" id="nextQ">${completedNow?(lang==='es'?'Ver resultado de la task →':'View Task Result →'):L('nextItem')}</button><button class="btn btn-secondary" id="studyIt">${L('reviewConcept')}</button><button class="btn btn-gold" id="challengeIt">${L('examRealityMode')}</button></div>`;
+  const completedNow=taskPracticeCount(task.id)>=PRACTICE_CYCLE_LENGTH && !getTaskPracticeRec(task.id).extended;
+  qs('feedbackMount').innerHTML=`<div class="feedback ${ok?'good':'bad'}"><div class="feedback-title">${ok?L('correctMsg'):L('incorrectMsg')}</div><p>${syncedRationale(q)}</p>${!ok&&conf==='high'?`<p style="margin-top:8px"><strong>${L('confidenceAlert')}</strong> ${L('confidenceAlertText')}</p>`:''}</div><div style="display:flex;gap:8px;flex-wrap:wrap">${completedNow?`<div class="note-box" style="width:100%;margin-top:0"><strong>${lang==='es'?'Task completada:':'Task completed:'}</strong> ${lang==='es'?'Completaste las 5 preguntas adaptativas mínimas de esta task. Puedes seguir practicando o salir.':'You completed the minimum 5 adaptive questions for this task. You can keep practicing or exit.'}</div>`:''}<button class="btn btn-primary" id="nextQ">${completedNow?(lang==='es'?'Ver resultado de la task →':'View Task Result →'):L('nextItem')}</button><button class="btn btn-secondary" id="studyIt">${L('reviewConcept')}</button><button class="btn btn-gold" id="challengeIt">${L('examRealityMode')}</button></div>`;
   qs('nextQ').onclick=()=> completedNow ? renderTaskCompletion(task.id) : renderPractice({domain:q.domain,concept:q.concept,mode:currentMode||'guided'});
   qs('studyIt').onclick=()=>{currentDomain=q.domain;currentConcept=q.concept;renderStudy()};
   qs('challengeIt').onclick=()=>renderChallenge(q.domain);
