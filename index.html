@@ -1853,6 +1853,260 @@ await Promise.allSettled(Array.from({length:5},()=>generateQuestion({domain:curr
 if(items.length<5)items.push(...FALLBACK_QUESTIONS.slice(0,5-items.length));function show(){const q=prepareDisplayQuestion(items[idx]);const opts=displayOptions(q);qs('main').innerHTML=`<div class="question-card"><div class="question-head"><div class="question-meta">${L('challengeTitle')} · Item ${idx+1}/5 · DOM. ${q.domain}</div><div class="timer-pill">${L('examRealityMode')}</div></div><div class="question-text">${qText(q,'q')}</div>${Object.entries(opts).map(([l,t])=>`<button class="option" data-ch="${l}"><span class="option-letter">${l}</span><span>${t}</span></button>`).join('')}</div>`;document.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>{const ok=b.dataset.ch===displayCorrect(q);score+=ok?1:0;registerCorrectLetter(displayCorrect(q));recordAnswer(q,b.dataset.ch,ok,'exam',0);idx++;idx<items.length?show():finish()})}function finish(){qs('main').innerHTML=`<div class="complete-card"><div style="font-size:48px">${score>=4?'🏆':score>=3?'📈':'🎯'}</div><div class="module-title">${L('challengeComplete')}</div><p class="page-sub">${L('score')}: <strong>${score}/5</strong>. ${score>=4?L('challengeGood'):L('challengeNeeds')}</p><div class="note-box">${L('readinessReminder')}</div><button class="btn btn-primary" id="backAfterChallenge">${L('backToDashboard')}</button></div>`;qs('backAfterChallenge').onclick=renderDashboard}show()}}
 function renderAnalytics(){state.currentView='analytics';bindNav();updateSide();qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${L('performanceInsights')}</div><div class="page-sub">${L('insightsSub')}</div></div><div class="topbar-right">${langSwitch()}</div></div><div class="metrics"><div class="metric"><div class="metric-value">${state.readiness}%</div><div class="metric-label">${L('examReadiness')}</div></div><div class="metric"><div class="metric-value">${Math.round(avg('stability'))}%</div><div class="metric-label">${L('averageStability')}</div></div><div class="metric"><div class="metric-value">${Math.round(avg('retention'))}%</div><div class="metric-label">${L('averageRetention')}</div></div><div class="metric"><div class="metric-value">${state.history.filter(x=>!x.ok&&x.conf==='high').length}</div><div class="metric-label">${L('confidenceAlerts')}</div></div></div><div class="domain-grid">${DOMAINS.map(domainCard).join('')}</div><div class="panel" style="margin-top:16px"><div class="panel-title">${L('recentHistory')}</div><div class="session-list">${state.history.slice(0,10).map(h=>`<div class="session-item"><span>${h.ok?'✓':'✗'} DOM. ${h.domain} · ${tConcept(h.concept)}</span><strong>${h.conf}</strong></div>`).join('')||'<div class="session-item"><span>'+L('noResponses')+'</span><strong>—</strong></div>'}</div></div>`;bindLang();bindDomainButtons()}
 function avg(k){return DOMAINS.reduce((s,d)=>s+(state.domains[d.id][k]||0),0)/DOMAINS.length}
+
+
+/* ─────────────────────────────────────────────
+   MINI-SESSION QUESTION ENGINE v17
+   Fix: no repeated mini-practice questions during early extended practice.
+   Each subskill now uses a larger rotating bank and stays aligned to the selected definition.
+───────────────────────────────────────────── */
+function miniQuestionForSubskill(task,sub,index){
+  const n=Number(index||0);
+  const taskId=task.id;
+  const nameEn=sub.en||sub.key||'target definition';
+  const nameEs=sub.es||nameEn;
+  function base(q,q_es,options,options_es,hint,hint_es,rationale,rationale_es){
+    const item={q,q_es,correct:'A',options,options_es,hint,hint_es,rationale,rationale_es};
+    item.domain=task.id.split('.')[0];
+    item.taskId=task.id;
+    item.concept=task.title;
+    item.subskillKey=sub.key;
+    item.subskillName=lang==='es'?nameEs:nameEn;
+    item.difficulty=n<3?'guided':n<6?'applied':'exam';
+    return prepareDisplayQuestion(item);
+  }
+  function pick(bank){const b=bank[n%bank.length];return base(...b);}
+
+  if(taskId==='A.1'){
+    if(sub.key==='description'){
+      return pick([
+        ['A BCBA writes a session note. Which statement best supports the scientific goal of description?', 'Un BCBA escribe una nota de sesión. ¿Qué enunciado apoya mejor la meta científica de descripción?',
+          {A:'During independent work, the client left the seat 4 times in 20 minutes.',B:'The client was trying to avoid responsibility.',C:'The client had a bad attitude today.',D:'The client wanted to control the room.'},
+          {A:'Durante trabajo independiente, el cliente se levantó del asiento 4 veces en 20 minutos.',B:'El cliente intentaba evitar responsabilidad.',C:'El cliente tuvo mala actitud hoy.',D:'El cliente quería controlar el salón.'},
+          'Description is objective, observable, and measurable.','La descripción es objetiva, observable y medible.',
+          'The correct option describes what happened in observable and measurable terms. The others infer motives or use labels.','La opción correcta describe lo que ocurrió en términos observables y medibles. Las otras infieren motivos o usan etiquetas.'],
+        ['Which revision best changes a mentalistic statement into a behavioral description?', '¿Qué revisión convierte mejor una frase mentalista en una descripción conductual?',
+          {A:'When asked to begin math, the learner tore the worksheet and said “no” twice.',B:'The learner became oppositional when math started.',C:'The learner refused because he dislikes math.',D:'The learner was anxious and wanted escape.'},
+          {A:'Cuando se le pidió comenzar matemáticas, el estudiante rompió la hoja y dijo “no” dos veces.',B:'El estudiante se volvió oposicional cuando empezó matemáticas.',C:'El estudiante se negó porque no le gustan las matemáticas.',D:'El estudiante estaba ansioso y quería escapar.'},
+          'Look for countable behavior, not inferred reasons.','Busca conducta contable, no razones inferidas.',
+          'The correct revision includes antecedent context and observable responses. The other choices use labels or inferred private events.','La revisión correcta incluye contexto antecedente y respuestas observables. Las otras usan etiquetas o eventos privados inferidos.'],
+        ['A supervisor asks for a better example of descriptive data. Which entry is best?', 'Un supervisor pide un mejor ejemplo de datos descriptivos. ¿Cuál registro es mejor?',
+          {A:'Aggression occurred 3 times: one hit to peer, two kicks to chair, during circle time.',B:'Aggression happened because the client was frustrated.',C:'The client showed aggressive tendencies.',D:'The client was in a difficult mood during circle time.'},
+          {A:'La agresión ocurrió 3 veces: un golpe a un compañero y dos patadas a la silla durante circle time.',B:'La agresión ocurrió porque el cliente estaba frustrado.',C:'El cliente mostró tendencias agresivas.',D:'El cliente estaba de mal humor durante circle time.'},
+          'Descriptive records say what was observed.','Los registros descriptivos dicen lo observado.',
+          'The correct option describes observable responses and frequency. It does not explain why the behavior occurred.','La opción correcta describe respuestas observables y frecuencia. No explica por qué ocurrió la conducta.'],
+        ['Which statement would be most acceptable in an operational description?', '¿Qué enunciado sería más aceptable en una descripción operacional?',
+          {A:'The student raised his voice above conversational volume and said “stop” three times.',B:'The student was disrespectful.',C:'The student wanted attention.',D:'The student was emotionally dysregulated.'},
+          {A:'El estudiante elevó la voz por encima del volumen conversacional y dijo “stop” tres veces.',B:'El estudiante fue irrespetuoso.',C:'El estudiante quería atención.',D:'El estudiante estaba emocionalmente desregulado.'},
+          'Operational description avoids labels.','La descripción operacional evita etiquetas.',
+          'The correct option provides observable, measurable behavior. The other options require interpretation.','La opción correcta ofrece conducta observable y medible. Las otras requieren interpretación.'],
+        ['Which example is NOT description?', '¿Cuál ejemplo NO es descripción?',
+          {A:'“The learner was manipulative during instruction.”',B:'“The learner threw two pencils.”',C:'“The learner said ‘no’ four times.”',D:'“The learner left the table for 30 seconds.”'},
+          {A:'“El estudiante fue manipulador durante la instrucción.”',B:'“El estudiante lanzó dos lápices.”',C:'“El estudiante dijo ‘no’ cuatro veces.”',D:'“El estudiante se alejó de la mesa por 30 segundos.”'},
+          'The correct answer uses an inferred label rather than observable behavior.','La respuesta correcta usa una etiqueta inferida, no conducta observable.',
+          '“Manipulative” is an interpretation, not a direct description. The other options are observable and measurable.','“Manipulador” es una interpretación, no una descripción directa. Las otras opciones son observables y medibles.'],
+        ['A BCBA wants to improve description before intervention. What should the BCBA prioritize?', 'Un BCBA quiere mejorar la descripción antes de intervenir. ¿Qué debe priorizar?',
+          {A:'Clear definitions and direct observation of behavior.',B:'Guessing the client’s motivation.',C:'Deciding whether the behavior is good or bad.',D:'Choosing a treatment before measuring behavior.'},
+          {A:'Definiciones claras y observación directa de la conducta.',B:'Adivinar la motivación del cliente.',C:'Decidir si la conducta es buena o mala.',D:'Elegir un tratamiento antes de medir la conducta.'},
+          'Description comes before prediction and control.','La descripción viene antes de predicción y control.',
+          'Scientific description begins with clear, observable definitions and data collection.','La descripción científica comienza con definiciones observables claras y recolección de datos.'],
+        ['Which statement best shows description rather than prediction or control?', '¿Qué enunciado muestra mejor descripción y no predicción ni control?',
+          {A:'The client screamed for 12 seconds after the timer sounded.',B:'Screaming will probably occur again when the timer sounds.',C:'Changing the timer reduced screaming.',D:'Screaming occurs because timers are aversive.'},
+          {A:'El cliente gritó durante 12 segundos después de que sonó el temporizador.',B:'Probablemente gritará otra vez cuando suene el temporizador.',C:'Cambiar el temporizador redujo los gritos.',D:'Los gritos ocurren porque los temporizadores son aversivos.'},
+          'Description states what occurred; prediction states what is likely; control shows change after manipulation.','Descripción dice qué ocurrió; predicción dice qué es probable; control muestra cambio tras manipulación.',
+          'The correct option only describes the observed event. It does not predict future behavior or show experimental control.','La opción correcta solo describe el evento observado. No predice conducta futura ni muestra control experimental.'],
+        ['Which data note best avoids mentalism?', '¿Qué nota de datos evita mejor el mentalismo?',
+          {A:'The client cried for 2 minutes and put head on desk.',B:'The client felt overwhelmed.',C:'The client was seeking escape.',D:'The client showed a poor attitude.'},
+          {A:'El cliente lloró por 2 minutos y puso la cabeza sobre el escritorio.',B:'El cliente se sintió abrumado.',C:'El cliente buscaba escape.',D:'El cliente mostró mala actitud.'},
+          'Avoid statements about feelings unless directly measured and defined.','Evita frases sobre sentimientos salvo que estén medidos y definidos directamente.',
+          'The correct option describes observable behavior. The other options infer internal states or motives.','La opción correcta describe conducta observable. Las otras infieren estados internos o motivos.']
+      ]);
+    }
+    if(sub.key==='prediction'){
+      return pick([
+        ['Which statement best demonstrates prediction in behavior analysis?', '¿Qué enunciado demuestra mejor predicción en análisis de conducta?',
+          {A:'Tantrums are more likely during transitions from preferred to nonpreferred activities.',B:'The tantrum lasted 45 seconds.',C:'A new reinforcement procedure reduced tantrums.',D:'The child tantrums because he is defiant.'},
+          {A:'Las rabietas son más probables durante transiciones de actividades preferidas a no preferidas.',B:'La rabieta duró 45 segundos.',C:'Un nuevo procedimiento de reforzamiento redujo las rabietas.',D:'El niño hace rabietas porque es desafiante.'},
+          'Prediction identifies reliable relations or patterns.','La predicción identifica relaciones o patrones confiables.',
+          'The correct option says when behavior is likely to occur. That is prediction.','La opción correcta dice cuándo es probable que ocurra la conducta. Eso es predicción.'],
+        ['A BCBA notices aggression occurs most often when demands are presented. This primarily supports which scientific goal?', 'Un BCBA nota que la agresión ocurre con más frecuencia cuando se presentan demandas. ¿Qué meta científica apoya principalmente?',
+          {A:'Prediction',B:'Description only',C:'Control',D:'Mentalistic explanation'},
+          {A:'Predicción',B:'Solo descripción',C:'Control',D:'Explicación mentalista'},
+          'Prediction is about anticipating behavior under certain conditions.','La predicción trata de anticipar conducta bajo ciertas condiciones.',
+          'A pattern between demands and aggression allows prediction. It does not yet show control unless variables are manipulated.','Un patrón entre demandas y agresión permite predicción. Aún no muestra control salvo que se manipulen variables.'],
+        ['Which option is prediction, not description?', '¿Cuál opción es predicción, no descripción?',
+          {A:'Based on data, elopement is likely when the door is open and attention is diverted.',B:'Elopement occurred two times today.',C:'Staff blocked elopement and it decreased.',D:'Elopement is a sign of impulsivity.'},
+          {A:'Según los datos, la fuga es probable cuando la puerta está abierta y la atención está desviada.',B:'La fuga ocurrió dos veces hoy.',C:'El personal bloqueó la fuga y disminuyó.',D:'La fuga es señal de impulsividad.'},
+          'Prediction points to future likelihood under known conditions.','La predicción apunta a probabilidad futura bajo condiciones conocidas.',
+          'The correct option uses data to say when behavior is likely. That is prediction.','La opción correcta usa datos para decir cuándo la conducta es probable. Eso es predicción.'],
+        ['Which statement is the best example of identifying a predictive relation?', '¿Qué enunciado es el mejor ejemplo de identificar una relación predictiva?',
+          {A:'Requests for breaks increase when assignments exceed 10 problems.',B:'The student requested a break once.',C:'The teacher changed the assignment size and requests decreased.',D:'The student wants easier work.'},
+          {A:'Las peticiones de descanso aumentan cuando las tareas exceden 10 problemas.',B:'El estudiante pidió un descanso una vez.',C:'La maestra cambió el tamaño de la tarea y las peticiones disminuyeron.',D:'El estudiante quiere trabajo más fácil.'},
+          'Prediction involves a relation between conditions and behavior.','Predicción implica una relación entre condiciones y conducta.',
+          'The correct option identifies a pattern: assignments above 10 problems predict more break requests.','La opción correcta identifica un patrón: tareas de más de 10 problemas predicen más peticiones de descanso.'],
+        ['Which question is most aligned with prediction?', '¿Qué pregunta se alinea más con predicción?',
+          {A:'Under what conditions is the behavior most likely to occur?',B:'What exactly did the client do?',C:'What intervention changed the behavior?',D:'Was the behavior appropriate?'},
+          {A:'¿Bajo qué condiciones es más probable que ocurra la conducta?',B:'¿Qué hizo exactamente el cliente?',C:'¿Qué intervención cambió la conducta?',D:'¿Fue apropiada la conducta?'},
+          'Prediction asks about likelihood and conditions.','Predicción pregunta sobre probabilidad y condiciones.',
+          'Prediction focuses on when behavior is likely to happen, based on patterns.','La predicción se enfoca en cuándo es probable que ocurra la conducta, según patrones.'],
+        ['A graph shows that self-injury reliably increases after long waiting periods. What goal is being supported?', 'Una gráfica muestra que la autolesión aumenta de forma confiable después de largos periodos de espera. ¿Qué meta se está apoyando?',
+          {A:'Prediction',B:'Description of one response only',C:'Control through manipulation',D:'Punishment'},
+          {A:'Predicción',B:'Descripción de una sola respuesta',C:'Control mediante manipulación',D:'Castigo'},
+          'Reliable covariation supports prediction.','La covariación confiable apoya la predicción.',
+          'The graph indicates a predictable relation between waiting and self-injury.','La gráfica indica una relación predecible entre esperar y autolesión.']
+      ]);
+    }
+    if(sub.key==='control'){
+      return pick([
+        ['Which statement best demonstrates control in behavior analysis?', '¿Qué enunciado demuestra mejor control en análisis de conducta?',
+          {A:'When the BCBA changed the antecedent arrangement, elopement decreased consistently.',B:'Elopement occurred three times today.',C:'Elopement is likely when doors are open.',D:'The client elopes because he is impulsive.'},
+          {A:'Cuando el BCBA cambió la organización antecedente, la fuga disminuyó consistentemente.',B:'La fuga ocurrió tres veces hoy.',C:'La fuga es probable cuando las puertas están abiertas.',D:'El cliente se fuga porque es impulsivo.'},
+          'Control requires manipulating variables and seeing behavior change.','Control requiere manipular variables y ver cambio en la conducta.',
+          'The correct option shows behavior changed after an environmental variable was manipulated.','La opción correcta muestra que la conducta cambió después de manipular una variable ambiental.'],
+        ['A BCBA teaches functional communication and aggression decreases across sessions. This best illustrates:', 'Un BCBA enseña comunicación funcional y la agresión disminuye a través de sesiones. Esto ilustra mejor:',
+          {A:'Control',B:'Description only',C:'Prediction only',D:'Mentalism'},
+          {A:'Control',B:'Solo descripción',C:'Solo predicción',D:'Mentalismo'},
+          'Control is demonstrated by changing behavior through intervention.','El control se demuestra cambiando conducta mediante intervención.',
+          'The intervention altered behavior. That is the scientific goal of control.','La intervención alteró la conducta. Esa es la meta científica de control.'],
+        ['Which option is control rather than prediction?', '¿Cuál opción es control en vez de predicción?',
+          {A:'Providing choices before work reduced refusal from 8 times to 2 times.',B:'Refusal happens more often during writing.',C:'Refusal occurred 8 times today.',D:'Refusal indicates low motivation.'},
+          {A:'Ofrecer opciones antes del trabajo redujo la negativa de 8 veces a 2 veces.',B:'La negativa ocurre más durante escritura.',C:'La negativa ocurrió 8 veces hoy.',D:'La negativa indica baja motivación.'},
+          'Control requires evidence of change after manipulation.','Control requiere evidencia de cambio tras manipulación.',
+          'The correct option shows an environmental change followed by behavior change.','La opción correcta muestra un cambio ambiental seguido de cambio conductual.'],
+        ['What must be present to claim control?', '¿Qué debe estar presente para afirmar control?',
+          {A:'A systematic manipulation of an environmental variable that changes behavior.',B:'A single observation of behavior.',C:'A guess about why the client behaved that way.',D:'A label that summarizes the client’s personality.'},
+          {A:'Una manipulación sistemática de una variable ambiental que cambia la conducta.',B:'Una sola observación de conducta.',C:'Una suposición sobre por qué el cliente actuó así.',D:'Una etiqueta que resume la personalidad del cliente.'},
+          'Control is stronger than description and prediction.','Control es más fuerte que descripción y predicción.',
+          'Behavior analysts demonstrate control by changing environmental variables and observing corresponding behavior change.','Los analistas de conducta demuestran control cambiando variables ambientales y observando cambios correspondientes en la conducta.'],
+        ['A teacher changes seating arrangement and calling-out decreases only during the new arrangement. Which scientific goal is most directly shown?', 'Una maestra cambia la organización de los asientos y las interrupciones disminuyen solo durante la nueva organización. ¿Qué meta científica se muestra más directamente?',
+          {A:'Control',B:'Description',C:'Prediction without intervention',D:'Stimulus equivalence'},
+          {A:'Control',B:'Descripción',C:'Predicción sin intervención',D:'Equivalencia de estímulos'},
+          'Look for manipulated variable plus behavior change.','Busca variable manipulada más cambio conductual.',
+          'The seating change is a manipulation; the change in calling-out suggests control.','El cambio de asientos es una manipulación; el cambio en interrupciones sugiere control.']
+      ]);
+    }
+  }
+
+  if(taskId==='B.1'){
+    if(sub.key==='behavior'){
+      return pick([
+        ['Which option best represents behavior in behavior analysis?', '¿Qué opción representa mejor conducta en análisis de conducta?',
+          {A:'A learner raises a hand during group instruction.',B:'The learner is stubborn during group instruction.',C:'The learner wants attention from the teacher.',D:'The learner has a bad attitude toward school.'},
+          {A:'Un estudiante levanta la mano durante instrucción grupal.',B:'El estudiante es terco durante instrucción grupal.',C:'El estudiante quiere atención de la maestra.',D:'El estudiante tiene mala actitud hacia la escuela.'},
+          'Behavior must be observable and measurable.','La conducta debe ser observable y medible.',
+          'Raising a hand is an observable action. The other options are labels or inferred causes.','Levantar la mano es una acción observable. Las otras opciones son etiquetas o causas inferidas.'],
+        ['A BCBA is defining a target for intervention. Which statement is most behavioral?', 'Un BCBA está definiendo un objetivo de intervención. ¿Qué enunciado es más conductual?',
+          {A:'The client leaves the seat for more than 5 seconds during instruction.',B:'The client is noncompliant.',C:'The client dislikes difficult tasks.',D:'The client is trying to escape responsibility.'},
+          {A:'El cliente se levanta del asiento por más de 5 segundos durante la instrucción.',B:'El cliente es no cumplidor.',C:'Al cliente no le gustan las tareas difíciles.',D:'El cliente intenta escapar de la responsabilidad.'},
+          'A behavioral definition describes what can be seen and counted.','Una definición conductual describe lo que se puede ver y contar.',
+          'Leaving the seat for more than 5 seconds is observable and measurable.','Levantarse del asiento por más de 5 segundos es observable y medible.'],
+        ['Which is behavior rather than an interpretation?', '¿Cuál es conducta en vez de interpretación?',
+          {A:'The learner threw the pencil across the table.',B:'The learner was angry.',C:'The learner wanted control.',D:'The learner lacked motivation.'},
+          {A:'El estudiante lanzó el lápiz sobre la mesa.',B:'El estudiante estaba enojado.',C:'El estudiante quería control.',D:'El estudiante carecía de motivación.'},
+          'Choose what a camera could record.','Elige lo que una cámara podría grabar.',
+          'Throwing the pencil is observable. The others are inferred states or motives.','Lanzar el lápiz es observable. Las otras son estados o motivos inferidos.'],
+        ['Which phrase should be revised because it is not behavioral?', '¿Qué frase debe revisarse porque no es conductual?',
+          {A:'The student was disrespectful.',B:'The student shouted “no.”',C:'The student pushed the chair.',D:'The student walked out of the room.'},
+          {A:'El estudiante fue irrespetuoso.',B:'El estudiante gritó “no.”',C:'El estudiante empujó la silla.',D:'El estudiante salió del salón.'},
+          'Labels are not behavior.','Las etiquetas no son conducta.',
+          '“Disrespectful” is a label. The other choices describe observable responses.','“Irrespetuoso” es una etiqueta. Las otras opciones describen respuestas observables.']
+      ]);
+    }
+    if(sub.key==='response'){
+      return pick([
+        ['A teacher says, “Touch dog.” The learner touches the dog card once. This single occurrence is best classified as:', 'Una maestra dice: “Toca perro.” El estudiante toca la tarjeta de perro una vez. Esta ocurrencia individual se clasifica mejor como:',
+          {A:'Response',B:'Response class',C:'Stimulus class',D:'Behavioral repertoire'},
+          {A:'Response',B:'Clase de respuesta',C:'Clase de estímulo',D:'Repertorio conductual'},
+          'A response is one instance of behavior.','Una response es una instancia individual de conducta.',
+          'Touching the dog card once is one specific instance of behavior.','Tocar la tarjeta de perro una vez es una instancia específica de conducta.'],
+        ['During DTT, the learner says “ball” one time after the therapist asks, “What is this?” What is the most precise term?', 'Durante DTT, el estudiante dice “ball” una vez después de que el terapeuta pregunta “What is this?” ¿Cuál es el término más preciso?',
+          {A:'Response',B:'Behavior change program',C:'Response class',D:'Stimulus generalization'},
+          {A:'Response',B:'Programa de cambio conductual',C:'Clase de respuesta',D:'Generalización de estímulo'},
+          'Look for a single occurrence.','Busca una sola ocurrencia.',
+          'Saying “ball” one time is a single response.','Decir “ball” una vez es una response individual.'],
+        ['Which example best isolates a response?', '¿Qué ejemplo aísla mejor una response?',
+          {A:'The client claps once after the model.',B:'The client can clap, wave, or say hi to greet.',C:'The therapist presents a clap model.',D:'The client enjoys attention.'},
+          {A:'El cliente aplaude una vez después del modelo.',B:'El cliente puede aplaudir, saludar con la mano o decir hola para saludar.',C:'El terapeuta presenta un modelo de aplauso.',D:'El cliente disfruta la atención.'},
+          'A response is a single instance, not a class or stimulus.','Una response es una instancia individual, no una clase ni estímulo.',
+          'One clap after a model is one response.','Un aplauso después de un modelo es una response.'],
+        ['A learner points to a picture one time when asked “Where is cat?” This is a:', 'Un estudiante señala una imagen una vez cuando le preguntan “Where is cat?” Esto es:',
+          {A:'Response',B:'Response class',C:'Stimulus class',D:'Motivating operation'},
+          {A:'Response',B:'Clase de respuesta',C:'Clase de estímulo',D:'Operación motivadora'},
+          'One occurrence equals response.','Una ocurrencia equivale a response.',
+          'Pointing one time is a single measurable instance of behavior.','Señalar una vez es una instancia conductual medible.']
+      ]);
+    }
+    if(sub.key==='response-class'){
+      return pick([
+        ['Which example best represents a response class?', '¿Qué ejemplo representa mejor una clase de respuesta?',
+          {A:'A child says “help,” raises a hand, or hands over a help card, and each response produces assistance.',B:'A child says “help” one time.',C:'A therapist presents three different picture cards.',D:'A child is described as attention-seeking.'},
+          {A:'Un niño dice “ayuda,” levanta la mano o entrega una tarjeta de ayuda, y cada respuesta produce asistencia.',B:'Un niño dice “ayuda” una vez.',C:'Un terapeuta presenta tres tarjetas con imágenes diferentes.',D:'Se describe al niño como buscador de atención.'},
+          'A response class includes multiple responses with a common function/effect.','Una clase de respuesta incluye múltiples respuestas con una función/efecto común.',
+          'The responses look different but produce the same outcome: assistance.','Las respuestas se ven diferentes pero producen el mismo resultado: asistencia.'],
+        ['A learner can request a break by saying “break,” pointing to a break icon, or handing over a break card. These responses all produce a break. This is best described as:', 'Un estudiante puede pedir descanso diciendo “break,” señalando un ícono de descanso o entregando una tarjeta de descanso. Todas estas respuestas producen descanso. Esto se describe mejor como:',
+          {A:'Response class',B:'Single response',C:'Stimulus delta',D:'Unconditioned reinforcer'},
+          {A:'Clase de respuesta',B:'Respuesta individual',C:'Estímulo delta',D:'Reforzador incondicionado'},
+          'Different forms, same function.','Diferentes formas, misma función.',
+          'Several different responses produce the same consequence, so they belong to one response class.','Varias respuestas diferentes producen la misma consecuencia, por eso pertenecen a una clase de respuesta.'],
+        ['Which option is NOT a response class?', '¿Qué opción NO es una clase de respuesta?',
+          {A:'The child says “milk” once.',B:'The child signs milk, says milk, or points to milk to obtain milk.',C:'The child taps a card or vocalizes to request help.',D:'The child waves, says hi, or fist bumps to greet.'},
+          {A:'El niño dice “milk” una vez.',B:'El niño hace la seña de milk, dice milk o señala milk para obtener leche.',C:'El niño toca una tarjeta o vocaliza para pedir ayuda.',D:'El niño saluda con la mano, dice hi o choca el puño para saludar.'},
+          'A single response is not a response class.','Una respuesta individual no es una clase de respuesta.',
+          'The correct option describes only one instance/topography. The others include multiple responses with common function.','La opción correcta describe solo una instancia/topografía. Las otras incluyen múltiples respuestas con función común.'],
+        ['Which clue points most strongly to response class?', '¿Qué pista apunta con más fuerza a clase de respuesta?',
+          {A:'Different topographies produce the same consequence.',B:'One response occurs one time.',C:'Several stimuli evoke the same response.',D:'A behavior is labeled as inappropriate.'},
+          {A:'Diferentes topografías producen la misma consecuencia.',B:'Una respuesta ocurre una vez.',C:'Varios estímulos evocan la misma respuesta.',D:'Una conducta se etiqueta como inapropiada.'},
+          'Response class = common function across different responses.','Clase de respuesta = función común a través de diferentes respuestas.',
+          'Different response forms with the same outcome indicate response class.','Diferentes formas de respuesta con el mismo resultado indican clase de respuesta.']
+      ]);
+    }
+  }
+
+  const generic=[
+    [`Which clinical example best represents ${nameEn} within ${task.id}?`,`¿Qué ejemplo clínico representa mejor ${nameEs} dentro de ${task.id}?`,
+      {A:sub.examples_en||sub.plain_en,B:`A different part of ${task.id}, not ${nameEn}.`,C:'A mentalistic explanation without observable evidence.',D:'A vague statement that cannot guide clinical decisions.'},
+      {A:sub.examples_es||sub.plain_es,B:`Otra parte de ${task.id}, no ${nameEs}.`,C:'Una explicación mentalista sin evidencia observable.',D:'Una frase vaga que no guía decisiones clínicas.'},
+      `Focus only on ${nameEn}.`,`Enfócate solo en ${nameEs}.`,
+      `The correct option directly matches ${nameEn} and stays inside ${task.id}.`,`La opción correcta coincide directamente con ${nameEs} y se mantiene dentro de ${task.id}.`],
+    [`A student is confusing ${nameEn} with a broader task label. Which answer isolates the individual definition?`,`Un estudiante confunde ${nameEs} con una etiqueta amplia de la task. ¿Qué respuesta aísla la definición individual?`,
+      {A:sub.plain_en,B:`Everything included in ${task.id}.`,C:'Any ABA-related answer.',D:'The learner’s inferred intention.'},
+      {A:sub.plain_es,B:`Todo lo incluido en ${task.id}.`,C:'Cualquier respuesta relacionada con ABA.',D:'La intención inferida del estudiante.'},
+      'Match the individual definition, not the entire task.','Haz match con la definición individual, no con toda la task.',
+      `This item is locked to ${nameEn}; the correct answer must match that subskill only.`,`Esta pregunta está bloqueada a ${nameEs}; la respuesta correcta debe coincidir solo con esa subhabilidad.`],
+    [`Which exam clue would most strongly signal ${nameEn}?`,`¿Qué pista de examen señalaría con más fuerza ${nameEs}?`,
+      {A:sub.examples_en||sub.plain_en,B:'The scenario belongs to a different domain.',C:'The scenario gives no observable or procedural detail.',D:'The scenario asks for personal opinion.'},
+      {A:sub.examples_es||sub.plain_es,B:'El escenario pertenece a otro dominio.',C:'El escenario no da detalle observable o procedural.',D:'El escenario pide opinión personal.'},
+      'Find the clue that fits this subskill.','Busca la pista que encaja con esta subhabilidad.',
+      `The correct clue aligns with ${nameEn}, not a neighboring concept.`,`La pista correcta se alinea con ${nameEs}, no con un concepto vecino.`],
+    [`Which statement is a non-example of ${nameEn}?`,`¿Qué enunciado es un no-ejemplo de ${nameEs}?`,
+      {A:`A statement that drifts away from ${nameEn} and does not match the individual definition.`,B:sub.plain_en,C:sub.examples_en||sub.plain_en,D:`A clear example of ${nameEn} in ${task.id}.`},
+      {A:`Un enunciado que se aleja de ${nameEs} y no coincide con la definición individual.`,B:sub.plain_es,C:sub.examples_es||sub.plain_es,D:`Un ejemplo claro de ${nameEs} dentro de ${task.id}.`},
+      'This one asks for the non-example.','Esta pregunta pide el no-ejemplo.',
+      `The correct answer is the option that does not represent ${nameEn}.`,`La respuesta correcta es la opción que no representa ${nameEs}.`],
+    [`A trainee gives an answer for ${task.id}. Which one best shows mastery of ${nameEn}?`,`Un aprendiz responde sobre ${task.id}. ¿Cuál muestra mejor dominio de ${nameEs}?`,
+      {A:`The answer specifically explains ${nameEn}: ${sub.plain_en}`,B:`The answer repeats the task title without explaining ${nameEn}.`,C:'The answer relies on intuition.',D:'The answer changes to an unrelated BACB domain.'},
+      {A:`La respuesta explica específicamente ${nameEs}: ${sub.plain_es}`,B:`La respuesta repite el título de la task sin explicar ${nameEs}.`,C:'La respuesta depende de intuición.',D:'La respuesta cambia a otro dominio BACB.'},
+      'Mastery means precise discrimination.','Dominio significa discriminación precisa.',
+      `The correct answer specifically explains ${nameEn}.`,`La respuesta correcta explica específicamente ${nameEs}.`],
+    [`Which comparison is most useful for distinguishing ${nameEn} from nearby ideas?`,`¿Qué comparación ayuda más a distinguir ${nameEs} de ideas cercanas?`,
+      {A:`${nameEn} must be identified by its own definition, not by the entire task label.`,B:`${nameEn} is the same as every other term in ${task.id}.`,C:`${nameEn} is correct whenever an answer sounds clinical.`,D:`${nameEn} is mainly about guessing internal states.`},
+      {A:`${nameEs} debe identificarse por su propia definición, no por la etiqueta completa de la task.`,B:`${nameEs} es igual a todos los demás términos en ${task.id}.`,C:`${nameEs} es correcto cuando una respuesta suena clínica.`,D:`${nameEs} trata principalmente de adivinar estados internos.`},
+      'Separate the subskill from neighboring terms.','Separa la subhabilidad de términos cercanos.',
+      `The correct option protects the boundary of ${nameEn}.`,`La opción correcta protege el límite conceptual de ${nameEs}.`],
+    [`In a mini-session for ${nameEn}, what should the learner attend to first?`,`En una mini-sesión de ${nameEs}, ¿a qué debe atender primero el estudiante?`,
+      {A:`The defining feature: ${sub.plain_en}`,B:'Whether the answer is the longest option.',C:'Whether the scenario mentions a clinic.',D:'Whether the behavior seems severe.'},
+      {A:`La característica definitoria: ${sub.plain_es}`,B:'Si la respuesta es la opción más larga.',C:'Si el escenario menciona una clínica.',D:'Si la conducta parece severa.'},
+      'Use the defining feature.','Usa la característica definitoria.',
+      `The defining feature is the anchor for identifying ${nameEn}.`,`La característica definitoria es el ancla para identificar ${nameEs}.`],
+    [`Which answer would you eliminate first when testing ${nameEn}?`,`¿Qué respuesta eliminarías primero al evaluar ${nameEs}?`,
+      {A:'An option based on labels or inferred causes instead of the target definition.',B:sub.plain_en,C:sub.examples_en||sub.plain_en,D:`A direct application of ${nameEn}.`},
+      {A:'Una opción basada en etiquetas o causas inferidas en vez de la definición objetivo.',B:sub.plain_es,C:sub.examples_es||sub.plain_es,D:`Una aplicación directa de ${nameEs}.`},
+      'Eliminate answers that drift from the definition.','Elimina respuestas que se alejan de la definición.',
+      `The correct elimination is the option that does not use the definition of ${nameEn}.`,`La eliminación correcta es la opción que no usa la definición de ${nameEs}.`]
+  ];
+  return pick(generic);
+}
+
 function render(){if(!['dashboard','study','practice','miniPractice','challenge','analytics'].includes(state.currentView))state.currentView='dashboard';if(!qs('app').classList.contains('active')&&state.onboarded){qs('landing').classList.remove('active');qs('onboarding').classList.remove('active');qs('app').classList.add('active')}if(state.currentView==='dashboard')renderDashboard();else if(state.currentView==='study')renderStudy();else if(state.currentView==='practice'&&state.practiceScreen==='completion'&&state.activeCompletionTaskId)renderTaskCompletion(state.activeCompletionTaskId,{reason:state.reportReason});else if(state.currentView==='practice')renderPractice();else if(state.currentView==='miniPractice'&&state.activeMini){if(state.activeMini.mode==='report')renderMiniCompletion(state.activeMini.taskId,state.activeMini.index,{reason:state.activeMini.reason||'exit'});else renderMiniPractice(state.activeMini.taskId,state.activeMini.index,state.activeMini.item||0);}else if(state.currentView==='challenge')renderChallenge();else if(state.currentView==='analytics')renderAnalytics();else renderDashboard()}
 function adminModal(){qs('adminModal').classList.add('active');qs('adminKeyInput').value=getAdminKey()}
 function showSetupScreen(){
