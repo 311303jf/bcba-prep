@@ -1306,6 +1306,18 @@ function prepareDisplayQuestion(q){
   });
   q._displayOptions=displayOptions;
   if(q.options_es)q._displayOptions_es=displayOptionsEs;
+
+  // Keep a permanent map from the ORIGINAL option letters to the DISPLAY letters.
+  // This prevents a serious QA bug where the answer is shuffled but the rationale
+  // still says "Option A" when the displayed correct answer is C, D, etc.
+  q._originalToDisplay={};
+  q._displayToOriginal={};
+  letters.forEach((newLetter,idx)=>{
+    const oldLetter=order[idx];
+    q._originalToDisplay[oldLetter]=newLetter;
+    q._displayToOriginal[newLetter]=oldLetter;
+  });
+
   q._displayCorrect=desired;
   q._originalCorrect=originalCorrect;
   q._displayPrepared=true;
@@ -1327,6 +1339,23 @@ function registerCorrectLetter(letter){
   state.lastAnswerLetters=state.lastAnswerLetters.slice(-8);
   save();
 }
+
+function syncedRationale(q){
+  prepareDisplayQuestion(q);
+  let text=qText(q,'rationale')||'';
+  const map=q._originalToDisplay||{};
+  // Remap letter references created BEFORE answer shuffling.
+  // Example: original rationale says "Option A" but A is displayed as C.
+  ['A','B','C','D'].forEach(oldLetter=>{
+    const newLetter=map[oldLetter];
+    if(!newLetter||newLetter===oldLetter)return;
+    text=text.replace(new RegExp('Option\\s+'+oldLetter+'\\b','g'),'Option '+newLetter);
+    text=text.replace(new RegExp('Opción\\s+'+oldLetter+'\\b','g'),'Opción '+newLetter);
+    text=text.replace(new RegExp('opción\\s+'+oldLetter+'\\b','g'),'opción '+newLetter);
+  });
+  return text;
+}
+
 function renderQuestion(){
   const q=prepareDisplayQuestion(currentQuestion);
   const opts=displayOptions(q);
@@ -1353,7 +1382,7 @@ function answerQuestion(letter,conf){
   registerCorrectLetter(correctLetter);
   recordAnswer(q,letter,ok,conf,seconds);
   const task=findTaskByTitle(q.domain,q.concept);
-  qs('feedbackMount').innerHTML=`<div class="feedback ${ok?'good':'bad'}"><div class="feedback-title">${ok?L('correctMsg'):L('incorrectMsg')}</div><p>${qText(q,'rationale')}</p>${!ok&&conf==='high'?`<p style="margin-top:8px"><strong>${L('confidenceAlert')}</strong> ${L('confidenceAlertText')}</p>`:''}</div><div style="display:flex;gap:8px;flex-wrap:wrap">${taskPracticeCount(task.id)>=10?`<div class="note-box" style="width:100%;margin-top:0"><strong>${lang==='es'?'Task practice complete:':'Task practice complete:'}</strong> ${lang==='es'?'Ya completaste 10 preguntas adaptativas para esta task. Puedes seguir practicando o seleccionar la próxima task en el panel izquierdo.':'You completed 10 adaptive questions for this task. You can keep practicing or choose the next task from the sidebar.'}</div>`:''}<button class="btn btn-primary" id="nextQ">${L('nextItem')}</button><button class="btn btn-secondary" id="studyIt">${L('reviewConcept')}</button><button class="btn btn-gold" id="challengeIt">${L('examRealityMode')}</button></div>`;
+  qs('feedbackMount').innerHTML=`<div class="feedback ${ok?'good':'bad'}"><div class="feedback-title">${ok?L('correctMsg'):L('incorrectMsg')}</div><p>${syncedRationale(q)}</p>${!ok&&conf==='high'?`<p style="margin-top:8px"><strong>${L('confidenceAlert')}</strong> ${L('confidenceAlertText')}</p>`:''}</div><div style="display:flex;gap:8px;flex-wrap:wrap">${taskPracticeCount(task.id)>=10?`<div class="note-box" style="width:100%;margin-top:0"><strong>${lang==='es'?'Task practice complete:':'Task practice complete:'}</strong> ${lang==='es'?'Ya completaste 10 preguntas adaptativas para esta task. Puedes seguir practicando o seleccionar la próxima task en el panel izquierdo.':'You completed 10 adaptive questions for this task. You can keep practicing or choose the next task from the sidebar.'}</div>`:''}<button class="btn btn-primary" id="nextQ">${L('nextItem')}</button><button class="btn btn-secondary" id="studyIt">${L('reviewConcept')}</button><button class="btn btn-gold" id="challengeIt">${L('examRealityMode')}</button></div>`;
   qs('nextQ').onclick=()=>renderPractice({domain:q.domain,concept:q.concept,mode:currentMode||'guided'});
   qs('studyIt').onclick=()=>{currentDomain=q.domain;currentConcept=q.concept;renderStudy()};
   qs('challengeIt').onclick=()=>renderChallenge(q.domain);
