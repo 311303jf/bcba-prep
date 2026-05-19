@@ -769,14 +769,18 @@ function obQ(step){return lang==='es'?(OB_ES[step.key]?.q||step.q):step.q}
 function obSub(step){return lang==='es'?(OB_ES[step.key]?.sub||step.sub):step.sub}
 function obOpt(step,o){return lang==='es'?(OB_ES[step.key]?.opts?.[o[0]]||o[2]):o[2]}
 let state=loadState(); let obIndex=0; let currentDomain='B'; let currentConcept='Positive Reinforcement'; let currentQuestion=null; let currentMode='guided'; let timer=null; let seconds=0;
-function freshState(){const domains={};DOMAINS.forEach(d=>domains[d.id]={accuracy:0,stability:0,retention:0,total:0,correct:0,last:0,concepts:{}});return{onboarded:false,profile:{},readiness:22,streak:1,domains,history:[],queue:[],usedFingerprints:[],currentView:'dashboard',learned:{},learnSeen:{},taskPractice:{},confidenceLog:[],adminConfigured:false,answerDist:{A:0,B:0,C:0,D:0},lastAnswerLetters:[]};}
-function loadState(){try{const raw=JSON.parse(localStorage.getItem(STORAGE));if(!raw||!raw.domains||!raw.profile)return freshState();const base=freshState();return {...base,...raw,domains:{...base.domains,...raw.domains},profile:{...base.profile,...raw.profile},queue:Array.isArray(raw.queue)?raw.queue:[],history:Array.isArray(raw.history)?raw.history:[],usedFingerprints:Array.isArray(raw.usedFingerprints)?raw.usedFingerprints:[],learned:raw.learned||{},taskPractice:raw.taskPractice||{},expandedDomains:Array.isArray(raw.expandedDomains)?raw.expandedDomains:['B'],answerDist:raw.answerDist||{A:0,B:0,C:0,D:0},lastAnswerLetters:Array.isArray(raw.lastAnswerLetters)?raw.lastAnswerLetters:[]}}catch(e){return freshState()}}
+function freshState(){const domains={};DOMAINS.forEach(d=>domains[d.id]={accuracy:0,stability:0,retention:0,total:0,correct:0,last:0,concepts:{}});return{onboarded:false,profile:{},readiness:22,streak:1,domains,history:[],queue:[],usedFingerprints:[],currentView:'dashboard',learned:{},learnSeen:{},taskPractice:{},confidenceLog:[],adminConfigured:false,answerDist:{A:0,B:0,C:0,D:0},lastAnswerLetters:[],practiceScreen:null,activeCompletionTaskId:null};}
+function loadState(){try{const raw=JSON.parse(localStorage.getItem(STORAGE));if(!raw||!raw.domains||!raw.profile)return freshState();const base=freshState();return {...base,...raw,domains:{...base.domains,...raw.domains},profile:{...base.profile,...raw.profile},queue:Array.isArray(raw.queue)?raw.queue:[],history:Array.isArray(raw.history)?raw.history:[],usedFingerprints:Array.isArray(raw.usedFingerprints)?raw.usedFingerprints:[],learned:raw.learned||{},taskPractice:raw.taskPractice||{},expandedDomains:Array.isArray(raw.expandedDomains)?raw.expandedDomains:['B'],answerDist:raw.answerDist||{A:0,B:0,C:0,D:0},lastAnswerLetters:Array.isArray(raw.lastAnswerLetters)?raw.lastAnswerLetters:[],practiceScreen:raw.practiceScreen||null,activeCompletionTaskId:raw.activeCompletionTaskId||null}}catch(e){return freshState()}}
 function save(){localStorage.setItem(STORAGE,JSON.stringify(state))}
 function langSwitch(){return `<div class="lang-switch" role="group" aria-label="Language"><button type="button" class="lang-btn ${lang==='en'?'active':''}" data-lang="en">EN</button><button type="button" class="lang-btn ${lang==='es'?'active':''}" data-lang="es">ES</button></div>`}
 function bindLang(){document.querySelectorAll('.lang-btn').forEach(b=>b.onclick=async()=>{const next=b.dataset.lang;if(next===lang)return;lang=next;localStorage.setItem('bcba_lang',lang);save();
   // Critical UX rule: language toggle must NEVER advance practice, pull a new item,
   // increment task counters, or regenerate the current question. It only re-renders
-  // the exact same active question in the selected language.
+  // the current screen in the selected language.
+  if(state.currentView==='practice'&&state.practiceScreen==='completion'){
+    renderTaskCompletion(state.activeCompletionTaskId||findTaskByTitle(currentDomain,currentConcept).id);
+    return;
+  }
   if(state.currentView==='practice'&&currentQuestion){
     await ensureQuestionLanguage(currentQuestion,lang).catch(()=>{});
     renderCurrentPracticeShell();
@@ -881,11 +885,15 @@ function resetTaskProgress(taskId){
   state.queue=(state.queue||[]).filter(q=>!(q.taskId===taskId||q.concept===title));
   recomputeDomainFromHistory(found.domain.id);
   state.readiness=calcReadiness();
+  state.practiceScreen=null;
+  state.activeCompletionTaskId=null;
   save();
 }
 function exitTask(taskId){
   const found=findTaskById(taskId);
   state.lastExitedTask={taskId,domain:found.domain.id,concept:found.task.title,ts:Date.now(),seen:taskPracticeCount(taskId)};
+  state.practiceScreen=null;
+  state.activeCompletionTaskId=null;
   save();
   showToast(lang==='es'?'Progreso guardado. Puedes continuar después.':'Progress saved. You can continue later.');
   renderDashboard();
@@ -1000,6 +1008,9 @@ function masteryTone(mastery){
 function renderTaskCompletion(taskId){
   if(timer)clearInterval(timer);
   state.currentView='practice';
+  state.practiceScreen='completion';
+  state.activeCompletionTaskId=taskId;
+  save();
   bindNav();
   updateSide();
   const found=findTaskById(taskId);
@@ -1331,7 +1342,7 @@ async function renderStudy(){
   const seenKey=ck+'_seen';
 
   function topbar(){return `<div class="topbar"><div><div class="page-title">${task.id} · ${L('learn')}</div><div class="page-sub">${tDomainTitle(d)}</div></div><div class="topbar-right">${langSwitch()}<button class="btn btn-secondary" id="backDash">${L('backDashboard')}</button></div></div>`;}
-  function taskFocusBox(){const cls=taskMasteryClass(d.id,currentConcept);return `<div class="task-focus-card"><div class="task-focus-top"><div><div class="task-focus-id">${task.id} · Official BACB Task</div><div class="task-focus-title">${task.title}</div></div><span class="status-pill ${cls==='mastered'?'stable':cls==='review'?'review':cls==='new'?'review':'stable'}">${taskMasteryLabel(cls)}</span></div><div class="task-focus-meta">Domain ${d.id}: ${tDomainTitle(d)} · ${d.questions} exam questions · ${d.weight}% exam weight</div></div>`;}
+  function taskFocusBox(){const cls=taskMasteryClass(d.id,currentConcept);const isEs=lang==='es';return `<div class="task-focus-card"><div class="task-focus-top"><div><div class="task-focus-id">${task.id} · ${isEs?'Tarea oficial BACB':'Official BACB Task'}</div><div class="task-focus-title">${task.title}</div>${isEs?`<div style="font-size:12px;color:var(--ink-soft);font-weight:700;line-height:1.55;margin-top:5px">Guía en español: esta lección traduce la explicación y práctica, manteniendo el wording oficial en inglés para que coincida con el examen.</div>`:''}</div><span class="status-pill ${cls==='mastered'?'stable':cls==='review'?'review':cls==='new'?'review':'stable'}">${taskMasteryLabel(cls)}</span></div><div class="task-focus-meta">${isEs?'Dominio':'Domain'} ${d.id}: ${tDomainTitle(d)} · ${d.questions} ${isEs?'preguntas del examen':'exam questions'} · ${d.weight}% ${isEs?'peso del examen':'exam weight'}</div></div>`;}
   function quickCheckHtml(qc){
     if(!qc||!qc.q||!qc.options)return '';
     return `<div class="quick-check"><div class="deep-label">✅ ${lang==='es'?'Chequeo rápido':'Quick Check'}</div><div class="quick-check-q">${qc.q}</div><div class="quick-check-options">${Object.entries(qc.options).map(([k,v])=>`<button class="quick-check-btn" data-qc="${k}" data-correct="${qc.correct}"><strong>${k}.</strong> ${v}</button>`).join('')}</div><div class="quick-feedback" id="quickFeedback">${qc.rationale||''}</div></div>`;
@@ -1368,6 +1379,10 @@ async function renderStudy(){
   }
 
   function bind(flipped){
+    // Re-bind language buttons created inside Learn Mode. This was intentionally
+    // added without changing practice/report logic: EN/ES in Learn only re-renders
+    // the same selected task in the chosen language.
+    bindLang();
     const bd=document.getElementById('backDash');if(bd)bd.onclick=renderDashboard;
     const sa=document.getElementById('seeAnswerBtn');
     if(sa)sa.onclick=()=>{state.learned[seenKey]=true;save();qs('main').innerHTML=buildPage(state.learned[ck]||deepFallbackLearn(d,task),true);bind(true);};
@@ -1442,6 +1457,9 @@ async function ensureQuestionLanguage(q,targetLang){
   return q;
 }
 function renderCurrentPracticeShell(){
+  state.practiceScreen='question';
+  state.activeCompletionTaskId=null;
+  save();
   if(!currentQuestion){renderPractice({domain:currentDomain,concept:currentConcept,mode:currentMode||'guided'});return;}
   state.currentView='practice';bindNav();updateSide();
   const task=findTaskByTitle(currentQuestion.domain||currentDomain,currentQuestion.concept||currentConcept);
@@ -1459,7 +1477,11 @@ function renderCurrentPracticeShell(){
 }
 
 async function renderPractice(target){
-  state.currentView='practice';bindNav();updateSide();
+  state.currentView='practice';
+  state.practiceScreen='question';
+  state.activeCompletionTaskId=null;
+  save();
+  bindNav();updateSide();
   target=target||{domain:currentDomain,concept:currentConcept||pickConcept(currentDomain),mode:'guided'};
   currentDomain=target.domain||currentDomain;
   currentConcept=target.concept||pickConcept(currentDomain);
