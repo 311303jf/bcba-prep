@@ -769,8 +769,8 @@ function obQ(step){return lang==='es'?(OB_ES[step.key]?.q||step.q):step.q}
 function obSub(step){return lang==='es'?(OB_ES[step.key]?.sub||step.sub):step.sub}
 function obOpt(step,o){return lang==='es'?(OB_ES[step.key]?.opts?.[o[0]]||o[2]):o[2]}
 let state=loadState(); let obIndex=0; let currentDomain='B'; let currentConcept='Positive Reinforcement'; let currentQuestion=null; let currentMode='guided'; let timer=null; let seconds=0;
-function freshState(){const domains={};DOMAINS.forEach(d=>domains[d.id]={accuracy:0,stability:0,retention:0,total:0,correct:0,last:0,concepts:{}});return{onboarded:false,profile:{},readiness:22,streak:1,domains,history:[],queue:[],usedFingerprints:[],currentView:'dashboard',learned:{},learnSeen:{},taskPractice:{},confidenceLog:[],adminConfigured:false,answerDist:{A:0,B:0,C:0,D:0},lastAnswerLetters:[],practiceScreen:null,activeCompletionTaskId:null};}
-function loadState(){try{const raw=JSON.parse(localStorage.getItem(STORAGE));if(!raw||!raw.domains||!raw.profile)return freshState();const base=freshState();return {...base,...raw,domains:{...base.domains,...raw.domains},profile:{...base.profile,...raw.profile},queue:Array.isArray(raw.queue)?raw.queue:[],history:Array.isArray(raw.history)?raw.history:[],usedFingerprints:Array.isArray(raw.usedFingerprints)?raw.usedFingerprints:[],learned:raw.learned||{},taskPractice:raw.taskPractice||{},expandedDomains:Array.isArray(raw.expandedDomains)?raw.expandedDomains:['B'],answerDist:raw.answerDist||{A:0,B:0,C:0,D:0},lastAnswerLetters:Array.isArray(raw.lastAnswerLetters)?raw.lastAnswerLetters:[],practiceScreen:raw.practiceScreen||null,activeCompletionTaskId:raw.activeCompletionTaskId||null}}catch(e){return freshState()}}
+function freshState(){const domains={};DOMAINS.forEach(d=>domains[d.id]={accuracy:0,stability:0,retention:0,total:0,correct:0,last:0,concepts:{}});return{onboarded:false,profile:{},readiness:22,streak:1,domains,history:[],queue:[],usedFingerprints:[],currentView:'dashboard',learned:{},learnSeen:{},taskPractice:{},confidenceLog:[],adminConfigured:false,answerDist:{A:0,B:0,C:0,D:0},lastAnswerLetters:[],practiceScreen:null,activeCompletionTaskId:null,reportReason:null};}
+function loadState(){try{const raw=JSON.parse(localStorage.getItem(STORAGE));if(!raw||!raw.domains||!raw.profile)return freshState();const base=freshState();return {...base,...raw,domains:{...base.domains,...raw.domains},profile:{...base.profile,...raw.profile},queue:Array.isArray(raw.queue)?raw.queue:[],history:Array.isArray(raw.history)?raw.history:[],usedFingerprints:Array.isArray(raw.usedFingerprints)?raw.usedFingerprints:[],learned:raw.learned||{},taskPractice:raw.taskPractice||{},expandedDomains:Array.isArray(raw.expandedDomains)?raw.expandedDomains:['B'],answerDist:raw.answerDist||{A:0,B:0,C:0,D:0},lastAnswerLetters:Array.isArray(raw.lastAnswerLetters)?raw.lastAnswerLetters:[],practiceScreen:raw.practiceScreen||null,activeCompletionTaskId:raw.activeCompletionTaskId||null,reportReason:raw.reportReason||null}}catch(e){return freshState()}}
 function save(){localStorage.setItem(STORAGE,JSON.stringify(state))}
 function langSwitch(){return `<div class="lang-switch" role="group" aria-label="Language"><button type="button" class="lang-btn ${lang==='en'?'active':''}" data-lang="en">EN</button><button type="button" class="lang-btn ${lang==='es'?'active':''}" data-lang="es">ES</button></div>`}
 function bindLang(){document.querySelectorAll('.lang-btn').forEach(b=>b.onclick=async()=>{const next=b.dataset.lang;if(next===lang)return;lang=next;localStorage.setItem('bcba_lang',lang);save();
@@ -778,7 +778,7 @@ function bindLang(){document.querySelectorAll('.lang-btn').forEach(b=>b.onclick=
   // increment task counters, or regenerate the current question. It only re-renders
   // the current screen in the selected language.
   if(state.currentView==='practice'&&state.practiceScreen==='completion'){
-    renderTaskCompletion(state.activeCompletionTaskId||findTaskByTitle(currentDomain,currentConcept).id);
+    renderTaskCompletion(state.activeCompletionTaskId||findTaskByTitle(currentDomain,currentConcept).id,{reason:state.reportReason});
     return;
   }
   if(state.currentView==='practice'&&currentQuestion){
@@ -838,19 +838,28 @@ function adaptiveDifficultyForAttempt(n){
 }
 function getTaskPracticeRec(taskId){
   state.taskPractice=state.taskPractice||{};
-  state.taskPractice[taskId]=state.taskPractice[taskId]||{seen:[],answered:0,mastered:false};
+  state.taskPractice[taskId]=state.taskPractice[taskId]||{seen:[],answered:0,mastered:false,extended:false};
   if(!Array.isArray(state.taskPractice[taskId].seen))state.taskPractice[taskId].seen=[];
   return state.taskPractice[taskId];
 }
+function answeredRowsForTask(taskId){
+  const found=findTaskById(taskId);
+  const title=found.task.title;
+  return (state.history||[]).filter(h=>h.taskId===taskId || h.concept===title);
+}
+function taskAnsweredCount(taskId){
+  return answeredRowsForTask(taskId).length;
+}
 function taskPracticeCount(taskId){
-  const rec=getTaskPracticeRec(taskId);
-  return rec.seen.length;
+  // Backward-compatible name: this now means ANSWERED items, not merely displayed/seen items.
+  return taskAnsweredCount(taskId);
 }
 function practiceCycleLabel(taskId,next=false){
   const rec=getTaskPracticeRec(taskId);
-  const count=rec.seen.length+(next?1:0);
+  const answered=taskAnsweredCount(taskId);
+  const count=answered+(next?1:0);
   if(rec.extended){
-    return lang==='es'?`Práctica extendida · ${Math.max(1,count)} preguntas`:`Extended practice · ${Math.max(1,count)} items`;
+    return lang==='es'?`Práctica extendida · ${Math.max(1,count)} preguntas respondidas`:`Extended practice · ${Math.max(1,count)} answered items`;
   }
   return `Item ${Math.min(Math.max(1,count),PRACTICE_CYCLE_LENGTH)}/${PRACTICE_CYCLE_LENGTH}`;
 }
@@ -887,16 +896,15 @@ function resetTaskProgress(taskId){
   state.readiness=calcReadiness();
   state.practiceScreen=null;
   state.activeCompletionTaskId=null;
+  state.reportReason=null;
   save();
 }
 function exitTask(taskId){
   const found=findTaskById(taskId);
-  state.lastExitedTask={taskId,domain:found.domain.id,concept:found.task.title,ts:Date.now(),seen:taskPracticeCount(taskId)};
-  state.practiceScreen=null;
-  state.activeCompletionTaskId=null;
+  state.lastExitedTask={taskId,domain:found.domain.id,concept:found.task.title,ts:Date.now(),answered:taskAnsweredCount(taskId)};
   save();
-  showToast(lang==='es'?'Progreso guardado. Puedes continuar después.':'Progress saved. You can continue later.');
-  renderDashboard();
+  showToast(lang==='es'?'Progreso guardado. Reporte actualizado.':'Progress saved. Updated report ready.');
+  renderTaskCompletion(taskId,{reason:'exit'});
 }
 function confirmResetTask(taskId){
   const found=findTaskById(taskId);
@@ -950,7 +958,7 @@ function getNextLocalTaskQuestion(dom,concept){
   const available=bank.map((q,i)=>({q,i,fp:fingerprint(q)})).filter(x=>!rec.seen.includes(x.fp));
   const chosen=(available.length?available[0]:bank[rec.seen.length%bank.length]);
   const q=JSON.parse(JSON.stringify(chosen.q||chosen));
-  q.difficulty=adaptiveDifficultyForAttempt(rec.seen.length);
+  q.difficulty=adaptiveDifficultyForAttempt(taskAnsweredCount(task.id));
   q.domain=dom.id;
   q.taskId=task.id;
   q.concept=task.title;
@@ -960,7 +968,7 @@ function generateTaskFallback(dom,concept,mode='guided'){
   const task=findTaskByTitle(dom.id,concept);
   const rec=getTaskPracticeRec(task.id);
   const q=getNextLocalTaskQuestion(dom,concept);
-  q.difficulty=adaptiveDifficultyForAttempt(rec.seen.length);
+  q.difficulty=adaptiveDifficultyForAttempt(taskAnsweredCount(task.id));
   return q;
 }
 function markQuestionSeen(q){
@@ -989,10 +997,8 @@ function nextOfficialTask(taskId){
   return flat[(idx>=0&&idx<flat.length-1)?idx+1:idx]||flat[0];
 }
 function taskResultStats(taskId){
-  const found=findTaskById(taskId);
-  const title=found.task.title;
-  const rows=(state.history||[]).filter(h=>h.taskId===taskId || h.concept===title).slice(0,PRACTICE_CYCLE_LENGTH);
-  const total=Math.max(rows.length, Math.min(taskPracticeCount(taskId),PRACTICE_CYCLE_LENGTH));
+  const rows=answeredRowsForTask(taskId);
+  const total=rows.length;
   const correct=rows.filter(h=>h.ok).length;
   const highMiss=rows.filter(h=>!h.ok&&h.conf==='high').length;
   const accuracy=total?Math.round((correct/total)*100):0;
@@ -1005,11 +1011,12 @@ function masteryTone(mastery){
   if(mastery==='Review Recommended')return {emoji:'📈',color:'var(--blue)',bg:'var(--blue-light)',border:'var(--blue-border)'};
   return {emoji:'🎯',color:'var(--red)',bg:'var(--red-light)',border:'var(--red-border)'};
 }
-function renderTaskCompletion(taskId){
+function renderTaskCompletion(taskId,opts={}){
   if(timer)clearInterval(timer);
   state.currentView='practice';
   state.practiceScreen='completion';
   state.activeCompletionTaskId=taskId;
+  state.reportReason=opts&&opts.reason?opts.reason:null;
   save();
   bindNav();
   updateSide();
@@ -1020,9 +1027,12 @@ function renderTaskCompletion(taskId){
   const tone=masteryTone(stats.mastery);
   const next=nextOfficialTask(taskId);
   const nextIsSame=next.task.id===taskId;
-  const completedText=lang==='es'?'Task completada':'Task Completed';
-  const subText=lang==='es'?'Cerraste una práctica adaptativa mínima de 5 preguntas alineada a esta task oficial.':'You completed a minimum 5-item adaptive practice set aligned to this official task.';
-  qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${tone.emoji} ${completedText}</div><div class="page-sub">${task.id} · ${task.title}</div></div><div class="topbar-right"><div class="task-panel-controls">${langSwitch()}<button class="btn btn-exit" id="exitCompletedTask">${lang==='es'?'Salir':'Exit'}</button><button class="btn btn-danger" id="resetCompletedTask">${lang==='es'?'Resetear Task':'Reset Task'}</button><button class="btn btn-secondary" id="dashAfterComplete">${L('backDashboard')}</button></div></div></div>
+  const isExitReport=opts&&opts.reason==='exit';
+  const completedText=isExitReport?(lang==='es'?'Reporte de progreso':'Progress Report'):(lang==='es'?'Task completada':'Task Completed');
+  const subText=isExitReport
+    ?(lang==='es'?'Este reporte muestra tu progreso hasta la última pregunta contestada en esta task. Puedes continuar después exactamente desde donde quedaste.':'This report shows your progress through the last answered question in this task. You can continue later exactly where you left off.')
+    :(lang==='es'?'Cerraste una práctica adaptativa mínima de 5 preguntas alineada a esta task oficial.':'You completed a minimum 5-item adaptive practice set aligned to this official task.');
+  qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${tone.emoji} ${completedText}</div><div class="page-sub">${task.id} · ${task.title}</div></div><div class="topbar-right"><div class="task-panel-controls">${langSwitch()}<button class="btn btn-exit" id="exitCompletedTask">${lang==='es'?'Salir al Dashboard':'Exit to Dashboard'}</button><button class="btn btn-danger" id="resetCompletedTask">${lang==='es'?'Resetear Task':'Reset Task'}</button><button class="btn btn-secondary" id="dashAfterComplete">${L('backDashboard')}</button></div></div></div>
   <div class="complete-card" style="max-width:880px">
     <div style="background:${tone.bg};border:1.5px solid ${tone.border};border-radius:var(--radius-lg);padding:20px;margin-bottom:16px">
       <div class="module-label" style="color:${tone.color}">${stats.mastery}</div>
@@ -1031,11 +1041,11 @@ function renderTaskCompletion(taskId){
     </div>
     <div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:16px">
       <div class="metric"><div class="metric-value">${stats.accuracy}%</div><div class="metric-label">${lang==='es'?'Precisión':'Accuracy'}</div></div>
-      <div class="metric"><div class="metric-value">${stats.correct}/${stats.total||PRACTICE_CYCLE_LENGTH}</div><div class="metric-label">${lang==='es'?'Correctas':'Correct'}</div></div>
+      <div class="metric"><div class="metric-value">${stats.correct}/${stats.total}</div><div class="metric-label">${lang==='es'?'Correctas':'Correct'}</div></div>
       <div class="metric"><div class="metric-value">${stats.highMiss}</div><div class="metric-label">${lang==='es'?'Alertas de confianza':'Confidence alerts'}</div></div>
-      <div class="metric"><div class="metric-value">5</div><div class="metric-label">${lang==='es'?'Preguntas mínimas':'Minimum items'}</div></div>
+      <div class="metric"><div class="metric-value">${stats.total}</div><div class="metric-label">${lang==='es'?'Respondidas':'Answered'}</div></div>
     </div>
-    <div class="note-box" style="background:var(--surface);border-color:var(--border);color:var(--ink-mid)"><strong>${lang==='es'?'Qué significa:':'What this means:'}</strong> ${stats.accuracy>=80?(lang==='es'?'Puedes avanzar, pero esta task seguirá regresando en repasos de retención.':'You can move forward, and this task will still return later for retention review.'):(lang==='es'?'Conviene revisar el concepto antes de avanzar para evitar que una confusión se estabilice.':'Review this concept before moving on so misconceptions do not stabilize.')}</div>
+    <div class="note-box" style="background:var(--surface);border-color:var(--border);color:var(--ink-mid)"><strong>${lang==='es'?'Qué significa:':'What this means:'}</strong> ${stats.total===0?(lang==='es'?'Aún no hay respuestas registradas para esta task.':'No answered items are recorded for this task yet.'):stats.accuracy>=80?(lang==='es'?'Vas muy bien. Puedes avanzar o seguir practicando para fortalecer retención.':'You are doing well. You can move forward or keep practicing to strengthen retention.'):(lang==='es'?'Conviene revisar el concepto o seguir practicando antes de avanzar.':'Review the concept or keep practicing before moving on.')}</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
       <button class="btn btn-gold" id="keepPracticingTask">${lang==='es'?'Seguir practicando esta task':'Keep practicing this task'}</button>
       ${!nextIsSame?`<button class="btn btn-primary" id="continueNextTask">${lang==='es'?'Continuar a':'Continue to'} ${next.task.id}</button>`:''}
@@ -1046,7 +1056,7 @@ function renderTaskCompletion(taskId){
   bindLang();
   qs('dashAfterComplete').onclick=renderDashboard;
   qs('dashboardCompleteBtn').onclick=renderDashboard;
-  qs('exitCompletedTask').onclick=()=>exitTask(task.id);
+  qs('exitCompletedTask').onclick=renderDashboard;
   qs('resetCompletedTask').onclick=()=>confirmResetTask(task.id);
   qs('reviewCompletedConcept').onclick=()=>{currentDomain=d.id;currentConcept=task.title;state.currentView='study';save();renderStudy();};
   qs('keepPracticingTask').onclick=()=>{currentDomain=d.id;currentConcept=task.title;const rec=getTaskPracticeRec(task.id);rec.extended=true;save();renderPractice({domain:d.id,concept:task.title,mode:'exam',forceContinue:true});};
@@ -1459,6 +1469,7 @@ async function ensureQuestionLanguage(q,targetLang){
 function renderCurrentPracticeShell(){
   state.practiceScreen='question';
   state.activeCompletionTaskId=null;
+  state.reportReason=null;
   save();
   if(!currentQuestion){renderPractice({domain:currentDomain,concept:currentConcept,mode:currentMode||'guided'});return;}
   state.currentView='practice';bindNav();updateSide();
@@ -1480,6 +1491,7 @@ async function renderPractice(target){
   state.currentView='practice';
   state.practiceScreen='question';
   state.activeCompletionTaskId=null;
+  state.reportReason=null;
   save();
   bindNav();updateSide();
   target=target||{domain:currentDomain,concept:currentConcept||pickConcept(currentDomain),mode:'guided'};
@@ -1502,11 +1514,12 @@ async function renderPractice(target){
   // After 5 items, the student may continue practicing indefinitely until Exit.
   const rec=getTaskPracticeRec(task.id);
   if(target.forceContinue)rec.extended=true;
-  if(rec.seen.length>=PRACTICE_CYCLE_LENGTH && !rec.extended){
+  const answeredCount=taskAnsweredCount(task.id);
+  if(answeredCount>=PRACTICE_CYCLE_LENGTH && !rec.extended){
     renderTaskCompletion(task.id);
     return;
   }
-  if(rec.seen.length<PRACTICE_CYCLE_LENGTH){
+  if(answeredCount<PRACTICE_CYCLE_LENGTH){
     currentQuestion=getNextLocalTaskQuestion(dom,currentConcept);
   } else {
     const matchIndex=state.queue.findIndex(q=>questionAligned(q,dom,currentConcept)&&!state.usedFingerprints.includes(fingerprint(q)));
@@ -1662,7 +1675,7 @@ await Promise.allSettled(Array.from({length:5},()=>generateQuestion({domain:curr
 if(items.length<5)items.push(...FALLBACK_QUESTIONS.slice(0,5-items.length));function show(){const q=prepareDisplayQuestion(items[idx]);const opts=displayOptions(q);qs('main').innerHTML=`<div class="question-card"><div class="question-head"><div class="question-meta">${L('challengeTitle')} · Item ${idx+1}/5 · DOM. ${q.domain}</div><div class="timer-pill">${L('examRealityMode')}</div></div><div class="question-text">${qText(q,'q')}</div>${Object.entries(opts).map(([l,t])=>`<button class="option" data-ch="${l}"><span class="option-letter">${l}</span><span>${t}</span></button>`).join('')}</div>`;document.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>{const ok=b.dataset.ch===displayCorrect(q);score+=ok?1:0;registerCorrectLetter(displayCorrect(q));recordAnswer(q,b.dataset.ch,ok,'exam',0);idx++;idx<items.length?show():finish()})}function finish(){qs('main').innerHTML=`<div class="complete-card"><div style="font-size:48px">${score>=4?'🏆':score>=3?'📈':'🎯'}</div><div class="module-title">${L('challengeComplete')}</div><p class="page-sub">${L('score')}: <strong>${score}/5</strong>. ${score>=4?L('challengeGood'):L('challengeNeeds')}</p><div class="note-box">${L('readinessReminder')}</div><button class="btn btn-primary" id="backAfterChallenge">${L('backToDashboard')}</button></div>`;qs('backAfterChallenge').onclick=renderDashboard}show()}}
 function renderAnalytics(){state.currentView='analytics';bindNav();updateSide();qs('main').innerHTML=`<div class="topbar"><div><div class="page-title">${L('performanceInsights')}</div><div class="page-sub">${L('insightsSub')}</div></div><div class="topbar-right">${langSwitch()}</div></div><div class="metrics"><div class="metric"><div class="metric-value">${state.readiness}%</div><div class="metric-label">${L('examReadiness')}</div></div><div class="metric"><div class="metric-value">${Math.round(avg('stability'))}%</div><div class="metric-label">${L('averageStability')}</div></div><div class="metric"><div class="metric-value">${Math.round(avg('retention'))}%</div><div class="metric-label">${L('averageRetention')}</div></div><div class="metric"><div class="metric-value">${state.history.filter(x=>!x.ok&&x.conf==='high').length}</div><div class="metric-label">${L('confidenceAlerts')}</div></div></div><div class="domain-grid">${DOMAINS.map(domainCard).join('')}</div><div class="panel" style="margin-top:16px"><div class="panel-title">${L('recentHistory')}</div><div class="session-list">${state.history.slice(0,10).map(h=>`<div class="session-item"><span>${h.ok?'✓':'✗'} DOM. ${h.domain} · ${tConcept(h.concept)}</span><strong>${h.conf}</strong></div>`).join('')||'<div class="session-item"><span>'+L('noResponses')+'</span><strong>—</strong></div>'}</div></div>`;bindLang();bindDomainButtons()}
 function avg(k){return DOMAINS.reduce((s,d)=>s+(state.domains[d.id][k]||0),0)/DOMAINS.length}
-function render(){if(!['dashboard','study','practice','challenge','analytics'].includes(state.currentView))state.currentView='dashboard';if(!qs('app').classList.contains('active')&&state.onboarded){qs('landing').classList.remove('active');qs('onboarding').classList.remove('active');qs('app').classList.add('active')}if(state.currentView==='dashboard')renderDashboard();else if(state.currentView==='study')renderStudy();else if(state.currentView==='practice')renderPractice();else if(state.currentView==='challenge')renderChallenge();else if(state.currentView==='analytics')renderAnalytics();else renderDashboard()}
+function render(){if(!['dashboard','study','practice','challenge','analytics'].includes(state.currentView))state.currentView='dashboard';if(!qs('app').classList.contains('active')&&state.onboarded){qs('landing').classList.remove('active');qs('onboarding').classList.remove('active');qs('app').classList.add('active')}if(state.currentView==='dashboard')renderDashboard();else if(state.currentView==='study')renderStudy();else if(state.currentView==='practice'&&state.practiceScreen==='completion'&&state.activeCompletionTaskId)renderTaskCompletion(state.activeCompletionTaskId,{reason:state.reportReason});else if(state.currentView==='practice')renderPractice();else if(state.currentView==='challenge')renderChallenge();else if(state.currentView==='analytics')renderAnalytics();else renderDashboard()}
 function adminModal(){qs('adminModal').classList.add('active');qs('adminKeyInput').value=getAdminKey()}
 function showSetupScreen(){
   const sc=qs('setupScreen');if(!sc)return;sc.classList.add('active');
