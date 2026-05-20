@@ -2938,6 +2938,40 @@ document.addEventListener('click', function(e){
   }
 });
 
+
+
+/* v34 critical click repair: robust delegated handlers for Learn buttons.
+   This does not change practice logic; it only ensures buttons work after any re-render. */
+document.addEventListener('click', function(e){
+  const startLesson = e.target.closest('#seeAnswerBtn, [data-start-guided-lesson]');
+  if(startLesson){
+    e.preventDefault();
+    e.stopPropagation();
+    try{
+      const ck = currentDomain + ':' + currentConcept + ':deep_v1';
+      state.learned = state.learned || {};
+      state.learned[ck + '_seen'] = true;
+      save();
+      state.currentView = 'study';
+      renderStudy();
+    }catch(err){ console.error('Start guided lesson failed', err); }
+    return;
+  }
+  const miniBtn = e.target.closest('[data-mini-start]');
+  if(miniBtn){
+    e.preventDefault();
+    e.stopPropagation();
+    try{
+      const task = currentTaskObj();
+      if(task){
+        const idx = parseInt(miniBtn.dataset.miniStart, 10) || 0;
+        renderMiniPractice(task.id, idx, 0);
+      }
+    }catch(err){ console.error('Mini practice start failed', err); }
+    return;
+  }
+}, true);
+
 renderLanding(); if(state.onboarded){render();maybeAutoShowQuickTour();} startPreload();
 })();
 </script>
