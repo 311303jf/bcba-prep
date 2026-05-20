@@ -7,6 +7,9 @@
 <style>
 :root{--green:#047857;--green2:#dcfce7;--red:#dc2626;--red2:#fee2e2;--blue:#2563eb;--blue2:#eff6ff;--yellow:#f59e0b;--yellow2:#fffbeb;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--bg:#f8fafc}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}.sidebar{background:white;border-right:1px solid var(--line);padding:18px;position:sticky;top:0;height:100vh}.logo small{color:var(--green);font-weight:900}.logo h1{font-family:Georgia,serif;margin:6px 0;font-size:28px}.sub{font-size:13px;color:var(--muted);font-weight:700}.main{padding:28px;max-width:1050px}.card{background:white;border:1px solid var(--line);border-radius:22px;padding:22px;margin:16px 0;box-shadow:0 8px 24px #0000000b}.hero{background:linear-gradient(#ecfdf5,#fff);border-color:#34d399}h1,h2,h3{font-family:Georgia,serif;margin:.2rem 0}.badge{font-size:11px;font-weight:950;color:var(--green);letter-spacing:.08em;text-transform:uppercase}.pill{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:900;background:white;margin:4px}.task{display:grid;grid-template-columns:32px 1fr;gap:8px;padding:10px;border-radius:13px;background:var(--green2);border-left:4px solid var(--green);font-weight:900;font-size:13px}.num{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:white}.progress{height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden}.bar{height:100%;width:0;background:var(--green);transition:.25s}.stepper{display:flex;gap:8px;margin:18px 0}.dot{width:12px;height:12px;border-radius:50%;background:#d1d5db}.dot.on{background:var(--green)}.hidden{display:none!important}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.mini{border:1px solid var(--line);border-radius:16px;padding:15px;background:white}.green{background:var(--green2)!important;border-color:#86efac!important}.red{background:var(--red2)!important;border-color:#fecaca!important}.blue{background:var(--blue2)!important;border-color:#bfdbfe!important}.yellow{background:var(--yellow2)!important;border-color:#fde68a!important}.prompt{font-size:18px;font-weight:900;line-height:1.45}.options{display:grid;gap:10px;margin-top:14px}.option{border:1px solid var(--line);background:white;border-radius:14px;padding:14px;cursor:pointer;text-align:left;font-weight:800}.option.correct{border-color:var(--green);background:var(--green2)}.option.wrong{border-color:var(--red);background:var(--red2)}.option.notchosen{opacity:.85}.option:disabled{cursor:not-allowed}.feedback{display:none;margin-top:14px;border-radius:16px;padding:15px;font-weight:750}.feedback.show{display:block}.coachGrid{display:grid;gap:10px;margin-top:12px}.coachCard{border:1px solid var(--line);border-radius:14px;padding:12px;background:white;font-size:14px;line-height:1.35}.coachCard b{display:block;margin-bottom:4px}.hintBox{display:none;margin-top:12px;border:1px dashed var(--yellow);background:var(--yellow2);border-radius:14px;padding:12px;font-weight:750}.hintBox.show{display:block}.btn{border:0;border-radius:13px;padding:12px 16px;font-weight:950;cursor:pointer;background:var(--green);color:white}.btn.secondary{background:white;color:var(--ink);border:1px solid var(--line)}.btn.yellow{background:var(--yellow);color:#111827}.controlRow{display:flex;justify-content:space-between;gap:12px;margin-top:18px;flex-wrap:wrap}.lang{display:inline-flex;background:#eef2f7;border-radius:999px;padding:3px}.lang button{border:0;border-radius:999px;background:transparent;padding:8px 11px;font-weight:950;cursor:pointer}.lang button.active{background:white;color:var(--green)}
+.finalBox{border:1px solid #86efac;background:linear-gradient(180deg,#dcfce7,#ffffff);border-radius:20px;padding:18px;margin-top:16px}
+.finalScore{font-size:28px;font-weight:950;color:var(--green);margin:8px 0}
+.actionGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
 @media(max-width:850px){.app{grid-template-columns:1fr}.sidebar{position:relative;height:auto}.two{grid-template-columns:1fr}.main{padding:18px}}
 </style>
 </head>
@@ -94,9 +97,38 @@
 
 <article class="card hidden" data-step>
 <span class="badge" id="s6">6 · Resumen de dominio</span>
-<h2 id="summaryTitle">Practicaste la habilidad de pensar, no solo la definición.</h2>
-<div class="two"><div class="mini green" id="sum1">Ambiente sobre etiquetas</div><div class="mini blue" id="sum2">Eventos privados son conducta</div></div>
-<div class="controlRow"><button class="btn secondary" onclick="prevStep()" id="back6">← Atrás</button><button class="btn" onclick="resetAll()" id="again">Practicar otra vez</button></div>
+<h2 id="summaryTitle">Practice complete</h2>
+
+<div class="finalBox">
+  <div class="badge" id="finalLabel">Final Feedback</div>
+  <div class="finalScore" id="finalScore">Score: Guided Practice Complete</div>
+  <p id="finalMessage">You practiced the thinking skill, not just the definition.</p>
+
+  <div class="two">
+    <div class="mini green">
+      <h3 id="masteredTitle">You are improving in:</h3>
+      <ul id="masteredList">
+        <li>identifying mentalistic labels</li>
+        <li>choosing environmental explanations</li>
+        <li>detecting BCBA exam traps</li>
+      </ul>
+    </div>
+    <div class="mini yellow">
+      <h3 id="nextStepTitle">Next step:</h3>
+      <p id="nextStepText">Practice similar scenarios where two answers sound correct, but only one identifies contingencies.</p>
+    </div>
+  </div>
+
+  <div class="actionGrid">
+    <button class="btn" onclick="practiceSimilar()" id="similarBtn">Practice Similar Questions</button>
+    <button class="btn secondary" onclick="reviewWeakArea()" id="reviewBtn">Review Weak Area</button>
+  </div>
+</div>
+
+<div class="controlRow">
+  <button class="btn secondary" onclick="prevStep()" id="back6">← Atrás</button>
+  <button class="btn" onclick="resetAll()" id="again">Practicar otra vez</button>
+</div>
 </article>
 </section>
 </main>
@@ -134,8 +166,8 @@ nearOptions:[['The client hits because he is angry.',false,'Tempting, but it lab
 function t(){return L[lang]}
 function setLang(x){
  lang=x; enBtn.classList.toggle('active',x==='en'); esBtn.classList.toggle('active',x==='es');
- if(x==='en'){engineLabel.textContent='Universal Guided Learning Engine';taskName.textContent='Radical behaviorism';readyLabel.textContent='Current Task Readiness';masteryLabel.textContent='mastery building';pageTitle.textContent='A.3 • Radical behaviorism';heroText.textContent='Less reading, more discrimination: frequent decisions, clinical analysis, immediate feedback, and exam-style practice.';startBtn.textContent=t().start;newLabel.textContent='New universal structure';s1.textContent='1 · Concept Snapshot';meansTitle.textContent='What it means';notTitle.textContent='What it is NOT';understand.textContent='I understand →';s2.textContent='2 · Quick Discrimination';quickPrompt.textContent='“The client screams because she is frustrated.”';quickQuestion.textContent='What type of explanation is this?';quickHint.textContent='Ask: does it identify environmental variables, or only label a private event?';s3.textContent='3 · Trap Detection';trapPrompt.textContent='Which word is the trap? “The learner refuses because he is oppositional.”';trapHint.textContent='The trap is not the observable behavior. Look for the label that pretends to explain behavior.';s4.textContent='4 · Scenario Deconstruction';scenarioText.textContent='A student throws materials when given difficult math problems. The teacher removes the worksheet.';s5.textContent='5 · Near-Miss Training';nearPrompt.textContent='Which answer is BEST from a radical behaviorist perspective?';nearHint.textContent='Choose the option that identifies environmental events and reinforcement history.';summaryTitle.textContent='You practiced the thinking skill, not just the definition.';sum1.textContent='Environment over labels';sum2.textContent='Private events are behavior';again.textContent='Practice again';}
- else{engineLabel.textContent='Motor Universal de Aprendizaje Guiado';taskName.textContent='Conductismo radical';readyLabel.textContent='Preparación de la tarea actual';masteryLabel.textContent='construyendo dominio';pageTitle.textContent='A.3 • Conductismo radical';heroText.textContent='Menos lectura, más discriminación: decisiones frecuentes, análisis clínico, feedback inmediato y práctica estilo examen.';startBtn.textContent=t().start;newLabel.textContent='Nueva estructura universal';s1.textContent='1 · Resumen del concepto';meansTitle.textContent='Qué significa';notTitle.textContent='Qué NO significa';understand.textContent='Entendido →';s2.textContent='2 · Discriminación rápida';quickPrompt.textContent='“La cliente grita porque está frustrada.”';quickQuestion.textContent='¿Qué tipo de explicación es esta?';quickHint.textContent='Pregunta: ¿identifica variables ambientales o solo etiqueta un evento privado?';s3.textContent='3 · Detección de trampas';trapPrompt.textContent='¿Cuál palabra es la trampa? “El aprendiz se niega porque es oposicionista.”';trapHint.textContent='La trampa no es la conducta observable. Busca la etiqueta que pretende explicar la conducta.';s4.textContent='4 · Deconstrucción del escenario';scenarioText.textContent='Un estudiante tira materiales cuando recibe problemas difíciles de matemáticas. La maestra retira la hoja de trabajo.';s5.textContent='5 · Entrenamiento con opciones cercanas';nearPrompt.textContent='¿Cuál respuesta es la MEJOR desde la perspectiva del conductismo radical?';nearHint.textContent='Escoge la opción que identifica eventos ambientales e historia de reforzamiento.';summaryTitle.textContent='Practicaste la habilidad de pensar, no solo la definición.';sum1.textContent='Ambiente sobre etiquetas';sum2.textContent='Eventos privados son conducta';again.textContent='Practicar otra vez';}
+ if(x==='en'){engineLabel.textContent='Universal Guided Learning Engine';taskName.textContent='Radical behaviorism';readyLabel.textContent='Current Task Readiness';masteryLabel.textContent='mastery building';pageTitle.textContent='A.3 • Radical behaviorism';heroText.textContent='Less reading, more discrimination: frequent decisions, clinical analysis, immediate feedback, and exam-style practice.';startBtn.textContent=t().start;newLabel.textContent='New universal structure';s1.textContent='1 · Concept Snapshot';meansTitle.textContent='What it means';notTitle.textContent='What it is NOT';understand.textContent='I understand →';s2.textContent='2 · Quick Discrimination';quickPrompt.textContent='“The client screams because she is frustrated.”';quickQuestion.textContent='What type of explanation is this?';quickHint.textContent='Ask: does it identify environmental variables, or only label a private event?';s3.textContent='3 · Trap Detection';trapPrompt.textContent='Which word is the trap? “The learner refuses because he is oppositional.”';trapHint.textContent='The trap is not the observable behavior. Look for the label that pretends to explain behavior.';s4.textContent='4 · Scenario Deconstruction';scenarioText.textContent='A student throws materials when given difficult math problems. The teacher removes the worksheet.';s5.textContent='5 · Near-Miss Training';nearPrompt.textContent='Which answer is BEST from a radical behaviorist perspective?';nearHint.textContent='Choose the option that identifies environmental events and reinforcement history.';summaryTitle.textContent='Practice complete';finalLabel.textContent='Final Feedback';finalScore.textContent='Score: Guided Practice Complete';finalMessage.textContent='You practiced the thinking skill, not just the definition.';masteredTitle.textContent='You are improving in:';masteredList.innerHTML='<li>identifying mentalistic labels</li><li>choosing environmental explanations</li><li>detecting BCBA exam traps</li>';nextStepTitle.textContent='Next step:';nextStepText.textContent='Practice similar scenarios where two answers sound correct, but only one identifies contingencies.';similarBtn.textContent='Practice Similar Questions';reviewBtn.textContent='Review Weak Area';again.textContent='Practice again';}
+ else{engineLabel.textContent='Motor Universal de Aprendizaje Guiado';taskName.textContent='Conductismo radical';readyLabel.textContent='Preparación de la tarea actual';masteryLabel.textContent='construyendo dominio';pageTitle.textContent='A.3 • Conductismo radical';heroText.textContent='Menos lectura, más discriminación: decisiones frecuentes, análisis clínico, feedback inmediato y práctica estilo examen.';startBtn.textContent=t().start;newLabel.textContent='Nueva estructura universal';s1.textContent='1 · Resumen del concepto';meansTitle.textContent='Qué significa';notTitle.textContent='Qué NO significa';understand.textContent='Entendido →';s2.textContent='2 · Discriminación rápida';quickPrompt.textContent='“La cliente grita porque está frustrada.”';quickQuestion.textContent='¿Qué tipo de explicación es esta?';quickHint.textContent='Pregunta: ¿identifica variables ambientales o solo etiqueta un evento privado?';s3.textContent='3 · Detección de trampas';trapPrompt.textContent='¿Cuál palabra es la trampa? “El aprendiz se niega porque es oposicionista.”';trapHint.textContent='La trampa no es la conducta observable. Busca la etiqueta que pretende explicar la conducta.';s4.textContent='4 · Deconstrucción del escenario';scenarioText.textContent='Un estudiante tira materiales cuando recibe problemas difíciles de matemáticas. La maestra retira la hoja de trabajo.';s5.textContent='5 · Entrenamiento con opciones cercanas';nearPrompt.textContent='¿Cuál respuesta es la MEJOR desde la perspectiva del conductismo radical?';nearHint.textContent='Escoge la opción que identifica eventos ambientales e historia de reforzamiento.';summaryTitle.textContent='Práctica completada';finalLabel.textContent='Retroalimentación final';finalScore.textContent='Resultado: Práctica guiada completada';finalMessage.textContent='Practicaste la habilidad de pensar, no solo la definición.';masteredTitle.textContent='Estás mejorando en:';masteredList.innerHTML='<li>identificar etiquetas mentalistas</li><li>escoger explicaciones ambientales</li><li>detectar trampas del examen BCBA</li>';nextStepTitle.textContent='Próximo paso:';nextStepText.textContent='Practica escenarios similares donde dos respuestas suenan correctas, pero solo una identifica contingencias.';similarBtn.textContent='Practicar preguntas similares';reviewBtn.textContent='Revisar área débil';again.textContent='Practicar otra vez';}
  document.querySelectorAll('[id^=back]').forEach(b=>b.textContent=t().back);
  document.querySelectorAll('[id^=next]').forEach(b=>b.textContent=t().next);
  scenarioContinue.textContent=t().cont; document.querySelectorAll('[id^=hint]').forEach(b=>b.textContent=t().hint);
@@ -168,6 +200,14 @@ function pickScenario(i){
  if(scenarioStep < t().scenario.length-1) scenarioContinue.classList.remove('hidden'); else next4.classList.remove('hidden');
 }
 function continueScenario(){scenarioStep++; renderScenario()}
+function practiceSimilar(){
+ scenarioStep=0;
+ showStep(1);
+ setTimeout(()=>{ nextStep(); nextStep(); }, 50);
+}
+function reviewWeakArea(){
+ showStep(2);
+}
 function resetAll(){location.reload()}
 renderAllOptions(); renderScenario();
 </script>
