@@ -2830,6 +2830,114 @@ function submitSetupKey(){
   if(e.ctrlKey&&e.shiftKey&&key==='a')adminModal();
   if(e.ctrlKey&&e.shiftKey&&key==='k')showSetupScreen();
 });window.renderDashboard=renderDashboard;
+
+
+/* v31 Focused Single-Concept Learning Flow Patch
+   Shows ONE micro-lesson/subskill at a time to avoid overload and horizontal scrolling. */
+const __v31FocusCss = document.createElement('style');
+__v31FocusCss.textContent = `
+  .subskill-grid{display:block!important;grid-template-columns:1fr!important;}
+  .subskill-card{max-width:880px!important;margin:0 auto!important;padding:0!important;border:none!important;background:transparent!important;box-shadow:none!important;}
+  .micro-lesson-box{margin-top:0!important;border:0!important;background:transparent!important;padding:0!important;}
+  .micro-lesson-grid{display:grid!important;grid-template-columns:1fr!important;gap:12px!important;}
+  .concept-contrast-table{width:100%!important;min-width:0!important;table-layout:auto!important;}
+  .concept-contrast-table th,.concept-contrast-table td{white-space:normal!important;word-break:normal!important;}
+  .focused-flow-wrap{max-width:920px;margin:0 auto;}
+  .focused-progress-strip{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 18px;align-items:center;}
+  .focused-step{border:1.5px solid var(--border);background:var(--white);border-radius:999px;padding:7px 11px;font-size:11px;font-weight:900;color:var(--ink-soft);display:inline-flex;gap:7px;align-items:center;transition:.15s;}
+  .focused-step:hover{border-color:var(--green-mid);color:var(--green-dark);transform:translateY(-1px)}
+  .focused-step.active{background:var(--green-light);border-color:var(--green);color:var(--green-dark)}
+  .focused-step.done{background:#EDF7E0;border-color:#97C459;color:#3B6D11}
+  .focused-dot{width:8px;height:8px;border-radius:50%;background:var(--ink-faint);display:inline-block;}
+  .focused-step.active .focused-dot{background:var(--green)}
+  .focused-step.done .focused-dot{background:#3B6D11}
+  .focused-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-xl);padding:24px;box-shadow:var(--shadow-sm);}
+  .focused-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--green);font-weight:900;margin-bottom:8px;}
+  .focused-title{font-family:var(--font-display);font-size:28px;font-weight:900;line-height:1.16;margin-bottom:6px;color:var(--ink);}
+  .focused-sub{font-size:13px;color:var(--ink-soft);line-height:1.6;font-weight:700;margin-bottom:16px;}
+  .focused-plain{background:var(--surface);border-left:4px solid var(--green);border-radius:12px;padding:16px;font-size:15px;line-height:1.8;color:var(--ink-mid);margin-bottom:16px;}
+  .focused-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center;}
+  .focused-mini-status{background:var(--gold-light);border:1px solid var(--gold-border);border-radius:12px;padding:10px 12px;font-size:12px;font-weight:800;color:var(--gold);margin-top:14px;}
+  .focused-nav-note{font-size:12px;color:var(--ink-soft);font-weight:700;margin-top:10px;line-height:1.6;}
+  .micro-mini-card{font-size:13px;line-height:1.75;padding:14px 16px!important;border-radius:14px!important;}
+  .micro-mini-card strong{display:block;margin-bottom:5px;color:var(--ink);font-size:11px;text-transform:uppercase;letter-spacing:.08em;}
+  .concept-root-card{margin-bottom:14px!important;}
+  @media(max-width:820px){.focused-card{padding:18px}.focused-title{font-size:22px}.focused-progress-strip{gap:6px}.focused-step{font-size:10px;padding:6px 9px}}
+`;
+document.head.appendChild(__v31FocusCss);
+
+function v31CurrentFocusIndex(task){
+  state.focusedSubskill = state.focusedSubskill || {};
+  const subs = getTaskSubskills(task) || [];
+  let idx = Number(state.focusedSubskill[task.id] || 0);
+  if(!Number.isFinite(idx) || idx < 0) idx = 0;
+  if(idx >= subs.length) idx = Math.max(0, subs.length-1);
+  state.focusedSubskill[task.id] = idx;
+  return idx;
+}
+
+subskillPanelHtml = function(task){
+  const subs = getTaskSubskills(task) || [];
+  if(!subs.length) return '';
+  const isEs = lang === 'es';
+  const idx = v31CurrentFocusIndex(task);
+  const sub = subs[idx];
+  const r = subskillPracticeRec(task.id, sub.key);
+  const progress = subskillSummary(task);
+  const strip = subs.map((s,i)=>{
+    const rec = subskillPracticeRec(task.id, s.key);
+    const cls = i===idx ? 'active' : (rec.done ? 'done' : '');
+    return `<button class="focused-step ${cls}" data-focus-subskill="${i}" title="${escHtml(isEs?s.es:s.en)}"><span class="focused-dot"></span>${task.id}.${i+1}</button>`;
+  }).join('');
+  const nextLabel = idx >= subs.length-1 ? (isEs?'Práctica global del task →':'Global task practice →') : (isEs?'Siguiente concepto →':'Next concept →');
+  const prevBtn = idx>0 ? `<button class="btn btn-secondary" data-focus-subskill="${idx-1}">${isEs?'← Concepto anterior':'← Previous concept'}</button>` : '';
+  const nextBtn = idx >= subs.length-1
+    ? `<button class="btn btn-gold" data-start-global-practice="1">${nextLabel}</button>`
+    : `<button class="btn btn-secondary" data-focus-subskill="${idx+1}">${nextLabel}</button>`;
+  return `<div class="subskill-panel focused-flow-wrap">
+    <div class="subskill-head"><div><div class="subskill-title">${isEs?'Flujo enfocado de micro-lecciones':'Focused micro-lesson flow'}</div><div class="subskill-sub">${isEs?'Estudia un solo subconcepto a la vez. Primero entiendes la raíz, luego practicas esa definición antes de pasar a la siguiente.':'Study one cognitive target at a time. First understand the root discrimination, then practice that definition before moving on.'}</div></div><span class="status-pill ${progress.complete?'stable':'review'}">${progress.done}/${progress.total}</span></div>
+    <div class="focused-progress-strip">${strip}</div>
+    <div class="focused-card">
+      <div class="focused-kicker">${isEs?'Micro-lección activa':'Active micro-lesson'}</div>
+      <div class="focused-title">${task.id}.${idx+1} · ${escHtml(isEs?sub.es:sub.en)}</div>
+      <div class="focused-sub">${taskTitleDisplay(task)}</div>
+      <div class="focused-plain">${escHtml(isEs?sub.plain_es:sub.plain_en)}</div>
+      ${microLessonHtml(task, sub)}
+      <div class="focused-mini-status">${isEs?'Mini-práctica':'Mini-practice'}: ${Math.min(r.answered,3)}/3 ${isEs?'mínimo':'minimum'} · ${r.correct}/${r.answered||0} ${isEs?'correctas':'correct'} ${r.done?' · '+(isEs?'fortalecida':'strengthened'):''}</div>
+      <div class="focused-actions">
+        <button class="btn ${r.done?'btn-secondary':'btn-primary'}" data-mini-start="${idx}">${r.done?(isEs?'Seguir practicando esta definición':'Keep practicing this definition'):(isEs?'Practicar esta definición':'Practice this definition')}</button>
+        ${prevBtn}${nextBtn}
+      </div>
+      <div class="focused-nav-note">${isEs?'Consejo: no avances solo por leer. Usa la mini-práctica para comprobar que puedes discriminar este subconcepto en escenarios clínicos.':'Tip: do not move on just because you read it. Use mini-practice to verify that you can discriminate this sub-concept in clinical scenarios.'}</div>
+    </div>
+  </div>`;
+};
+
+document.addEventListener('click', function(e){
+  const focusBtn = e.target.closest('[data-focus-subskill]');
+  if(focusBtn){
+    const task = currentTaskObj();
+    if(task){
+      state.focusedSubskill = state.focusedSubskill || {};
+      state.focusedSubskill[task.id] = Number(focusBtn.dataset.focusSubskill || 0);
+      save();
+      state.currentView='study';
+      renderStudy();
+    }
+  }
+  const globalBtn = e.target.closest('[data-start-global-practice]');
+  if(globalBtn){
+    const task = currentTaskObj();
+    if(task){
+      currentDomain = task.id.split('.')[0];
+      currentConcept = task.title;
+      state.currentView='practice';
+      save();
+      renderPractice({domain:currentDomain,concept:currentConcept,mode:'guided'});
+    }
+  }
+});
+
 renderLanding(); if(state.onboarded){render();maybeAutoShowQuickTour();} startPreload();
 })();
 </script>
