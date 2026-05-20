@@ -870,7 +870,7 @@ function bindLang(){document.querySelectorAll('.lang-btn').forEach(b=>b.onclick=
     return;
   }
   if(state.currentView==='practice'&&currentQuestion){
-    await ensureQuestionLanguage(currentQuestion,lang).catch(()=>{});
+    await ensureQuestionLanguage(currentQuestion,lang).catch(e=>console.error('ensureQuestionLanguage error:',e));
     renderCurrentPracticeShell();
     return;
   }
@@ -1369,9 +1369,9 @@ async function ensureQueue(target=18){
 async function aggressivePreload(){
   const jobs=[];
 
-  // Wave 1 — practice questions (2 per domain, all 9 domains in parallel)
+  // Wave 1 — practice questions (1 per domain, all 9 domains in parallel)
   DOMAINS.forEach(d=>{
-    for(let i=0;i<2;i++){
+    for(let i=0;i<1;i++){
       jobs.push(
         generateQuestion({domain:d.id,concept:pickConcept(d.id),mode:'guided'})
           .then(q=>{
@@ -1382,7 +1382,7 @@ async function aggressivePreload(){
               if(state.usedFingerprints.length>120)state.usedFingerprints=state.usedFingerprints.slice(-120);
               save();
             }
-          }).catch(()=>{})
+          }).catch(e=>console.error('preload question error:',e))
       );
     }
   });
@@ -1397,19 +1397,19 @@ async function aggressivePreload(){
     const ck2=domId+':'+concept;
     if(!state.learned[ck2]){
       jobs.push(
-        generateLearnContent(domId,concept).catch(()=>{})
+        generateLearnContent(domId,concept).catch(e=>console.error('preload learnContent error:',e))
       );
     }
   });
 
   await Promise.allSettled(jobs);
   // Keep topping up practice queue in background
-  ensureQueue(18).catch(()=>{});
+  ensureQueue(4).catch(e=>console.error('aggressivePreload top-up error:',e));
 }
 
-function startPreload(){ensureQueue(18).catch(()=>{})}
-function renderLanding(){qs('landCard').innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div class="brand-row" style="margin-bottom:0"><div class="brand-icon">🧠</div><div><div class="brand-name">BCBA Study Hub</div><div class="brand-tagline">Clinical Mastery Platform</div></div></div>${langSwitch()}</div><div class="hero-box"><div class="hero-eyebrow">${L('heroEye')}</div><div class="hero-heading">${L('heroHead')}</div><div class="hero-sub">${L('heroSub')}</div></div><div class="trust-grid"><div class="trust-item">${L('trust1')}</div><div class="trust-item">${L('trust2')}</div><div class="trust-item">${L('trust3')}</div><div class="trust-item">${L('trust4')}</div></div><button class="cta-btn" id="startBtn">${L('start')}</button><div class="checklist">${['check1','check2','check3','check4','check5'].map(k=>`<div class="check-item"><div class="check-dot">✓</div>${L(k)}</div>`).join('')}</div>`;bindLang();qs('startBtn').onclick=()=>{qs('landing').classList.remove('active');qs('onboarding').classList.add('active');renderOnboarding();aggressivePreload().catch(()=>{});}}
-function renderOnboarding(){const step=obSteps[obIndex];const dots=obSteps.map((_,i)=>`<div class="pdot ${i===obIndex?'active':''}"></div>`).join('');qs('onboardCard').innerHTML=`<div class="progress-dots">${dots}</div><div class="onboard-step">Step ${obIndex+1} of ${obSteps.length}</div><div class="onboard-q">${obQ(step)}</div><div class="onboard-sub">${obSub(step)}</div><div class="onboard-opts">${step.opts.map(o=>`<button class="onboard-opt ${state.profile[step.key]===o[0]?'selected':''}" data-val="${o[0]}"><span class="opt-emoji">${o[1]}</span>${obOpt(step,o)}</button>`).join('')}</div><div style="display:flex;gap:8px;align-items:center">${langSwitch()}<button class="btn btn-primary" id="obNext" style="margin-left:auto;opacity:${state.profile[step.key]?1:.45}" ${state.profile[step.key]?'':'disabled'}>${obIndex===obSteps.length-1?L('obStart'):L('obNext')}</button></div>`;bindLang();document.querySelectorAll('.onboard-opt').forEach(b=>b.onclick=()=>{state.profile[step.key]=b.dataset.val;save();renderOnboarding()});qs('obNext').onclick=()=>{if(obIndex<obSteps.length-1){obIndex++;renderOnboarding();if(state.queue.length<10)aggressivePreload().catch(()=>{});}else{state.onboarded=true;save();qs('onboarding').classList.remove('active');qs('app').classList.add('active');renderDashboard();showToast(lang==='es'?'¡Tu ruta de estudio está lista!':'Your study path is ready.');}}}
+function startPreload(){ensureQueue(4).catch(e=>console.error('startPreload error:',e))}
+function renderLanding(){qs('landCard').innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div class="brand-row" style="margin-bottom:0"><div class="brand-icon">🧠</div><div><div class="brand-name">BCBA Study Hub</div><div class="brand-tagline">Clinical Mastery Platform</div></div></div>${langSwitch()}</div><div class="hero-box"><div class="hero-eyebrow">${L('heroEye')}</div><div class="hero-heading">${L('heroHead')}</div><div class="hero-sub">${L('heroSub')}</div></div><div class="trust-grid"><div class="trust-item">${L('trust1')}</div><div class="trust-item">${L('trust2')}</div><div class="trust-item">${L('trust3')}</div><div class="trust-item">${L('trust4')}</div></div><button class="cta-btn" id="startBtn">${L('start')}</button><div class="checklist">${['check1','check2','check3','check4','check5'].map(k=>`<div class="check-item"><div class="check-dot">✓</div>${L(k)}</div>`).join('')}</div>`;bindLang();qs('startBtn').onclick=()=>{qs('landing').classList.remove('active');qs('onboarding').classList.add('active');renderOnboarding();aggressivePreload().catch(e=>console.error('aggressivePreload error:',e));}}
+function renderOnboarding(){const step=obSteps[obIndex];const dots=obSteps.map((_,i)=>`<div class="pdot ${i===obIndex?'active':''}"></div>`).join('');qs('onboardCard').innerHTML=`<div class="progress-dots">${dots}</div><div class="onboard-step">Step ${obIndex+1} of ${obSteps.length}</div><div class="onboard-q">${obQ(step)}</div><div class="onboard-sub">${obSub(step)}</div><div class="onboard-opts">${step.opts.map(o=>`<button class="onboard-opt ${state.profile[step.key]===o[0]?'selected':''}" data-val="${o[0]}"><span class="opt-emoji">${o[1]}</span>${obOpt(step,o)}</button>`).join('')}</div><div style="display:flex;gap:8px;align-items:center">${langSwitch()}<button class="btn btn-primary" id="obNext" style="margin-left:auto;opacity:${state.profile[step.key]?1:.45}" ${state.profile[step.key]?'':'disabled'}>${obIndex===obSteps.length-1?L('obStart'):L('obNext')}</button></div>`;bindLang();document.querySelectorAll('.onboard-opt').forEach(b=>b.onclick=()=>{state.profile[step.key]=b.dataset.val;save();renderOnboarding()});qs('obNext').onclick=()=>{if(obIndex<obSteps.length-1){obIndex++;renderOnboarding();if(state.queue.length<10)aggressivePreload().catch(e=>console.error('onboarding preload error:',e));}else{state.onboarded=true;save();qs('onboarding').classList.remove('active');qs('app').classList.add('active');renderDashboard();showToast(lang==='es'?'¡Tu ruta de estudio está lista!':'Your study path is ready.');}}}
 function taskMasteryClass(domId,title){
   const r=taskRecord(domId,title);
   if(!r.total)return 'new';
@@ -1892,7 +1892,7 @@ async function renderStudy(){
         qs('main').innerHTML=buildPage(rich,!!state.learned[seenKey]);
         bind(!!state.learned[seenKey]);
       }
-    }).catch(()=>{});
+    }).catch(e=>console.error('generateLearnContent error:',e));
   }
 }
 
@@ -2017,7 +2017,7 @@ async function renderPractice(target){
         if(state.usedFingerprints.length>120)state.usedFingerprints=state.usedFingerprints.slice(-120);
         save();
       }
-    }).catch(()=>{});
+    }).catch(e=>console.error('background generateQuestion error:',e));
 }
 
 function shuffledArray(arr){
@@ -2650,7 +2650,7 @@ function submitSetupKey(){
   const sc=qs('setupScreen');if(sc)sc.classList.remove('active');
   showToast(lang==='es'?'¡Clave guardada! Sistema listo.':'Key saved! System ready.');
   startPreload();
-}qs('saveAdminKey').onclick=()=>{localStorage.setItem(KEY_STORAGE,qs('adminKeyInput').value.trim());state.adminConfigured=!!getAdminKey();save();qs('adminModal').classList.remove('active');showToast('Admin key saved locally.');startPreload()};qs('closeAdmin').onclick=()=>qs('adminModal').classList.remove('active');document.addEventListener('keydown',e=>{
+}const saveAdminKeyEl=qs('saveAdminKey');if(saveAdminKeyEl)saveAdminKeyEl.onclick=()=>{const keyVal=(qs('adminKeyInput')?.value||'').trim();localStorage.setItem(KEY_STORAGE,keyVal);state.adminConfigured=!!getAdminKey();save();qs('adminModal').classList.remove('active');showToast('Admin key saved locally.');startPreload()};const closeAdminEl=qs('closeAdmin');if(closeAdminEl)closeAdminEl.onclick=()=>qs('adminModal').classList.remove('active');document.addEventListener('keydown',e=>{
   const key=String(e.key).toLowerCase();
   if(e.ctrlKey&&e.shiftKey&&key==='a')adminModal();
   if(e.ctrlKey&&e.shiftKey&&key==='k')showSetupScreen();
