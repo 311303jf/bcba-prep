@@ -122,7 +122,12 @@ aside{width:300px}
 .subskill-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
 .subskill-title{font-family:var(--font-display);font-size:20px;font-weight:900;color:var(--ink)}
 .subskill-sub{font-size:12px;color:var(--ink-soft);font-weight:700;line-height:1.6;margin-top:3px}
-.subskill-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.subskill-grid{display:block}
+.subskill-stepper-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:16px;flex-wrap:wrap}
+.subskill-stepper-dots{display:flex;gap:5px;align-items:center}
+.subskill-stepper-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:all .2s}
+.subskill-stepper-dot.active{background:var(--purple);width:22px;border-radius:4px}
+.subskill-stepper-dot.done{background:var(--green)}
 .subskill-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;box-shadow:var(--shadow-sm)}
 .subskill-card.done{border-color:var(--green-mid);background:linear-gradient(135deg,var(--green-light),var(--white))}
 .subskill-label{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);margin-bottom:6px}
@@ -857,7 +862,7 @@ function obQ(step){return lang==='es'?(OB_ES[step.key]?.q||step.q):step.q}
 function obSub(step){return lang==='es'?(OB_ES[step.key]?.sub||step.sub):step.sub}
 function obOpt(step,o){return lang==='es'?(OB_ES[step.key]?.opts?.[o[0]]||o[2]):o[2]}
 let state=loadState(); let obIndex=0; let currentDomain='A'; let currentConcept='Identify the goals of behavior analysis as a science (i.e., description, prediction, control).'; let currentQuestion=null; let currentMode='guided'; let timer=null; let seconds=0;
-function freshState(){const domains={};DOMAINS.forEach(d=>domains[d.id]={accuracy:0,stability:0,retention:0,total:0,correct:0,last:0,concepts:{}});return{onboarded:false,profile:{},readiness:22,streak:1,domains,history:[],queue:[],usedFingerprints:[],currentView:'dashboard',learned:{},learnSeen:{},taskPractice:{},confidenceLog:[],adminConfigured:false,answerDist:{A:0,B:0,C:0,D:0},lastAnswerLetters:[],practiceScreen:null,activeCompletionTaskId:null,reportReason:null,activeMini:null,subskillPractice:{},expandedDomains:['A'],defaultDomainA_v22:true,selectedTask:'A:Identify the goals of behavior analysis as a science (i.e., description, prediction, control).'};}
+function freshState(){const domains={};DOMAINS.forEach(d=>domains[d.id]={accuracy:0,stability:0,retention:0,total:0,correct:0,last:0,concepts:{}});return{onboarded:false,profile:{},readiness:22,streak:1,domains,history:[],queue:[],usedFingerprints:[],currentView:'dashboard',learned:{},learnSeen:{},taskPractice:{},confidenceLog:[],adminConfigured:false,answerDist:{A:0,B:0,C:0,D:0},lastAnswerLetters:[],practiceScreen:null,activeCompletionTaskId:null,reportReason:null,activeMini:null,subskillPractice:{},activeSubskillIndex:{},expandedDomains:['A'],defaultDomainA_v22:true,selectedTask:'A:Identify the goals of behavior analysis as a science (i.e., description, prediction, control).'};}
 function loadState(){try{const raw=JSON.parse(localStorage.getItem(STORAGE));if(!raw||!raw.domains||!raw.profile)return freshState();const base=freshState();const merged={...base,...raw,domains:{...base.domains,...raw.domains},profile:{...base.profile,...raw.profile},queue:Array.isArray(raw.queue)?raw.queue:[],history:Array.isArray(raw.history)?raw.history:[],usedFingerprints:Array.isArray(raw.usedFingerprints)?raw.usedFingerprints:[],learned:raw.learned||{},taskPractice:raw.taskPractice||{},expandedDomains:Array.isArray(raw.expandedDomains)?raw.expandedDomains:['A'],answerDist:raw.answerDist||{A:0,B:0,C:0,D:0},lastAnswerLetters:Array.isArray(raw.lastAnswerLetters)?raw.lastAnswerLetters:[],practiceScreen:raw.practiceScreen||null,activeCompletionTaskId:raw.activeCompletionTaskId||null,reportReason:raw.reportReason||null,activeMini:raw.activeMini||null,subskillPractice:raw.subskillPractice||{}};if(!raw.defaultDomainA_v22&&!raw.practiceScreen&&!raw.activeMini&&!raw.activeCompletionTaskId){merged.expandedDomains=['A'];merged.selectedTask='A:Identify the goals of behavior analysis as a science (i.e., description, prediction, control).';merged.defaultDomainA_v22=true;}return merged;}catch(e){return freshState()}}
 function save(){localStorage.setItem(STORAGE,JSON.stringify(state))}
 function langSwitch(){return `<div class="lang-switch" role="group" aria-label="Language"><button type="button" class="lang-btn ${lang==='en'?'active':''}" data-lang="en">EN</button><button type="button" class="lang-btn ${lang==='es'?'active':''}" data-lang="es">ES</button></div>`}
@@ -1693,7 +1698,18 @@ function subskillPanelHtml(task){
   const subs=getTaskSubskills(task);
   const sum=subskillProgressSummary(task);
   const isEs=lang==='es';
-  return `<div class="subskill-panel"><div class="subskill-head"><div><div class="subskill-title">${isEs?'Micro-lessons antes de la práctica global':'Micro-lessons before global practice'}</div><div class="subskill-sub">${isEs?'Cada definición se estudia como una mini-lección completa: explicación, ejemplo clínico, qué NO es, trampa del examen y mini-práctica individual.':'Each definition is studied as a complete mini-lesson: explanation, clinical example, what it is NOT, exam trap, and individual mini-practice.'}</div></div><span class="status-pill ${sum.complete?'stable':'review'}">${sum.done}/${sum.total}</span></div><div class="subskill-grid">${subs.map((s,i)=>{const r=subskillPracticeRec(task.id,s.key);return `<div class="subskill-card ${r.done?'done':''}"><div class="subskill-label">${task.id}.${i+1}</div><div class="subskill-name">${lang==='es'?s.es:s.en}</div><div class="subskill-copy">${lang==='es'?s.plain_es:s.plain_en}</div>${microLessonHtml(task,s)}<div class="subskill-mini-meta">${isEs?'Mini-práctica':'Mini-practice'}: ${Math.min(r.answered,3)}/3 · ${r.correct}/${r.answered||0} ${isEs?'correctas':'correct'}</div><button class="btn ${r.done?'btn-secondary':'btn-primary'}" data-mini-start="${i}" style="width:100%;padding:8px 10px;font-size:12px">${r.done?(isEs?'Practicar otra vez':'Practice again'):(isEs?'Practicar esta definición':'Practice this definition')}</button></div>`}).join('')}</div></div>`;
+  // Stepper: show one subskill at a time
+  state.activeSubskillIndex=state.activeSubskillIndex||{};
+  const taskKey=task.id;
+  if(state.activeSubskillIndex[taskKey]===undefined)state.activeSubskillIndex[taskKey]=0;
+  const idx=Math.min(Math.max(state.activeSubskillIndex[taskKey],0),subs.length-1);
+  const s=subs[idx];
+  const r=subskillPracticeRec(task.id,s.key);
+  const dots=subs.map((_,i)=>{const ri=subskillPracticeRec(task.id,subs[i].key);return `<span class="subskill-stepper-dot ${i===idx?'active':ri.done?'done':''}"></span>`}).join('');
+  const card=`<div class="subskill-card ${r.done?'done':''}"><div class="subskill-label">${task.id}.${idx+1} ${isEs?'de':'of'} ${subs.length}</div><div class="subskill-name">${lang==='es'?s.es:s.en}</div><div class="subskill-copy">${lang==='es'?s.plain_es:s.plain_en}</div>${microLessonHtml(task,s)}<div class="subskill-mini-meta">${isEs?'Mini-práctica':'Mini-practice'}: ${Math.min(r.answered,3)}/3 · ${r.correct}/${r.answered||0} ${isEs?'correctas':'correct'}</div><button class="btn ${r.done?'btn-secondary':'btn-primary'}" data-mini-start="${idx}" style="width:100%;padding:8px 10px;font-size:12px">${r.done?(isEs?'Practicar otra vez':'Practice again'):(isEs?'Practicar esta definición':'Practice this definition')}</button></div>`;
+  const prevDisabled=idx===0?'disabled':'';
+  const nextDisabled=idx===subs.length-1?'disabled':'';
+  return `<div class="subskill-panel"><div class="subskill-head"><div><div class="subskill-title">${isEs?'Micro-lessons':'Micro-lessons'}</div><div class="subskill-sub">${isEs?'Una definición a la vez. Estudia, practica y avanza al siguiente.':'One definition at a time. Study, practice, then move to the next.'}</div></div><span class="status-pill ${sum.complete?'stable':'review'}">${sum.done}/${sum.total}</span></div><div class="subskill-grid">${card}</div><div class="subskill-stepper-nav"><button class="btn btn-secondary" id="subskillPrev" ${prevDisabled} style="padding:8px 14px;font-size:12px">← ${isEs?'Anterior':'Previous'}</button><div class="subskill-stepper-dots">${dots}</div><button class="btn btn-secondary" id="subskillNext" ${nextDisabled} style="padding:8px 14px;font-size:12px">${isEs?'Siguiente':'Next'} →</button></div></div>`;
 }
 
 function miniQuestionForSubskill(task,sub,index){
@@ -1820,6 +1836,9 @@ async function renderStudy(){
   const task=findTaskByTitle(d.id,currentConcept);
   const ck=currentDomain+':'+currentConcept+':deep_v1';
   const seenKey=ck+'_seen';
+  // Reset subskill stepper to first slide when entering a fresh task
+  state.activeSubskillIndex=state.activeSubskillIndex||{};
+  if(state.activeSubskillIndex[task.id]===undefined)state.activeSubskillIndex[task.id]=0;
 
   function topbar(){return `<div class="topbar"><div><div class="page-title">${task.id} · ${L('learn')}</div><div class="page-sub">${tDomainTitle(d)}</div></div><div class="topbar-right">${langSwitch()}<button class="btn btn-secondary" id="backDash">${L('backDashboard')}</button></div></div>`;}
   function taskFocusBox(){const cls=taskMasteryClass(d.id,currentConcept);const isEs=lang==='es';return `<div class="task-focus-card"><div class="task-focus-top"><div><div class="task-focus-id">${task.id} · ${isEs?'Tarea oficial BACB':'Official BACB Task'}</div><div class="task-focus-title">${task.title}</div>${isEs?`<div style="font-size:12px;color:var(--ink-soft);font-weight:700;line-height:1.55;margin-top:5px">Guía en español: esta lección traduce la explicación y práctica, manteniendo el wording oficial en inglés para que coincida con el examen.</div>`:''}</div><span class="status-pill ${cls==='mastered'?'stable':cls==='review'?'review':cls==='new'?'review':'stable'}">${taskMasteryLabel(cls)}</span></div><div class="task-focus-meta">${isEs?'Dominio':'Domain'} ${d.id}: ${tDomainTitle(d)} · ${d.questions} ${isEs?'preguntas del examen':'exam questions'} · ${d.weight}% ${isEs?'peso del examen':'exam weight'}</div></div>`;}
@@ -1872,6 +1891,19 @@ async function renderStudy(){
     const ct=document.getElementById('challengeTask');
     if(ct)ct.onclick=()=>renderChallenge(currentDomain);
     document.querySelectorAll('[data-mini-start]').forEach(btn=>btn.onclick=()=>renderMiniPractice(task.id,parseInt(btn.dataset.miniStart,10)||0,0));
+    const prevBtn=document.getElementById('subskillPrev');
+    const nextBtn=document.getElementById('subskillNext');
+    const subs2=getTaskSubskills(task);
+    if(prevBtn)prevBtn.onclick=()=>{
+      state.activeSubskillIndex=state.activeSubskillIndex||{};
+      state.activeSubskillIndex[task.id]=Math.max((state.activeSubskillIndex[task.id]||0)-1,0);
+      save();qs('main').innerHTML=buildPage(state.learned[ck]||deepFallbackLearn(d,task),true);bind(true);
+    };
+    if(nextBtn)nextBtn.onclick=()=>{
+      state.activeSubskillIndex=state.activeSubskillIndex||{};
+      state.activeSubskillIndex[task.id]=Math.min((state.activeSubskillIndex[task.id]||0)+1,subs2.length-1);
+      save();qs('main').innerHTML=buildPage(state.learned[ck]||deepFallbackLearn(d,task),true);bind(true);
+    };
     document.querySelectorAll('[data-qc]').forEach(btn=>btn.onclick=()=>{
       const correct=btn.dataset.correct;
       document.querySelectorAll('[data-qc]').forEach(x=>{x.disabled=true;if(x.dataset.qc===correct)x.classList.add('correct')});
