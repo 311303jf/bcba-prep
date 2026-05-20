@@ -128,11 +128,11 @@ aside{width:300px}
 .subskill-stepper-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:all .2s}
 .subskill-stepper-dot.active{background:var(--purple);width:22px;border-radius:4px}
 .subskill-stepper-dot.done{background:var(--green)}
-.subskill-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;box-shadow:var(--shadow-sm)}
+.subskill-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 24px;box-shadow:var(--shadow-sm)}
 .subskill-card.done{border-color:var(--green-mid);background:linear-gradient(135deg,var(--green-light),var(--white))}
 .subskill-label{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);margin-bottom:6px}
-.subskill-name{font-size:15px;font-weight:900;color:var(--ink);line-height:1.25;margin-bottom:6px}
-.subskill-copy{font-size:12px;line-height:1.65;color:var(--ink-mid);margin-bottom:10px}
+.subskill-name{font-family:var(--font-display);font-size:26px;font-weight:900;color:var(--ink);line-height:1.15;margin-bottom:12px}
+.subskill-copy{font-size:14.5px;line-height:1.85;color:var(--ink-mid);margin-bottom:18px;padding:14px 18px;background:var(--green-light);border-left:4px solid var(--green-mid);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-weight:600}
 .subskill-mini-meta{font-size:11px;color:var(--ink-soft);font-weight:800;margin-bottom:10px}
 .mini-practice-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-sm);max-width:880px}
 .mini-practice-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
@@ -183,13 +183,16 @@ aside{width:300px}
 .tour-close{position:absolute;right:14px;top:12px;border:none;background:transparent;font-size:22px;line-height:1;color:var(--ink-soft);font-weight:800}.tour-close:hover{color:var(--ink)}
 
 
-.micro-lesson-box{background:linear-gradient(135deg,var(--white),var(--surface));border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin:12px 0;box-shadow:var(--shadow-sm)}
-.micro-lesson-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:10px}
-.micro-mini-card{background:var(--white);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:11px 12px;font-size:12px;line-height:1.62;color:var(--ink-mid)}
-.micro-mini-card strong{display:block;color:var(--ink);font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
-.micro-trap{background:var(--red-light);border-color:var(--red-border)}
-.micro-strategy{background:var(--gold-light);border-color:var(--gold-border)}
-.micro-clinical{background:var(--blue-light);border-color:var(--blue-border)}
+.micro-lesson-box{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin:18px 0;box-shadow:var(--shadow-sm)}
+.micro-lesson-header{padding:16px 20px;background:linear-gradient(135deg,var(--purple-light),var(--white));border-bottom:1px solid var(--purple-border)}
+.micro-lesson-header .deep-label{margin-bottom:5px;color:var(--purple)}
+.micro-lesson-title{font-family:var(--font-display);font-size:19px;font-weight:900;color:var(--ink);line-height:1.2}
+.micro-lesson-grid{display:flex;flex-direction:column;gap:0}
+.micro-mini-card{background:var(--white);border-top:1px solid var(--border-soft);padding:18px 22px;font-size:13.5px;line-height:1.82;color:var(--ink-mid)}
+.micro-mini-card strong{display:flex;align-items:center;gap:6px;color:var(--ink-soft);font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:900;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border-soft)}
+.micro-trap{background:var(--red-light)}
+.micro-strategy{background:var(--gold-light)}
+.micro-clinical{background:var(--blue-light)}
 .subskill-card .micro-lesson-box{margin-top:12px}
 .subskill-card{display:flex;flex-direction:column}
 .subskill-card .btn{margin-top:auto}
@@ -875,7 +878,7 @@ function bindLang(){document.querySelectorAll('.lang-btn').forEach(b=>b.onclick=
     return;
   }
   if(state.currentView==='practice'&&currentQuestion){
-    await ensureQuestionLanguage(currentQuestion,lang).catch(e=>console.error('ensureQuestionLanguage error:',e));
+    await ensureQuestionLanguage(currentQuestion,lang).catch(e=>console.error("ensureQuestionLanguage:",e));
     renderCurrentPracticeShell();
     return;
   }
@@ -1374,9 +1377,9 @@ async function ensureQueue(target=18){
 async function aggressivePreload(){
   const jobs=[];
 
-  // Wave 1 — practice questions (1 per domain, all 9 domains in parallel)
+  // Wave 1 — practice questions (2 per domain, all 9 domains in parallel)
   DOMAINS.forEach(d=>{
-    for(let i=0;i<1;i++){
+    for(let i=0;i<2;i++){
       jobs.push(
         generateQuestion({domain:d.id,concept:pickConcept(d.id),mode:'guided'})
           .then(q=>{
@@ -1387,7 +1390,7 @@ async function aggressivePreload(){
               if(state.usedFingerprints.length>120)state.usedFingerprints=state.usedFingerprints.slice(-120);
               save();
             }
-          }).catch(e=>console.error('preload question error:',e))
+          }).catch(e=>console.error("preload question:",e))
       );
     }
   });
@@ -1402,19 +1405,19 @@ async function aggressivePreload(){
     const ck2=domId+':'+concept;
     if(!state.learned[ck2]){
       jobs.push(
-        generateLearnContent(domId,concept).catch(e=>console.error('preload learnContent error:',e))
+        generateLearnContent(domId,concept).catch(e=>console.error("preload learnContent:",e))
       );
     }
   });
 
   await Promise.allSettled(jobs);
   // Keep topping up practice queue in background
-  ensureQueue(4).catch(e=>console.error('aggressivePreload top-up error:',e));
+  ensureQueue(4).catch(e=>console.error("ensureQueue top-up:",e));
 }
 
-function startPreload(){ensureQueue(4).catch(e=>console.error('startPreload error:',e))}
-function renderLanding(){qs('landCard').innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div class="brand-row" style="margin-bottom:0"><div class="brand-icon">🧠</div><div><div class="brand-name">BCBA Study Hub</div><div class="brand-tagline">Clinical Mastery Platform</div></div></div>${langSwitch()}</div><div class="hero-box"><div class="hero-eyebrow">${L('heroEye')}</div><div class="hero-heading">${L('heroHead')}</div><div class="hero-sub">${L('heroSub')}</div></div><div class="trust-grid"><div class="trust-item">${L('trust1')}</div><div class="trust-item">${L('trust2')}</div><div class="trust-item">${L('trust3')}</div><div class="trust-item">${L('trust4')}</div></div><button class="cta-btn" id="startBtn">${L('start')}</button><div class="checklist">${['check1','check2','check3','check4','check5'].map(k=>`<div class="check-item"><div class="check-dot">✓</div>${L(k)}</div>`).join('')}</div>`;bindLang();qs('startBtn').onclick=()=>{qs('landing').classList.remove('active');qs('onboarding').classList.add('active');renderOnboarding();aggressivePreload().catch(e=>console.error('aggressivePreload error:',e));}}
-function renderOnboarding(){const step=obSteps[obIndex];const dots=obSteps.map((_,i)=>`<div class="pdot ${i===obIndex?'active':''}"></div>`).join('');qs('onboardCard').innerHTML=`<div class="progress-dots">${dots}</div><div class="onboard-step">Step ${obIndex+1} of ${obSteps.length}</div><div class="onboard-q">${obQ(step)}</div><div class="onboard-sub">${obSub(step)}</div><div class="onboard-opts">${step.opts.map(o=>`<button class="onboard-opt ${state.profile[step.key]===o[0]?'selected':''}" data-val="${o[0]}"><span class="opt-emoji">${o[1]}</span>${obOpt(step,o)}</button>`).join('')}</div><div style="display:flex;gap:8px;align-items:center">${langSwitch()}<button class="btn btn-primary" id="obNext" style="margin-left:auto;opacity:${state.profile[step.key]?1:.45}" ${state.profile[step.key]?'':'disabled'}>${obIndex===obSteps.length-1?L('obStart'):L('obNext')}</button></div>`;bindLang();document.querySelectorAll('.onboard-opt').forEach(b=>b.onclick=()=>{state.profile[step.key]=b.dataset.val;save();renderOnboarding()});qs('obNext').onclick=()=>{if(obIndex<obSteps.length-1){obIndex++;renderOnboarding();if(state.queue.length<10)aggressivePreload().catch(e=>console.error('onboarding preload error:',e));}else{state.onboarded=true;save();qs('onboarding').classList.remove('active');qs('app').classList.add('active');renderDashboard();showToast(lang==='es'?'¡Tu ruta de estudio está lista!':'Your study path is ready.');}}}
+function startPreload(){ensureQueue(4).catch(e=>console.error("startPreload:",e))}
+function renderLanding(){qs('landCard').innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div class="brand-row" style="margin-bottom:0"><div class="brand-icon">🧠</div><div><div class="brand-name">BCBA Study Hub</div><div class="brand-tagline">Clinical Mastery Platform</div></div></div>${langSwitch()}</div><div class="hero-box"><div class="hero-eyebrow">${L('heroEye')}</div><div class="hero-heading">${L('heroHead')}</div><div class="hero-sub">${L('heroSub')}</div></div><div class="trust-grid"><div class="trust-item">${L('trust1')}</div><div class="trust-item">${L('trust2')}</div><div class="trust-item">${L('trust3')}</div><div class="trust-item">${L('trust4')}</div></div><button class="cta-btn" id="startBtn">${L('start')}</button><div class="checklist">${['check1','check2','check3','check4','check5'].map(k=>`<div class="check-item"><div class="check-dot">✓</div>${L(k)}</div>`).join('')}</div>`;bindLang();qs('startBtn').onclick=()=>{qs('landing').classList.remove('active');qs('onboarding').classList.add('active');renderOnboarding();aggressivePreload().catch(e=>console.error("aggressivePreload:",e));}}
+function renderOnboarding(){const step=obSteps[obIndex];const dots=obSteps.map((_,i)=>`<div class="pdot ${i===obIndex?'active':''}"></div>`).join('');qs('onboardCard').innerHTML=`<div class="progress-dots">${dots}</div><div class="onboard-step">Step ${obIndex+1} of ${obSteps.length}</div><div class="onboard-q">${obQ(step)}</div><div class="onboard-sub">${obSub(step)}</div><div class="onboard-opts">${step.opts.map(o=>`<button class="onboard-opt ${state.profile[step.key]===o[0]?'selected':''}" data-val="${o[0]}"><span class="opt-emoji">${o[1]}</span>${obOpt(step,o)}</button>`).join('')}</div><div style="display:flex;gap:8px;align-items:center">${langSwitch()}<button class="btn btn-primary" id="obNext" style="margin-left:auto;opacity:${state.profile[step.key]?1:.45}" ${state.profile[step.key]?'':'disabled'}>${obIndex===obSteps.length-1?L('obStart'):L('obNext')}</button></div>`;bindLang();document.querySelectorAll('.onboard-opt').forEach(b=>b.onclick=()=>{state.profile[step.key]=b.dataset.val;save();renderOnboarding()});qs('obNext').onclick=()=>{if(obIndex<obSteps.length-1){obIndex++;renderOnboarding();if(state.queue.length<10)aggressivePreload().catch(e=>console.error("onboarding preload:",e));}else{state.onboarded=true;save();qs('onboarding').classList.remove('active');qs('app').classList.add('active');renderDashboard();showToast(lang==='es'?'¡Tu ruta de estudio está lista!':'Your study path is ready.');}}}
 function taskMasteryClass(domId,title){
   const r=taskRecord(domId,title);
   if(!r.total)return 'new';
@@ -1691,25 +1694,23 @@ function microLessonHtml(task,sub){
   const not=escHtml(isEs?m.not_es:m.not_en);
   const trap=escHtml(isEs?m.trap_es:m.trap_en);
   const strategy=escHtml(isEs?m.strategy_es:m.strategy_en);
-  return `<div class="micro-lesson-box"><div class="deep-label">${isEs?'Micro-lesson':'Micro-lesson'} · ${escHtml(isEs?sub.es:sub.en)}</div><div class="micro-lesson-grid"><div class="micro-mini-card"><strong>${isEs?'Por qué importa':'Why it matters'}</strong>${why}</div><div class="micro-mini-card micro-clinical"><strong>${isEs?'Caso clínico':'Clinical example'}</strong>${clinical}</div><div class="micro-mini-card"><strong>${isEs?'Qué NO es':'What it is NOT'}</strong>${not}</div><div class="micro-mini-card micro-trap"><strong>${isEs?'Trampa BCBA':'BCBA trap'}</strong>${trap}</div><div class="micro-mini-card micro-strategy"><strong>${isEs?'Cómo reconocerlo':'How to recognize it'}</strong>${strategy}</div></div></div>`;
+  return `<div class="micro-lesson-box"><div class="micro-lesson-header"><div class="deep-label">📖 ${isEs?'Lección detallada':'Detailed lesson'}</div><div class="micro-lesson-title">${escHtml(isEs?sub.es:sub.en)}</div></div><div class="micro-lesson-grid"><div class="micro-mini-card"><strong>💡 ${isEs?'Por qué importa':'Why it matters'}</strong>${why}</div><div class="micro-mini-card micro-clinical"><strong>🏥 ${isEs?'Caso clínico':'Clinical example'}</strong>${clinical}</div><div class="micro-mini-card"><strong>🚫 ${isEs?'Qué NO es':'What it is NOT'}</strong>${not}</div><div class="micro-mini-card micro-trap"><strong>⚠️ ${isEs?'Trampa BCBA':'BCBA exam trap'}</strong>${trap}</div><div class="micro-mini-card micro-strategy"><strong>🎯 ${isEs?'Cómo reconocerlo en el examen':'How to recognize it on the exam'}</strong>${strategy}</div></div></div>`;
 }
 
 function subskillPanelHtml(task){
   const subs=getTaskSubskills(task);
   const sum=subskillProgressSummary(task);
   const isEs=lang==='es';
-  // Stepper: show one subskill at a time
   state.activeSubskillIndex=state.activeSubskillIndex||{};
-  const taskKey=task.id;
-  if(state.activeSubskillIndex[taskKey]===undefined)state.activeSubskillIndex[taskKey]=0;
-  const idx=Math.min(Math.max(state.activeSubskillIndex[taskKey],0),subs.length-1);
+  if(state.activeSubskillIndex[task.id]===undefined)state.activeSubskillIndex[task.id]=0;
+  const idx=Math.min(Math.max(state.activeSubskillIndex[task.id],0),subs.length-1);
   const s=subs[idx];
   const r=subskillPracticeRec(task.id,s.key);
   const dots=subs.map((_,i)=>{const ri=subskillPracticeRec(task.id,subs[i].key);return `<span class="subskill-stepper-dot ${i===idx?'active':ri.done?'done':''}"></span>`}).join('');
-  const card=`<div class="subskill-card ${r.done?'done':''}"><div class="subskill-label">${task.id}.${idx+1} ${isEs?'de':'of'} ${subs.length}</div><div class="subskill-name">${lang==='es'?s.es:s.en}</div><div class="subskill-copy">${lang==='es'?s.plain_es:s.plain_en}</div>${microLessonHtml(task,s)}<div class="subskill-mini-meta">${isEs?'Mini-práctica':'Mini-practice'}: ${Math.min(r.answered,3)}/3 · ${r.correct}/${r.answered||0} ${isEs?'correctas':'correct'}</div><button class="btn ${r.done?'btn-secondary':'btn-primary'}" data-mini-start="${idx}" style="width:100%;padding:8px 10px;font-size:12px">${r.done?(isEs?'Practicar otra vez':'Practice again'):(isEs?'Practicar esta definición':'Practice this definition')}</button></div>`;
+  const card=`<div class="subskill-card ${r.done?'done':''}"><div class="subskill-label">${task.id}.${idx+1} ${isEs?'de':'of'} ${subs.length}</div><div class="subskill-name">${lang==='es'?s.es:s.en}</div><div class="subskill-copy">${lang==='es'?s.plain_es:s.plain_en}</div>${microLessonHtml(task,s)}<div class="subskill-mini-meta">${isEs?'Mini-práctica':'Mini-practice'}: ${Math.min(r.answered,3)}/3 · ${r.correct}/${r.answered||0} ${isEs?'correctas':'correct'}</div><button class="btn ${r.done?'btn-secondary':'btn-primary'}" data-mini-start="${idx}" style="width:100%;padding:10px;font-size:13px;margin-top:8px">${r.done?(isEs?'Practicar otra vez':'Practice again'):(isEs?'Practicar esta definición':'Practice this definition')}</button></div>`;
   const prevDisabled=idx===0?'disabled':'';
   const nextDisabled=idx===subs.length-1?'disabled':'';
-  return `<div class="subskill-panel"><div class="subskill-head"><div><div class="subskill-title">${isEs?'Micro-lessons':'Micro-lessons'}</div><div class="subskill-sub">${isEs?'Una definición a la vez. Estudia, practica y avanza al siguiente.':'One definition at a time. Study, practice, then move to the next.'}</div></div><span class="status-pill ${sum.complete?'stable':'review'}">${sum.done}/${sum.total}</span></div><div class="subskill-grid">${card}</div><div class="subskill-stepper-nav"><button class="btn btn-secondary" id="subskillPrev" ${prevDisabled} style="padding:8px 14px;font-size:12px">← ${isEs?'Anterior':'Previous'}</button><div class="subskill-stepper-dots">${dots}</div><button class="btn btn-secondary" id="subskillNext" ${nextDisabled} style="padding:8px 14px;font-size:12px">${isEs?'Siguiente':'Next'} →</button></div></div>`;
+  return `<div class="subskill-panel"><div class="subskill-head"><div><div class="subskill-title">${isEs?'Definiciones del task':'Task definitions'}</div><div class="subskill-sub">${isEs?'Una definición a la vez. Léela completa, luego practica antes de avanzar.':'One definition at a time. Read it fully, then practice before moving on.'}</div></div><span class="status-pill ${sum.complete?'stable':'review'}">${sum.done}/${sum.total} ${isEs?'completadas':'completed'}</span></div><div class="subskill-grid">${card}</div><div class="subskill-stepper-nav"><button class="btn btn-secondary" id="subskillPrev" ${prevDisabled} style="padding:8px 14px;font-size:12px">← ${isEs?'Anterior':'Previous'}</button><div class="subskill-stepper-dots">${dots}</div><button class="btn btn-secondary" id="subskillNext" ${nextDisabled} style="padding:8px 14px;font-size:12px">${isEs?'Siguiente':'Next'} →</button></div></div>`;
 }
 
 function miniQuestionForSubskill(task,sub,index){
@@ -1836,7 +1837,7 @@ async function renderStudy(){
   const task=findTaskByTitle(d.id,currentConcept);
   const ck=currentDomain+':'+currentConcept+':deep_v1';
   const seenKey=ck+'_seen';
-  // Reset subskill stepper to first slide when entering a fresh task
+  // Init stepper index for this task if not set
   state.activeSubskillIndex=state.activeSubskillIndex||{};
   if(state.activeSubskillIndex[task.id]===undefined)state.activeSubskillIndex[task.id]=0;
 
@@ -1891,6 +1892,7 @@ async function renderStudy(){
     const ct=document.getElementById('challengeTask');
     if(ct)ct.onclick=()=>renderChallenge(currentDomain);
     document.querySelectorAll('[data-mini-start]').forEach(btn=>btn.onclick=()=>renderMiniPractice(task.id,parseInt(btn.dataset.miniStart,10)||0,0));
+    // Stepper navigation
     const prevBtn=document.getElementById('subskillPrev');
     const nextBtn=document.getElementById('subskillNext');
     const subs2=getTaskSubskills(task);
@@ -1924,7 +1926,7 @@ async function renderStudy(){
         qs('main').innerHTML=buildPage(rich,!!state.learned[seenKey]);
         bind(!!state.learned[seenKey]);
       }
-    }).catch(e=>console.error('generateLearnContent error:',e));
+    }).catch(e=>console.error("generateLearnContent:",e));
   }
 }
 
@@ -2049,7 +2051,7 @@ async function renderPractice(target){
         if(state.usedFingerprints.length>120)state.usedFingerprints=state.usedFingerprints.slice(-120);
         save();
       }
-    }).catch(e=>console.error('background generateQuestion error:',e));
+    }).catch(e=>console.error("background generateQuestion:",e));
 }
 
 function shuffledArray(arr){
@@ -2561,7 +2563,7 @@ microLessonHtml = function(task,sub){
     contrast=`<table class="concept-contrast-table"><thead><tr><th>${isEs?'Nivel/Concepto':'Level/Concept'}</th><th>${isEs?'Clave':'Core cue'}</th><th>${isEs?'Ejemplo':'Example'}</th></tr></thead><tbody>${m.contrast.map(r=>`<tr><td>${escHtml(r[0])}</td><td>${escHtml(r[1])}</td><td>${escHtml(r[2])}</td></tr>`).join('')}</tbody></table>`;
   }
   const rootHtml=root?`<div class="concept-root-card"><div class="concept-root-title">${isEs?'Discriminación desde la raíz':'Root-level discrimination'}</div><div class="concept-root-text">${escHtml(root)}</div>${contrast}</div>`:'';
-  return `<div class="micro-lesson-box"><div class="deep-label">${isEs?'Micro-lesson':'Micro-lesson'} · ${escHtml(isEs?sub.es:sub.en)}</div>${rootHtml}<div class="micro-lesson-grid"><div class="micro-mini-card"><strong>${isEs?'Por qué importa':'Why it matters'}</strong>${why}</div><div class="micro-mini-card micro-clinical"><strong>${isEs?'Caso clínico':'Clinical example'}</strong>${clinical}</div><div class="micro-mini-card"><strong>${isEs?'Qué NO es':'What it is NOT'}</strong>${not}</div><div class="micro-mini-card micro-trap"><strong>${isEs?'Trampa BCBA':'BCBA trap'}</strong>${trap}</div><div class="micro-mini-card micro-strategy"><strong>${isEs?'Cómo reconocerlo':'How to recognize it'}</strong>${strategy}</div></div></div>`;
+  return `<div class="micro-lesson-box"><div class="micro-lesson-header"><div class="deep-label">📖 ${isEs?'Lección detallada':'Detailed lesson'}</div><div class="micro-lesson-title">${escHtml(isEs?sub.es:sub.en)}</div></div>${rootHtml}<div class="micro-lesson-grid"><div class="micro-mini-card"><strong>💡 ${isEs?'Por qué importa':'Why it matters'}</strong>${why}</div><div class="micro-mini-card micro-clinical"><strong>🏥 ${isEs?'Caso clínico':'Clinical example'}</strong>${clinical}</div><div class="micro-mini-card"><strong>🚫 ${isEs?'Qué NO es':'What it is NOT'}</strong>${not}</div><div class="micro-mini-card micro-trap"><strong>⚠️ ${isEs?'Trampa BCBA':'BCBA exam trap'}</strong>${trap}</div><div class="micro-mini-card micro-strategy"><strong>🎯 ${isEs?'Cómo reconocerlo en el examen':'How to recognize it on the exam'}</strong>${strategy}</div></div></div>`;
 };
 
 function v28Item(task,sub,index,q,q_es,options,options_es,hint,hint_es,rationale,rationale_es,diff){
@@ -2682,7 +2684,7 @@ function submitSetupKey(){
   const sc=qs('setupScreen');if(sc)sc.classList.remove('active');
   showToast(lang==='es'?'¡Clave guardada! Sistema listo.':'Key saved! System ready.');
   startPreload();
-}const saveAdminKeyEl=qs('saveAdminKey');if(saveAdminKeyEl)saveAdminKeyEl.onclick=()=>{const keyVal=(qs('adminKeyInput')?.value||'').trim();localStorage.setItem(KEY_STORAGE,keyVal);state.adminConfigured=!!getAdminKey();save();qs('adminModal').classList.remove('active');showToast('Admin key saved locally.');startPreload()};const closeAdminEl=qs('closeAdmin');if(closeAdminEl)closeAdminEl.onclick=()=>qs('adminModal').classList.remove('active');document.addEventListener('keydown',e=>{
+}qs('saveAdminKey').onclick=()=>{localStorage.setItem(KEY_STORAGE,qs('adminKeyInput').value.trim());state.adminConfigured=!!getAdminKey();save();qs('adminModal').classList.remove('active');showToast('Admin key saved locally.');startPreload()};qs('closeAdmin').onclick=()=>qs('adminModal').classList.remove('active');document.addEventListener('keydown',e=>{
   const key=String(e.key).toLowerCase();
   if(e.ctrlKey&&e.shiftKey&&key==='a')adminModal();
   if(e.ctrlKey&&e.shiftKey&&key==='k')showSetupScreen();
