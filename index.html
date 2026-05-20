@@ -129,6 +129,7 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
         <div class="feedback" id="quickFeedback"></div>
         <div class="controlRow">
           <button class="btn secondary" onclick="prevStep()" data-i18n="back">← Back</button>
+          <button class="btn hidden" id="scenarioContinue" onclick="continueScenario()" data-i18n="continue">Continue →</button>
           <button class="btn hidden nextBtn" onclick="nextStep()" data-i18n="next">Next →</button>
         </div>
       </article>
@@ -210,8 +211,8 @@ textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:
 
 <script>
 const UI = {
- en:{hub:'Study Hub',engine:'Universal Guided Learning Engine',readiness:'Current Task Readiness',mastery:'mastery building',reset:'Reset',newStructure:'New universal structure',start:'Start Guided Lab',step1:'1 · Concept Snapshot',means:'What it means',notMeans:'What it is NOT',anchor:'Exam anchor:',back:'← Back',understand:'I understand →',step2:'2 · Quick Discrimination',step3:'3 · Trap Detection',step4:'4 · Scenario Deconstruction',step5:'5 · Near-Miss Training',step6:'6 · Rewrite / Apply',check:'Check my reasoning',next:'Next →',summary:'Mastery Summary',summaryTitle:'You practiced the thinking skill, not just the definition.',exam:'Launch Exam Reality Mode',examMode:'Exam Reality Mode',closeExam:'Close Exam',all:'All Domains',heroGeneric:'This task uses the universal active-learning engine: minimal reading, frequent decisions, clinical discrimination, near-miss analysis, and exam-style feedback.',correct:'Correct answer',notBest:'Not the best answer'},
- es:{hub:'Study Hub',engine:'Motor Universal de Aprendizaje Guiado',readiness:'Preparación de la tarea actual',mastery:'construyendo dominio',reset:'Reiniciar',newStructure:'Nueva estructura universal',start:'Comenzar laboratorio guiado',step1:'1 · Resumen del concepto',means:'Qué significa',notMeans:'Qué NO significa',anchor:'Ancla del examen:',back:'← Atrás',understand:'Entendido →',step2:'2 · Discriminación rápida',step3:'3 · Detección de trampas',step4:'4 · Deconstrucción del escenario',step5:'5 · Entrenamiento con opciones cercanas',step6:'6 · Reescribir / Aplicar',check:'Revisar mi razonamiento',next:'Siguiente →',summary:'Resumen de dominio',summaryTitle:'Practicaste la habilidad de pensar, no solo la definición.',exam:'Iniciar Modo Realidad del Examen',examMode:'Modo Realidad del Examen',closeExam:'Cerrar examen',all:'Todos los dominios',heroGeneric:'Esta tarea usa el motor universal de aprendizaje activo: menos lectura, decisiones frecuentes, discriminación clínica, análisis de opciones cercanas y retroalimentación estilo examen.',correct:'Respuesta correcta',notBest:'No es la mejor respuesta'}
+ en:{hub:'Study Hub',engine:'Universal Guided Learning Engine',readiness:'Current Task Readiness',mastery:'mastery building',reset:'Reset',newStructure:'New universal structure',start:'Start Guided Lab',step1:'1 · Concept Snapshot',means:'What it means',notMeans:'What it is NOT',anchor:'Exam anchor:',back:'← Back',understand:'I understand →',step2:'2 · Quick Discrimination',step3:'3 · Trap Detection',step4:'4 · Scenario Deconstruction',step5:'5 · Near-Miss Training',step6:'6 · Rewrite / Apply',check:'Check my reasoning',next:'Next →',summary:'Mastery Summary',summaryTitle:'You practiced the thinking skill, not just the definition.',exam:'Launch Exam Reality Mode',examMode:'Exam Reality Mode',closeExam:'Close Exam',continue:'Continue →',all:'All Domains',heroGeneric:'This task uses the universal active-learning engine: minimal reading, frequent decisions, clinical discrimination, near-miss analysis, and exam-style feedback.',correct:'Correct answer',notBest:'Not the best answer'},
+ es:{hub:'Study Hub',engine:'Motor Universal de Aprendizaje Guiado',readiness:'Preparación de la tarea actual',mastery:'construyendo dominio',reset:'Reiniciar',newStructure:'Nueva estructura universal',start:'Comenzar laboratorio guiado',step1:'1 · Resumen del concepto',means:'Qué significa',notMeans:'Qué NO significa',anchor:'Ancla del examen:',back:'← Atrás',understand:'Entendido →',step2:'2 · Discriminación rápida',step3:'3 · Detección de trampas',step4:'4 · Deconstrucción del escenario',step5:'5 · Entrenamiento con opciones cercanas',step6:'6 · Reescribir / Aplicar',check:'Revisar mi razonamiento',next:'Siguiente →',summary:'Resumen de dominio',summaryTitle:'Practicaste la habilidad de pensar, no solo la definición.',exam:'Iniciar Modo Realidad del Examen',examMode:'Modo Realidad del Examen',closeExam:'Cerrar examen',continue:'Continuar →',all:'Todos los dominios',heroGeneric:'Esta tarea usa el motor universal de aprendizaje activo: menos lectura, decisiones frecuentes, discriminación clínica, análisis de opciones cercanas y retroalimentación estilo examen.',correct:'Respuesta correcta',notBest:'No es la mejor respuesta'}
 };
 let lang='en';
 
@@ -415,14 +416,17 @@ function pickScenario(i){
  });
  scenarioFeedback.className='feedback show '+(ok?'green':'red');
  scenarioFeedback.innerHTML=(ok?'✅ ':'⚠️ ')+T(s.fb)+explainAll(s.options,i);
- if(ok){
-  answeredScenarioSteps[scenarioStep]=true;
-  scenarioStep++;
-  if(scenarioStep<current.scenario.steps.length){
-    setTimeout(renderScenario,1200);
-  } else {
-    document.querySelector('[data-step="scenario"] .nextBtn').classList.remove('hidden');
-  }
+ // FIX: no automatic jump. The learner reads the feedback, then controls the next move.
+ if(scenarioStep < current.scenario.steps.length - 1){
+   document.getElementById('scenarioContinue').classList.remove('hidden');
+ } else {
+   document.querySelector('[data-step="scenario"] .nextBtn').classList.remove('hidden');
+ }
+}
+function continueScenario(){
+ if(scenarioStep < current.scenario.steps.length - 1){
+   scenarioStep++;
+   renderScenario();
  }
 }
 function checkRewrite(){
