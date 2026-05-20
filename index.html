@@ -3,475 +3,173 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>BCBA Prep • Universal Guided Learning Engine v2</title>
+<title>BCBA Prep • Fixed Guided Learning Engine</title>
 <style>
-:root{
-  --green:#047857;--green2:#dcfce7;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;
-  --blue:#2563eb;--blue2:#eff6ff;--red:#dc2626;--red2:#fef2f2;--yellow:#f59e0b;--yellow2:#fffbeb;
-  --purple:#7c3aed;--purple2:#f5f3ff;--bg:#f8fafc;--card:#fff;
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif}
-.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
-.sidebar{background:#fff;border-right:1px solid var(--line);padding:18px;position:sticky;top:0;height:100vh;overflow:auto}
-.logo small{color:var(--green);font-weight:900;letter-spacing:.12em}
-.logo h1{font-family:Georgia,serif;margin:4px 0;font-size:28px}
-.sub{color:var(--muted);font-weight:700;font-size:13px}
-.domainTitle{font-size:12px;color:#475569;text-transform:uppercase;font-weight:900;margin:18px 0 8px}
-.task{display:grid;grid-template-columns:32px 1fr;gap:8px;align-items:center;padding:10px;border-radius:13px;cursor:pointer;border-left:4px solid transparent;font-size:13px}
-.task:hover{background:#f1f5f9}
-.task.active{background:var(--green2);border-left-color:var(--green);font-weight:900}
-.num{width:24px;height:24px;border-radius:50%;background:#e5e7eb;display:grid;place-items:center;font-size:11px;font-weight:900}
-.task.active .num{background:var(--green);color:#fff}
-.main{padding:28px;max-width:1050px}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px}
-h1,h2,h3{font-family:Georgia,serif;margin:.2rem 0}
-.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px;margin:16px 0;box-shadow:0 8px 24px rgba(0,0,0,.045)}
-.hero{border-color:#34d399;background:linear-gradient(180deg,#ecfdf5,#fff)}
-.badge{font-size:11px;font-weight:950;letter-spacing:.08em;color:var(--green);text-transform:uppercase}
-.pill{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:900;background:#fff;margin:4px}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.two{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.mini{border:1px solid var(--line);border-radius:16px;padding:15px;background:#fff}
-.green{background:var(--green2)!important;border-color:#86efac!important}
-.blue{background:var(--blue2)!important;border-color:#bfdbfe!important}
-.red{background:var(--red2)!important;border-color:#fecaca!important}
-.yellow{background:var(--yellow2)!important;border-color:#fde68a!important}
-.purple{background:var(--purple2)!important;border-color:#ddd6fe!important}
-.prompt{font-size:18px;font-weight:900;line-height:1.45}
-.options{display:grid;gap:10px;margin-top:14px}
-.option{border:1px solid var(--line);background:#fff;border-radius:14px;padding:14px;cursor:pointer;text-align:left;font-weight:800;transition:.15s}
-.option:hover{border-color:#34d399;transform:translateY(-1px)}
-.option.correct{border-color:var(--green);background:var(--green2)}
-.option.wrong{border-color:var(--red);background:var(--red2)}
-.option.notchosen{opacity:.82}
-.option:disabled{cursor:not-allowed}
-.feedback{display:none;margin-top:14px;border-radius:16px;padding:15px;font-weight:750}
-.feedback.show{display:block}
-.explainList{display:grid;gap:8px;margin-top:12px}
-.explainItem{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;font-size:14px}
-.btn{border:0;border-radius:13px;padding:12px 16px;font-weight:950;cursor:pointer;background:var(--green);color:#fff}
-.btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line)}
-.btn.purple{background:var(--purple)}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.controlRow{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px;flex-wrap:wrap}
-.progress{height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden}
-.bar{height:100%;width:0;background:var(--green);transition:.3s}
-.hidden{display:none!important}
-.stepper{display:flex;gap:8px;margin:18px 0;flex-wrap:wrap}
-.dot{width:12px;height:12px;border-radius:50%;background:#d1d5db}
-.dot.on{background:var(--green)}
-textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:14px;padding:12px;font:inherit}
-.reason{border-left:5px solid var(--green);padding-left:12px}
-.select{border:1px solid var(--line);border-radius:12px;padding:10px;font-weight:800;background:#fff}
-.lang{display:inline-flex;background:#eef2f7;border-radius:999px;padding:3px;gap:3px}
-.lang button{border:0;border-radius:999px;background:transparent;padding:8px 11px;font-weight:950;cursor:pointer}
-.lang button.active{background:#fff;color:var(--green);box-shadow:0 2px 8px rgba(0,0,0,.08)}
-@media(max-width:900px){.app{grid-template-columns:1fr}.sidebar{position:relative;height:auto}.grid,.two{grid-template-columns:1fr}.main{padding:18px}.topbar{align-items:flex-start;flex-direction:column}}
+:root{--green:#047857;--green2:#dcfce7;--red:#dc2626;--red2:#fee2e2;--blue:#2563eb;--blue2:#eff6ff;--yellow:#f59e0b;--yellow2:#fffbeb;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--bg:#f8fafc}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}.sidebar{background:white;border-right:1px solid var(--line);padding:18px;position:sticky;top:0;height:100vh}.logo small{color:var(--green);font-weight:900}.logo h1{font-family:Georgia,serif;margin:6px 0;font-size:28px}.sub{font-size:13px;color:var(--muted);font-weight:700}.main{padding:28px;max-width:1050px}.card{background:white;border:1px solid var(--line);border-radius:22px;padding:22px;margin:16px 0;box-shadow:0 8px 24px #0000000b}.hero{background:linear-gradient(#ecfdf5,#fff);border-color:#34d399}h1,h2,h3{font-family:Georgia,serif;margin:.2rem 0}.badge{font-size:11px;font-weight:950;color:var(--green);letter-spacing:.08em;text-transform:uppercase}.pill{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:900;background:white;margin:4px}.task{display:grid;grid-template-columns:32px 1fr;gap:8px;padding:10px;border-radius:13px;background:var(--green2);border-left:4px solid var(--green);font-weight:900;font-size:13px}.num{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:white}.progress{height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden}.bar{height:100%;width:0;background:var(--green);transition:.25s}.stepper{display:flex;gap:8px;margin:18px 0}.dot{width:12px;height:12px;border-radius:50%;background:#d1d5db}.dot.on{background:var(--green)}.hidden{display:none!important}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.mini{border:1px solid var(--line);border-radius:16px;padding:15px;background:white}.green{background:var(--green2)!important;border-color:#86efac!important}.red{background:var(--red2)!important;border-color:#fecaca!important}.blue{background:var(--blue2)!important;border-color:#bfdbfe!important}.yellow{background:var(--yellow2)!important;border-color:#fde68a!important}.prompt{font-size:18px;font-weight:900;line-height:1.45}.options{display:grid;gap:10px;margin-top:14px}.option{border:1px solid var(--line);background:white;border-radius:14px;padding:14px;cursor:pointer;text-align:left;font-weight:800}.option.correct{border-color:var(--green);background:var(--green2)}.option.wrong{border-color:var(--red);background:var(--red2)}.option.notchosen{opacity:.85}.option:disabled{cursor:not-allowed}.feedback{display:none;margin-top:14px;border-radius:16px;padding:15px;font-weight:750}.feedback.show{display:block}.coachGrid{display:grid;gap:10px;margin-top:12px}.coachCard{border:1px solid var(--line);border-radius:14px;padding:12px;background:white;font-size:14px;line-height:1.35}.coachCard b{display:block;margin-bottom:4px}.hintBox{display:none;margin-top:12px;border:1px dashed var(--yellow);background:var(--yellow2);border-radius:14px;padding:12px;font-weight:750}.hintBox.show{display:block}.btn{border:0;border-radius:13px;padding:12px 16px;font-weight:950;cursor:pointer;background:var(--green);color:white}.btn.secondary{background:white;color:var(--ink);border:1px solid var(--line)}.btn.yellow{background:var(--yellow);color:#111827}.controlRow{display:flex;justify-content:space-between;gap:12px;margin-top:18px;flex-wrap:wrap}.lang{display:inline-flex;background:#eef2f7;border-radius:999px;padding:3px}.lang button{border:0;border-radius:999px;background:transparent;padding:8px 11px;font-weight:950;cursor:pointer}.lang button.active{background:white;color:var(--green)}
+@media(max-width:850px){.app{grid-template-columns:1fr}.sidebar{position:relative;height:auto}.two{grid-template-columns:1fr}.main{padding:18px}}
 </style>
 </head>
 <body>
 <div class="app">
-  <aside class="sidebar">
-    <div class="logo"><small>BCBA PREP</small><h1 data-i18n="hub">Study Hub</h1><div class="sub" data-i18n="engine">Universal Guided Learning Engine</div></div>
-    <hr>
-    <div id="taskList"></div>
-    <hr>
-    <div class="sub" data-i18n="readiness">Current Task Readiness</div>
-    <div class="progress"><div id="sideBar" class="bar"></div></div>
-    <p class="sub"><span id="scoreText">0%</span> <span data-i18n="mastery">mastery building</span></p>
-  </aside>
+<aside class="sidebar">
+<div class="logo"><small>BCBA PREP</small><h1>Study Hub</h1><div class="sub" id="engineLabel">Motor Universal de Aprendizaje Guiado</div></div><hr>
+<div class="task"><div class="num">3</div><div><b>A.3</b><br><span id="taskName">Conductismo radical</span></div></div><hr>
+<div class="sub" id="readyLabel">Preparación de la tarea actual</div><div class="progress"><div id="sideBar" class="bar"></div></div><p class="sub"><span id="scoreText">0%</span> <span id="masteryLabel">construyendo dominio</span></p>
+</aside>
+<main class="main">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+<div><h1 id="pageTitle">A.3 • Conductismo radical</h1><div class="sub" id="pageSub">Guided Thinking Lab</div></div>
+<div><span class="lang"><button id="enBtn" onclick="setLang('en')">EN</button><button id="esBtn" class="active" onclick="setLang('es')">ES</button></span></div>
+</div>
 
-  <main class="main">
-    <div class="topbar">
-      <div>
-        <h1 id="pageTitle">Guided Thinking Lab</h1>
-        <div class="sub" id="pageSub">Select a task to begin</div>
-      </div>
-      <div>
-        <span class="lang"><button id="enBtn" class="active" onclick="setLang('en')">EN</button><button id="esBtn" onclick="setLang('es')">ES</button></span>
-        <select class="select" id="domainFilter" onchange="filterDomain()"></select>
-        <button class="btn secondary" onclick="resetCurrent()" data-i18n="reset">Reset</button>
-      </div>
-    </div>
+<section class="card hero">
+<span class="badge" id="newLabel">Nueva estructura universal</span>
+<h2 id="heroTitle">Conductismo radical · Guided Thinking Lab</h2>
+<p id="heroText">Menos lectura, más discriminación: decisiones frecuentes, análisis clínico, feedback inmediato y práctica estilo examen.</p>
+<span class="pill" id="tag1">Eventos privados</span><span class="pill" id="tag2">Trampas mentalistas</span><span class="pill" id="tag3">Explicación ambiental</span>
+<br><br><button class="btn" id="startBtn" onclick="startLab()">Comenzar laboratorio guiado</button>
+</section>
 
-    <section class="card hero">
-      <span class="badge" data-i18n="newStructure">New universal structure</span>
-      <h2 id="heroTitle">Less reading. More discrimination.</h2>
-      <p id="heroText"></p>
-      <div id="tags"></div>
-      <br>
-      <button class="btn" onclick="startLab()" data-i18n="start">Start Guided Lab</button>
-    </section>
+<section id="lab" class="hidden">
+<div class="stepper" id="dots"></div>
 
-    <section id="lab" class="hidden">
-      <div class="stepper" id="dots"></div>
+<article class="card" data-step>
+<span class="badge" id="s1">1 · Resumen del concepto</span>
+<h2 id="snapTitle">El conductismo radical incluye eventos privados, pero no detiene el análisis ahí.</h2>
+<div class="two">
+<div class="mini green"><h3 id="meansTitle">Qué significa</h3><p id="snapMeans">La conducta, incluyendo pensamientos y sentimientos, se explica mediante variables ambientales, contingencias e historia de aprendizaje.</p></div>
+<div class="mini red"><h3 id="notTitle">Qué NO significa</h3><p id="snapNot">No niega emociones. Tampoco las trata como causas independientes que terminan el análisis.</p></div>
+</div>
+<div class="controlRow"><button class="btn secondary" onclick="prevStep()" id="back1">← Atrás</button><button class="btn" onclick="nextStep()" id="understand">Entendido →</button></div>
+</article>
 
-      <article class="card" data-step="snapshot">
-        <span class="badge" data-i18n="step1">1 · Concept Snapshot</span>
-        <h2 id="snapTitle"></h2>
-        <div class="two">
-          <div class="mini green"><h3 data-i18n="means">What it means</h3><p id="snapMeans"></p></div>
-          <div class="mini red"><h3 data-i18n="notMeans">What it is NOT</h3><p id="snapNot"></p></div>
-        </div>
-        <p class="reason"><b data-i18n="anchor">Exam anchor:</b> <span id="snapAnchor"></span></p>
-        <div class="controlRow">
-          <button class="btn secondary" onclick="prevStep()" data-i18n="back">← Back</button>
-          <button class="btn" onclick="nextStep()" data-i18n="understand">I understand →</button>
-        </div>
-      </article>
+<article class="card hidden" data-step>
+<span class="badge" id="s2">2 · Discriminación rápida</span>
+<div class="prompt" id="quickPrompt">“La cliente grita porque está frustrada.”</div>
+<p id="quickQuestion">¿Qué tipo de explicación es esta?</p>
+<button class="btn yellow" onclick="toggleHint('quickHint')" id="hint1">💡 Pista</button>
+<div class="hintBox" id="quickHint">Pregunta: ¿identifica variables ambientales o solo etiqueta un evento privado?</div>
+<div class="options" id="quickOptions"></div>
+<div class="feedback" id="quickFeedback"></div>
+<div class="controlRow"><button class="btn secondary" onclick="prevStep()" id="back2">← Atrás</button><button class="btn hidden nextBtn" onclick="nextStep()" id="next2">Siguiente →</button></div>
+</article>
 
-      <article class="card hidden" data-step="quick">
-        <span class="badge" data-i18n="step2">2 · Quick Discrimination</span>
-        <div class="prompt" id="quickPrompt"></div>
-        <p id="quickQuestion"></p>
-        <div class="options" id="quickOptions"></div>
-        <div class="feedback" id="quickFeedback"></div>
-        <div class="controlRow">
-          <button class="btn secondary" onclick="prevStep()" data-i18n="back">← Back</button>
-          <button class="btn hidden" id="scenarioContinue" onclick="continueScenario()" data-i18n="continue">Continue →</button>
-          <button class="btn hidden nextBtn" onclick="nextStep()" data-i18n="next">Next →</button>
-        </div>
-      </article>
+<article class="card hidden" data-step>
+<span class="badge" id="s3">3 · Detección de trampas</span>
+<p class="prompt" id="trapPrompt">¿Cuál palabra es la trampa? “El aprendiz se niega porque es oposicionista.”</p>
+<button class="btn yellow" onclick="toggleHint('trapHint')" id="hint2">💡 Pista</button>
+<div class="hintBox" id="trapHint">La trampa no es la conducta observable. Busca la etiqueta que pretende explicar la conducta.</div>
+<div class="options" id="trapOptions"></div>
+<div class="feedback" id="trapFeedback"></div>
+<div class="controlRow"><button class="btn secondary" onclick="prevStep()" id="back3">← Atrás</button><button class="btn hidden nextBtn" onclick="nextStep()" id="next3">Siguiente →</button></div>
+</article>
 
-      <article class="card hidden" data-step="trap">
-        <span class="badge" data-i18n="step3">3 · Trap Detection</span>
-        <p class="prompt" id="trapPrompt"></p>
-        <div class="options" id="trapOptions"></div>
-        <div class="feedback" id="trapFeedback"></div>
-        <div class="controlRow">
-          <button class="btn secondary" onclick="prevStep()" data-i18n="back">← Back</button>
-          <button class="btn hidden nextBtn" onclick="nextStep()" data-i18n="next">Next →</button>
-        </div>
-      </article>
+<article class="card hidden" data-step>
+<span class="badge" id="s4">4 · Deconstrucción del escenario</span>
+<p class="prompt" id="scenarioText">Un estudiante tira materiales cuando recibe problemas difíciles de matemáticas. La maestra retira la hoja de trabajo.</p>
+<div class="mini blue">
+<h3 id="scenarioQ"></h3>
+<button class="btn yellow" onclick="toggleHint('scenarioHint')" id="hint3">💡 Pista</button>
+<div class="hintBox" id="scenarioHint"></div>
+<div class="options" id="scenarioOptions"></div>
+</div>
+<div class="feedback" id="scenarioFeedback"></div>
+<div class="controlRow">
+<button class="btn secondary" onclick="prevStep()" id="back4">← Atrás</button>
+<button class="btn hidden" id="scenarioContinue" onclick="continueScenario()">Continuar →</button>
+<button class="btn hidden nextBtn" onclick="nextStep()" id="next4">Siguiente →</button>
+</div>
+</article>
 
-      <article class="card hidden" data-step="scenario">
-        <span class="badge" data-i18n="step4">4 · Scenario Deconstruction</span>
-        <p class="prompt" id="scenarioText"></p>
-        <div class="mini blue">
-          <h3 id="scenarioQ"></h3>
-          <div class="options" id="scenarioOptions"></div>
-        </div>
-        <div class="feedback" id="scenarioFeedback"></div>
-        <div class="controlRow">
-          <button class="btn secondary" onclick="prevStep()" data-i18n="back">← Back</button>
-          <button class="btn hidden nextBtn" onclick="nextStep()" data-i18n="next">Next →</button>
-        </div>
-      </article>
+<article class="card hidden" data-step>
+<span class="badge" id="s5">5 · Entrenamiento con opciones cercanas</span>
+<p class="prompt" id="nearPrompt">¿Cuál respuesta es la MEJOR desde la perspectiva del conductismo radical?</p>
+<button class="btn yellow" onclick="toggleHint('nearHint')" id="hint4">💡 Pista</button>
+<div class="hintBox" id="nearHint">Escoge la opción que identifica eventos ambientales e historia de reforzamiento.</div>
+<div class="options" id="nearOptions"></div>
+<div class="feedback" id="nearFeedback"></div>
+<div class="controlRow"><button class="btn secondary" onclick="prevStep()" id="back5">← Atrás</button><button class="btn hidden nextBtn" onclick="nextStep()" id="next5">Siguiente →</button></div>
+</article>
 
-      <article class="card hidden" data-step="nearMiss">
-        <span class="badge" data-i18n="step5">5 · Near-Miss Training</span>
-        <p class="prompt" id="nearPrompt"></p>
-        <div class="options" id="nearOptions"></div>
-        <div class="feedback" id="nearFeedback"></div>
-        <div class="controlRow">
-          <button class="btn secondary" onclick="prevStep()" data-i18n="back">← Back</button>
-          <button class="btn hidden nextBtn" onclick="nextStep()" data-i18n="next">Next →</button>
-        </div>
-      </article>
-
-      <article class="card hidden" data-step="rewrite">
-        <span class="badge" data-i18n="step6">6 · Rewrite / Apply</span>
-        <p class="prompt" id="rewritePrompt"></p>
-        <textarea id="rewriteBox"></textarea>
-        <br><br>
-        <button class="btn" onclick="checkRewrite()" data-i18n="check">Check my reasoning</button>
-        <div id="rewriteFeedback" class="feedback blue"></div>
-        <div class="controlRow">
-          <button class="btn secondary" onclick="prevStep()" data-i18n="back">← Back</button>
-          <button class="btn hidden nextBtn" onclick="nextStep()" data-i18n="next">Next →</button>
-        </div>
-      </article>
-
-      <article class="card hidden" data-step="summary">
-        <span class="badge" data-i18n="summary">Mastery Summary</span>
-        <h2 data-i18n="summaryTitle">You practiced the thinking skill, not just the definition.</h2>
-        <div class="grid" id="summaryCards"></div>
-        <br>
-        <div class="controlRow">
-          <button class="btn secondary" onclick="prevStep()" data-i18n="back">← Back</button>
-          <button class="btn purple" onclick="examMode()" data-i18n="exam">Launch Exam Reality Mode</button>
-        </div>
-      </article>
-    </section>
-
-    <section id="exam" class="hidden card">
-      <span class="badge" data-i18n="examMode">Exam Reality Mode</span>
-      <h2 id="examTitle">Question</h2>
-      <p id="examPrompt" class="prompt"></p>
-      <div id="examOptions" class="options"></div>
-      <div id="examFeedback" class="feedback"></div>
-      <div class="controlRow">
-        <button class="btn secondary" onclick="exam.classList.add('hidden')" data-i18n="closeExam">Close Exam</button>
-        <button id="examNext" class="btn hidden" onclick="nextExam()" data-i18n="next">Next →</button>
-      </div>
-    </section>
-  </main>
+<article class="card hidden" data-step>
+<span class="badge" id="s6">6 · Resumen de dominio</span>
+<h2 id="summaryTitle">Practicaste la habilidad de pensar, no solo la definición.</h2>
+<div class="two"><div class="mini green" id="sum1">Ambiente sobre etiquetas</div><div class="mini blue" id="sum2">Eventos privados son conducta</div></div>
+<div class="controlRow"><button class="btn secondary" onclick="prevStep()" id="back6">← Atrás</button><button class="btn" onclick="resetAll()" id="again">Practicar otra vez</button></div>
+</article>
+</section>
+</main>
 </div>
 
 <script>
-const UI = {
- en:{hub:'Study Hub',engine:'Universal Guided Learning Engine',readiness:'Current Task Readiness',mastery:'mastery building',reset:'Reset',newStructure:'New universal structure',start:'Start Guided Lab',step1:'1 · Concept Snapshot',means:'What it means',notMeans:'What it is NOT',anchor:'Exam anchor:',back:'← Back',understand:'I understand →',step2:'2 · Quick Discrimination',step3:'3 · Trap Detection',step4:'4 · Scenario Deconstruction',step5:'5 · Near-Miss Training',step6:'6 · Rewrite / Apply',check:'Check my reasoning',next:'Next →',summary:'Mastery Summary',summaryTitle:'You practiced the thinking skill, not just the definition.',exam:'Launch Exam Reality Mode',examMode:'Exam Reality Mode',closeExam:'Close Exam',continue:'Continue →',all:'All Domains',heroGeneric:'This task uses the universal active-learning engine: minimal reading, frequent decisions, clinical discrimination, near-miss analysis, and exam-style feedback.',correct:'Correct answer',notBest:'Not the best answer'},
- es:{hub:'Study Hub',engine:'Motor Universal de Aprendizaje Guiado',readiness:'Preparación de la tarea actual',mastery:'construyendo dominio',reset:'Reiniciar',newStructure:'Nueva estructura universal',start:'Comenzar laboratorio guiado',step1:'1 · Resumen del concepto',means:'Qué significa',notMeans:'Qué NO significa',anchor:'Ancla del examen:',back:'← Atrás',understand:'Entendido →',step2:'2 · Discriminación rápida',step3:'3 · Detección de trampas',step4:'4 · Deconstrucción del escenario',step5:'5 · Entrenamiento con opciones cercanas',step6:'6 · Reescribir / Aplicar',check:'Revisar mi razonamiento',next:'Siguiente →',summary:'Resumen de dominio',summaryTitle:'Practicaste la habilidad de pensar, no solo la definición.',exam:'Iniciar Modo Realidad del Examen',examMode:'Modo Realidad del Examen',closeExam:'Cerrar examen',continue:'Continuar →',all:'Todos los dominios',heroGeneric:'Esta tarea usa el motor universal de aprendizaje activo: menos lectura, decisiones frecuentes, discriminación clínica, análisis de opciones cercanas y retroalimentación estilo examen.',correct:'Respuesta correcta',notBest:'No es la mejor respuesta'}
-};
-let lang='en';
-
-const TASKS = [
-{
- id:'A.3', domain:{en:'Domain A · Philosophical Underpinnings',es:'Dominio A · Fundamentos filosóficos'}, short:{en:'Radical behaviorism',es:'Conductismo radical'},
- title:{en:'A.3 • Explain behavior from the perspective of radical behaviorism',es:'A.3 • Explicar la conducta desde la perspectiva del conductismo radical'},
- sub:{en:'Behaviorism and Philosophical Foundations',es:'Conductismo y fundamentos filosóficos'},
- tags:{en:['Private events','Mentalism traps','Environmental explanation','BEST answer reasoning'],es:['Eventos privados','Trampas mentalistas','Explicación ambiental','Razonamiento de la MEJOR respuesta']},
- snapshot:{
-  title:{en:'Radical behaviorism includes private events, but does not stop there.',es:'El conductismo radical incluye eventos privados, pero no detiene el análisis ahí.'},
-  means:{en:'Behavior, including thoughts and feelings, is explained through environmental variables, contingencies, and learning history.',es:'La conducta, incluyendo pensamientos y sentimientos, se explica mediante variables ambientales, contingencias e historia de aprendizaje.'},
-  not:{en:'It does not deny emotions. It also does not treat emotions as independent causes that end the analysis.',es:'No niega las emociones. Tampoco trata las emociones como causas independientes que terminan el análisis.'},
-  anchor:{en:'Ask what antecedents, consequences, motivating operations, and reinforcement history are relevant.',es:'Pregunta qué antecedentes, consecuencias, operaciones motivadoras e historia de reforzamiento son relevantes.'}
- },
- quick:{prompt:{en:'“The client screams because she is frustrated.”',es:'“La cliente grita porque está frustrada.”'}, question:{en:'What type of explanation is this?',es:'¿Qué tipo de explicación es esta?'}, options:[
-  [{en:'Radical behaviorism',es:'Conductismo radical'},false,{en:'It mentions an emotion, but does not analyze environmental variables or reinforcement history.',es:'Menciona una emoción, pero no analiza variables ambientales ni historia de reforzamiento.'}],
-  [{en:'Mentalism',es:'Mentalismo'},true,{en:'“Frustrated” labels a private event but does not explain the behavior functionally.',es:'“Frustrada” etiqueta un evento privado, pero no explica la conducta funcionalmente.'}]
- ]},
- trap:{prompt:{en:'Which word is the trap? “The learner refuses because he is oppositional.”',es:'¿Cuál palabra es la trampa? “El aprendiz se niega porque es oposicionista.”'}, options:[
-  [{en:'refuses',es:'se niega'},false,{en:'Refuses is the behavior being described, not the explanatory trap.',es:'“Se niega” es la conducta descrita, no la trampa explicativa.'}],
-  [{en:'oppositional',es:'oposicionista'},true,{en:'It is a label that sounds explanatory but does not identify function or contingencies.',es:'Es una etiqueta que suena explicativa, pero no identifica función ni contingencias.'}],
-  [{en:'because',es:'porque'},false,{en:'Because signals an explanation, but the trap is the label used after it.',es:'“Porque” indica que viene una explicación, pero la trampa es la etiqueta que aparece después.'}]
- ]},
- scenario:{text:{en:'A student throws materials when given difficult math problems. The teacher removes the worksheet.',es:'Un estudiante tira materiales cuando recibe problemas difíciles de matemáticas. La maestra retira la hoja de trabajo.'}, steps:[
-  {q:{en:'Step 1: What is the behavior?',es:'Paso 1: ¿Cuál es la conducta?'}, options:[[{en:'Throwing materials',es:'Tirar materiales'},true],[{en:'Being frustrated',es:'Estar frustrado'},false],[{en:'Not liking math',es:'No gustarle matemáticas'},false]], fb:{en:'Behavior must be observable: throwing materials.',es:'La conducta debe ser observable: tirar materiales.'}},
-  {q:{en:'Step 2: What consequence followed?',es:'Paso 2: ¿Qué consecuencia siguió?'}, options:[[{en:'Worksheet removed',es:'La hoja fue retirada'},true],[{en:'Student felt better',es:'El estudiante se sintió mejor'},false],[{en:'Student has poor attitude',es:'El estudiante tiene mala actitud'},false]], fb:{en:'The worksheet was removed after the behavior.',es:'La hoja fue retirada después de la conducta.'}},
-  {q:{en:'Step 3: What function is plausible?',es:'Paso 3: ¿Qué función es plausible?'}, options:[[{en:'Escape from difficult task',es:'Escape de una tarea difícil'},true],[{en:'Personality trait',es:'Rasgo de personalidad'},false],[{en:'Diagnosis',es:'Diagnóstico'},false]], fb:{en:'Removal of the worksheet suggests escape may be maintaining behavior.',es:'Retirar la hoja sugiere que el escape puede estar manteniendo la conducta.'}}
- ]},
- near:{prompt:{en:'Which answer is BEST from a radical behaviorist perspective?',es:'¿Cuál respuesta es la MEJOR desde la perspectiva del conductismo radical?'}, options:[
-  [{en:'The client hits because he is angry.',es:'El cliente golpea porque está enojado.'},false,{en:'Tempting, but “angry” labels a private event instead of identifying contingencies.',es:'Tentadora, pero “enojado” etiqueta un evento privado en lugar de identificar contingencias.'}],
-  [{en:'The behavior is observable and measurable.',es:'La conducta es observable y medible.'},false,{en:'True, but too general. It does not explain the behavior from a radical behaviorist perspective.',es:'Es cierto, pero demasiado general. No explica la conducta desde una perspectiva conductista radical.'}],
-  [{en:'Hitting may have contacted reinforcement such as attention or escape after denied access.',es:'Golpear pudo haber contactado reforzamiento como atención o escape después de negar acceso.'},true,{en:'This explains behavior through environmental events and reinforcement history.',es:'Esto explica la conducta mediante eventos ambientales e historia de reforzamiento.'}],
-  [{en:'The client hits because of a diagnosis.',es:'El cliente golpea por un diagnóstico.'},false,{en:'Diagnosis may be context, but it is not a functional explanation.',es:'El diagnóstico puede ser contexto, pero no es una explicación funcional.'}]
- ]},
- rewrite:{prompt:{en:'Rewrite this mentalistic explanation behaviorally: “He refuses work because he is lazy.”',es:'Reescribe esta explicación mentalista de forma conductual: “Él se niega a trabajar porque es vago.”'}, keywords:['escape','attention','reinforce','consequence','antecedent','demand','history','task','escap','atenci','reforz','consecuencia','antecedente','demanda','historia','tarea'], good:{en:'Good. You moved from a personality label toward environmental variables or reinforcement history.',es:'Bien. Pasaste de una etiqueta de personalidad a variables ambientales o historia de reforzamiento.'}},
- summary:{en:['Environment over labels','Private events are behavior','Contingencies explain behavior'],es:['Ambiente sobre etiquetas','Eventos privados son conducta','Las contingencias explican conducta']},
- exam:[
-  {p:{en:'A therapist says, “He aggresses because he is angry.” Why is this problematic?',es:'Un terapeuta dice: “Él agrede porque está enojado.” ¿Por qué es problemático?'}, a:[{en:'It rejects all private events',es:'Rechaza todos los eventos privados'},{en:'It uses an internal label without identifying contingencies',es:'Usa una etiqueta interna sin identificar contingencias'},{en:'It focuses too much on measurement',es:'Se enfoca demasiado en medición'},{en:'It is an example of selectionism',es:'Es un ejemplo de seleccionismo'}], c:1, e:{en:'Radical behaviorism accepts anger as private behavior, but does not stop the analysis there.',es:'El conductismo radical acepta el enojo como conducta privada, pero no detiene el análisis ahí.'}},
-  {p:{en:'Which statement BEST reflects radical behaviorism?',es:'¿Cuál afirmación refleja MEJOR el conductismo radical?'}, a:[{en:'Only observable behavior should be studied',es:'Solo debe estudiarse la conducta observable'},{en:'Private events exist and are behavior',es:'Los eventos privados existen y son conducta'},{en:'Thoughts independently cause behavior',es:'Los pensamientos causan conducta de forma independiente'},{en:'Emotions should be ignored',es:'Las emociones deben ignorarse'}], c:1, e:{en:'Private events are real, but analyzed through behavioral principles.',es:'Los eventos privados son reales, pero se analizan mediante principios conductuales.'}},
-  {p:{en:'A client runs away during table work and staff remove the task. Best interpretation?',es:'Un cliente se escapa durante trabajo de mesa y el personal retira la tarea. ¿Mejor interpretación?'}, a:[{en:'He is oppositional',es:'Es oposicionista'},{en:'The behavior may be maintained by escape',es:'La conducta puede estar mantenida por escape'},{en:'He lacks motivation',es:'Le falta motivación'},{en:'Running is caused by anxiety',es:'Correr es causado por ansiedad'}], c:1, e:{en:'This identifies a possible environmental consequence maintaining behavior.',es:'Esto identifica una posible consecuencia ambiental que mantiene la conducta.'}}
- ]
+let lang='es', step=0, scenarioStep=0;
+const L={
+es:{
+start:'Comenzar laboratorio guiado', back:'← Atrás', next:'Siguiente →', cont:'Continuar →', hint:'💡 Pista',
+correct:'Respuesta correcta', notBest:'No es la mejor respuesta',
+quickOptions:[['Conductismo radical',false,'Menciona una emoción, pero no analiza variables ambientales ni historia de reforzamiento.'],['Mentalismo',true,'“Frustrada” etiqueta un evento privado, pero no explica la conducta funcionalmente.']],
+trapOptions:[['se niega',false,'Esta es la conducta observable. No es la trampa explicativa.'],['oposicionista',true,'Es una etiqueta que suena explicativa, pero no identifica función ni contingencias.'],['porque',false,'Indica que viene una explicación. La trampa es la etiqueta después.']],
+scenario:[
+{q:'Paso 1: ¿Cuál es la conducta?',hint:'Elige la acción observable, no un sentimiento o interpretación.',opts:[['Tirar materiales',true,'La conducta observable es tirar materiales.'],['Estar frustrado',false,'Esto es una interpretación/evento privado, no la conducta observable principal.'],['No gustarle matemáticas',false,'Esto es una inferencia, no una conducta observable.']]},
+{q:'Paso 2: ¿Qué consecuencia siguió?',hint:'Mira inmediatamente después de la conducta. ¿Qué cambió en el ambiente?',opts:[['La hoja fue retirada',true,'La hoja fue retirada después de la conducta.'],['El estudiante se sintió mejor',false,'Eso puede ocurrir, pero no es el cambio ambiental observado.'],['El estudiante tiene mala actitud',false,'Esto es una etiqueta, no una consecuencia.']]},
+{q:'Paso 3: ¿Qué función es plausible?',hint:'Si una tarea desaparece después de la conducta, piensa en escape de demandas.',opts:[['Escape de una tarea difícil',true,'Retirar la hoja sugiere que el escape puede mantener la conducta.'],['Rasgo de personalidad',false,'Eso etiqueta al estudiante, no explica la función.'],['Diagnóstico',false,'Puede ser contexto, pero no explica la relación funcional.']]}
+],
+nearOptions:[['El cliente golpea porque está enojado.',false,'Tentadora, pero etiqueta un evento privado.'],['La conducta es observable y medible.',false,'Cierto, pero demasiado general.'],['Golpear pudo haber producido atención o escape después de negar acceso.',true,'Es la mejor porque identifica eventos ambientales e historia de reforzamiento.'],['El cliente golpea por un diagnóstico.',false,'El diagnóstico no es una explicación funcional.']]
 },
-{
- id:'B.9', domain:{en:'Domain B · Concepts and Principles',es:'Dominio B · Conceptos y principios'}, short:{en:'Schedules of reinforcement',es:'Programas de reforzamiento'},
- title:{en:'B.9 • Distinguish among schedules of reinforcement',es:'B.9 • Distinguir entre programas de reforzamiento'},
- sub:{en:'Concepts and Principles',es:'Conceptos y principios'},
- tags:{en:['Ratio vs interval','Fixed vs variable','Scallop traps','Real examples'],es:['Razón vs intervalo','Fijo vs variable','Trampas de scallop','Ejemplos reales']},
- snapshot:{
-  title:{en:'Schedules describe when reinforcement becomes available.',es:'Los programas describen cuándo el reforzamiento está disponible.'},
-  means:{en:'A schedule of reinforcement specifies the response requirement or time condition for reinforcement.',es:'Un programa de reforzamiento especifica el requisito de respuestas o la condición de tiempo para recibir reforzamiento.'},
-  not:{en:'It is not simply “how often someone gets reinforced.” The requirement matters: responses vs time, fixed vs variable.',es:'No es simplemente “con qué frecuencia alguien recibe reforzamiento”. Importa el requisito: respuestas vs tiempo, fijo vs variable.'},
-  anchor:{en:'First decide: is reinforcement based on number of responses or passage of time? Then decide fixed or variable.',es:'Primero decide: ¿el reforzamiento depende del número de respuestas o del paso del tiempo? Luego decide si es fijo o variable.'}
- },
- quick:{prompt:{en:'A teacher gives a token after every 5 correct responses.',es:'Una maestra da una ficha después de cada 5 respuestas correctas.'}, question:{en:'What schedule is this?',es:'¿Qué programa es este?'}, options:[
-  [{en:'Fixed ratio',es:'Razón fija'},true,{en:'Reinforcement follows a fixed number of responses.',es:'El reforzamiento sigue un número fijo de respuestas.'}],
-  [{en:'Fixed interval',es:'Intervalo fijo'},false,{en:'Interval schedules are based on time, not number of responses.',es:'Los programas de intervalo se basan en tiempo, no en número de respuestas.'}]
- ]},
- trap:{prompt:{en:'Which word is the trap? “The student gets a break every 10 minutes if working.”',es:'¿Cuál parte es la pista/trampa? “El estudiante recibe un descanso cada 10 minutos si trabaja.”'}, options:[
-  [{en:'every 10 minutes',es:'cada 10 minutos'},true,{en:'Time-based wording usually points toward interval, not ratio.',es:'La frase basada en tiempo usualmente apunta a intervalo, no a razón.'}],
-  [{en:'student',es:'estudiante'},false,{en:'The learner is not the schedule cue.',es:'El aprendiz no es la clave para identificar el programa.'}],
-  [{en:'break',es:'descanso'},false,{en:'The reinforcer is not enough to identify the schedule.',es:'El reforzador no es suficiente para identificar el programa.'}]
- ]},
- scenario:{text:{en:'A learner earns access to a game after completing an average of 8 math problems, sometimes 6, sometimes 10.',es:'Un aprendiz gana acceso a un juego después de completar un promedio de 8 problemas, a veces 6, a veces 10.'}, steps:[
-  {q:{en:'Step 1: Is this response-based or time-based?',es:'Paso 1: ¿Está basado en respuestas o en tiempo?'}, options:[[{en:'Response-based',es:'Basado en respuestas'},true],[{en:'Time-based',es:'Basado en tiempo'},false],[{en:'Neither',es:'Ninguno'},false]], fb:{en:'Problems completed are responses.',es:'Los problemas completados son respuestas.'}},
-  {q:{en:'Step 2: Is the requirement fixed or changing?',es:'Paso 2: ¿El requisito es fijo o cambia?'}, options:[[{en:'Changing around an average',es:'Cambia alrededor de un promedio'},true],[{en:'Always the same',es:'Siempre igual'},false],[{en:'Time elapsed',es:'Tiempo transcurrido'},false]], fb:{en:'The requirement varies around an average.',es:'El requisito varía alrededor de un promedio.'}},
-  {q:{en:'Step 3: What schedule?',es:'Paso 3: ¿Qué programa es?'}, options:[[{en:'Variable ratio',es:'Razón variable'},true],[{en:'Fixed interval',es:'Intervalo fijo'},false],[{en:'Variable interval',es:'Intervalo variable'},false]], fb:{en:'Variable ratio: reinforcement after a varying number of responses.',es:'Razón variable: reforzamiento después de un número variable de respuestas.'}}
- ]},
- near:{prompt:{en:'Which answer is BEST?',es:'¿Cuál respuesta es la MEJOR?'}, options:[
-  [{en:'FR because reinforcement happens many times.',es:'RF porque el reforzamiento ocurre muchas veces.'},false,{en:'Many reinforcers does not identify fixed ratio.',es:'Muchos reforzadores no identifican razón fija.'}],
-  [{en:'VR because reinforcement follows an average number of responses.',es:'RV porque el reforzamiento sigue un promedio de respuestas.'},true,{en:'Variable ratio depends on a varying response requirement around an average.',es:'La razón variable depende de un requisito de respuestas que varía alrededor de un promedio.'}],
-  [{en:'VI because the number changes.',es:'IV porque el número cambia.'},false,{en:'Changing alone is not enough; interval schedules are based on time.',es:'Que cambie no es suficiente; los intervalos se basan en tiempo.'}],
-  [{en:'FI because the learner waits.',es:'IF porque el aprendiz espera.'},false,{en:'Waiting is not the key; the scenario is response-based.',es:'Esperar no es la clave; el escenario está basado en respuestas.'}]
- ]},
- rewrite:{prompt:{en:'Explain why “variable” does not automatically mean variable interval.',es:'Explica por qué “variable” no significa automáticamente intervalo variable.'}, keywords:['response','time','ratio','interval','average','requirement','respuesta','tiempo','razón','razon','intervalo','promedio','requisito'], good:{en:'Good. You distinguished the requirement type, not just the word variable.',es:'Bien. Distinguiste el tipo de requisito, no solo la palabra variable.'}},
- summary:{en:['Ratio = responses','Interval = time','Variable = average requirement'],es:['Razón = respuestas','Intervalo = tiempo','Variable = requisito promedio']},
- exam:[
-  {p:{en:'A learner is reinforced after an average of 10 responses. What schedule?',es:'Un aprendiz recibe reforzamiento después de un promedio de 10 respuestas. ¿Qué programa es?'}, a:[{en:'FI',es:'IF'},{en:'FR',es:'RF'},{en:'VI',es:'IV'},{en:'VR',es:'RV'}], c:3, e:{en:'Average number of responses = variable ratio.',es:'Promedio de respuestas = razón variable.'}},
-  {p:{en:'Which is the safest first step for schedule questions?',es:'¿Cuál es el primer paso más seguro en preguntas de programas?'}, a:[{en:'Identify the reinforcer',es:'Identificar el reforzador'},{en:'Decide response-based vs time-based',es:'Decidir si está basado en respuestas o en tiempo'},{en:'Pick the longest answer',es:'Escoger la respuesta más larga'},{en:'Look for diagnosis',es:'Buscar diagnóstico'}], c:1, e:{en:'Ratio vs interval is the first discrimination.',es:'Razón vs intervalo es la primera discriminación.'}},
-  {p:{en:'A paycheck every Friday is most like:',es:'Un cheque de pago cada viernes se parece más a:'}, a:[{en:'FR',es:'RF'},{en:'FI',es:'IF'},{en:'VR',es:'RV'},{en:'VI',es:'IV'}], c:1, e:{en:'Fixed time period before reinforcement availability = fixed interval.',es:'Período fijo de tiempo antes de que el reforzamiento esté disponible = intervalo fijo.'}}
- ]
+en:{
+start:'Start Guided Lab', back:'← Back', next:'Next →', cont:'Continue →', hint:'💡 Hint',
+correct:'Correct answer', notBest:'Not the best answer',
+quickOptions:[['Radical behaviorism',false,'It mentions an emotion but does not analyze environmental variables or reinforcement history.'],['Mentalism',true,'“Frustrated” labels a private event but does not explain behavior functionally.']],
+trapOptions:[['refuses',false,'This is the observable behavior. It is not the explanatory trap.'],['oppositional',true,'It is a label that sounds explanatory but does not identify function or contingencies.'],['because',false,'It signals an explanation. The trap is the label after it.']],
+scenario:[
+{q:'Step 1: What is the behavior?',hint:'Choose the observable action, not a feeling or interpretation.',opts:[['Throwing materials',true,'The observable behavior is throwing materials.'],['Being frustrated',false,'This is an interpretation/private event, not the main observable behavior.'],['Not liking math',false,'This is an inference, not observable behavior.']]},
+{q:'Step 2: What consequence followed?',hint:'Look immediately after the behavior. What changed in the environment?',opts:[['Worksheet removed',true,'The worksheet was removed after the behavior.'],['Student felt better',false,'That may occur, but it is not the observed environmental change.'],['Student has poor attitude',false,'This is a label, not a consequence.']]},
+{q:'Step 3: What function is plausible?',hint:'If a task disappears after behavior, think escape from demands.',opts:[['Escape from difficult task',true,'Removal of the worksheet suggests escape may maintain behavior.'],['Personality trait',false,'That labels the learner instead of explaining function.'],['Diagnosis',false,'It may be context, but it does not explain the functional relation.']]}
+],
+nearOptions:[['The client hits because he is angry.',false,'Tempting, but it labels a private event.'],['The behavior is observable and measurable.',false,'True, but too general.'],['Hitting may have produced attention or escape after denied access.',true,'Best because it identifies environmental events and reinforcement history.'],['The client hits because of a diagnosis.',false,'Diagnosis is not a functional explanation.']]
 }
-];
+};
 
-let current=TASKS[0], step=0, scenarioStep=0, examIndex=0, examScore=0, answeredScenarioSteps={};
-
-const T=x=> typeof x==='string'?x:x[lang];
-
-function init(){
- renderDomainFilter();
- renderTaskList();
- loadTask('A.3');
- applyUI();
+function t(){return L[lang]}
+function setLang(x){
+ lang=x; enBtn.classList.toggle('active',x==='en'); esBtn.classList.toggle('active',x==='es');
+ if(x==='en'){engineLabel.textContent='Universal Guided Learning Engine';taskName.textContent='Radical behaviorism';readyLabel.textContent='Current Task Readiness';masteryLabel.textContent='mastery building';pageTitle.textContent='A.3 • Radical behaviorism';heroText.textContent='Less reading, more discrimination: frequent decisions, clinical analysis, immediate feedback, and exam-style practice.';startBtn.textContent=t().start;newLabel.textContent='New universal structure';s1.textContent='1 · Concept Snapshot';meansTitle.textContent='What it means';notTitle.textContent='What it is NOT';understand.textContent='I understand →';s2.textContent='2 · Quick Discrimination';quickPrompt.textContent='“The client screams because she is frustrated.”';quickQuestion.textContent='What type of explanation is this?';quickHint.textContent='Ask: does it identify environmental variables, or only label a private event?';s3.textContent='3 · Trap Detection';trapPrompt.textContent='Which word is the trap? “The learner refuses because he is oppositional.”';trapHint.textContent='The trap is not the observable behavior. Look for the label that pretends to explain behavior.';s4.textContent='4 · Scenario Deconstruction';scenarioText.textContent='A student throws materials when given difficult math problems. The teacher removes the worksheet.';s5.textContent='5 · Near-Miss Training';nearPrompt.textContent='Which answer is BEST from a radical behaviorist perspective?';nearHint.textContent='Choose the option that identifies environmental events and reinforcement history.';summaryTitle.textContent='You practiced the thinking skill, not just the definition.';sum1.textContent='Environment over labels';sum2.textContent='Private events are behavior';again.textContent='Practice again';}
+ else{engineLabel.textContent='Motor Universal de Aprendizaje Guiado';taskName.textContent='Conductismo radical';readyLabel.textContent='Preparación de la tarea actual';masteryLabel.textContent='construyendo dominio';pageTitle.textContent='A.3 • Conductismo radical';heroText.textContent='Menos lectura, más discriminación: decisiones frecuentes, análisis clínico, feedback inmediato y práctica estilo examen.';startBtn.textContent=t().start;newLabel.textContent='Nueva estructura universal';s1.textContent='1 · Resumen del concepto';meansTitle.textContent='Qué significa';notTitle.textContent='Qué NO significa';understand.textContent='Entendido →';s2.textContent='2 · Discriminación rápida';quickPrompt.textContent='“La cliente grita porque está frustrada.”';quickQuestion.textContent='¿Qué tipo de explicación es esta?';quickHint.textContent='Pregunta: ¿identifica variables ambientales o solo etiqueta un evento privado?';s3.textContent='3 · Detección de trampas';trapPrompt.textContent='¿Cuál palabra es la trampa? “El aprendiz se niega porque es oposicionista.”';trapHint.textContent='La trampa no es la conducta observable. Busca la etiqueta que pretende explicar la conducta.';s4.textContent='4 · Deconstrucción del escenario';scenarioText.textContent='Un estudiante tira materiales cuando recibe problemas difíciles de matemáticas. La maestra retira la hoja de trabajo.';s5.textContent='5 · Entrenamiento con opciones cercanas';nearPrompt.textContent='¿Cuál respuesta es la MEJOR desde la perspectiva del conductismo radical?';nearHint.textContent='Escoge la opción que identifica eventos ambientales e historia de reforzamiento.';summaryTitle.textContent='Practicaste la habilidad de pensar, no solo la definición.';sum1.textContent='Ambiente sobre etiquetas';sum2.textContent='Eventos privados son conducta';again.textContent='Practicar otra vez';}
+ document.querySelectorAll('[id^=back]').forEach(b=>b.textContent=t().back);
+ document.querySelectorAll('[id^=next]').forEach(b=>b.textContent=t().next);
+ scenarioContinue.textContent=t().cont; document.querySelectorAll('[id^=hint]').forEach(b=>b.textContent=t().hint);
+ renderAllOptions(); renderScenario();
 }
-function renderDomainFilter(){
- const domains=[...new Map(TASKS.map(t=>[T(t.domain), t.domain])).values()];
- domainFilter.innerHTML=`<option value="all">${UI[lang].all}</option>`+domains.map(d=>`<option value="${T(d)}">${T(d)}</option>`).join('');
-}
-function renderTaskList(filter='all'){
- let html='', last='';
- TASKS.filter(t=>filter==='all'||T(t.domain)===filter).forEach(t=>{
-  if(T(t.domain)!==last){html+=`<div class="domainTitle">${T(t.domain)}</div>`;last=T(t.domain);}
-  html+=`<div class="task ${t.id===current?.id?'active':''}" onclick="loadTask('${t.id}')"><div class="num">${t.id.split('.')[1]}</div><div><b>${t.id}</b><br>${T(t.short)}</div></div>`;
- });
- taskList.innerHTML=html;
-}
-function filterDomain(){renderTaskList(domainFilter.value)}
-function setLang(l){
- lang=l;
- enBtn.classList.toggle('active',l==='en'); esBtn.classList.toggle('active',l==='es');
- renderDomainFilter();
- renderTaskList('all');
- hydrate();
- applyUI();
-}
-function applyUI(){
- document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=UI[lang][el.dataset.i18n]);
- heroText.textContent=UI[lang].heroGeneric;
-}
-function loadTask(id){
- current=TASKS.find(t=>t.id===id);
- resetLabOnly();
- hydrate();
- renderTaskList(domainFilter?.value || 'all');
-}
-function hydrate(){
- pageTitle.textContent=T(current.title);
- pageSub.textContent=T(current.sub);
- heroTitle.textContent=T(current.short)+' · Guided Thinking Lab';
- heroText.textContent=UI[lang].heroGeneric;
- tags.innerHTML=current.tags[lang].map(x=>`<span class="pill">${x}</span>`).join('');
- snapTitle.textContent=T(current.snapshot.title);
- snapMeans.textContent=T(current.snapshot.means);
- snapNot.textContent=T(current.snapshot.not);
- snapAnchor.textContent=T(current.snapshot.anchor);
- quickPrompt.textContent=T(current.quick.prompt);
- quickQuestion.textContent=T(current.quick.question);
- quickOptions.innerHTML=current.quick.options.map((o,i)=>`<button class="option" onclick="pickStandard('quick',${i})">${T(o[0])}</button>`).join('');
- trapPrompt.textContent=T(current.trap.prompt);
- trapOptions.innerHTML=current.trap.options.map((o,i)=>`<button class="option" onclick="pickStandard('trap',${i})">${T(o[0])}</button>`).join('');
- scenarioText.textContent=T(current.scenario.text);
- scenarioStep=0; answeredScenarioSteps={}; renderScenario();
- nearPrompt.textContent=T(current.near.prompt);
- nearOptions.innerHTML=current.near.options.map((o,i)=>`<button class="option" onclick="pickStandard('near',${i})">${String.fromCharCode(65+i)}. ${T(o[0])}</button>`).join('');
- rewritePrompt.textContent=T(current.rewrite.prompt);
- rewriteBox.placeholder=lang==='en'?'Write a short explanation using the key variables...':'Escribe una explicación corta usando las variables clave...';
- summaryCards.innerHTML=current.summary[lang].map((x,i)=>`<div class="mini ${['green','yellow','purple'][i%3]}"><b>${x}</b><br>${lang==='en'?'Use this as an exam anchor.':'Úsalo como ancla para el examen.'}</div>`).join('');
- applyUI();
-}
-function startLab(){lab.classList.remove('hidden'); exam.classList.add('hidden'); showStep(0); window.scrollTo({top:0,behavior:'smooth'});}
-function resetLabOnly(){
- lab.classList.add('hidden'); exam.classList.add('hidden'); step=0; scenarioStep=0; examIndex=0; examScore=0; answeredScenarioSteps={};
- document.querySelectorAll('.feedback').forEach(f=>{f.className='feedback';f.innerHTML=''});
- document.querySelectorAll('.nextBtn').forEach(b=>b.classList.add('hidden'));
- sideBar.style.width='0%'; scoreText.textContent='0%';
-}
-function resetCurrent(){loadTask(current.id)}
-function showStep(n){
- step=n;
- document.querySelectorAll('[data-step]').forEach((s,i)=>s.classList.toggle('hidden',i!==n));
- dots.innerHTML=[...document.querySelectorAll('[data-step]')].map((_,i)=>`<span class="dot ${i<=n?'on':''}"></span>`).join('');
- const pct=Math.round((n/6)*100); sideBar.style.width=pct+'%'; scoreText.textContent=pct+'%';
-}
-function nextStep(){showStep(Math.min(step+1,6));}
-function prevStep(){showStep(Math.max(step-1,0));}
-function explainAll(options, selectedIndex){
- return `<div class="explainList">`+options.map((o,i)=>{
-  const ok=o[1], chosen=i===selectedIndex;
-  const label=ok?`✅ ${UI[lang].correct}`:(chosen?`⚠️ ${UI[lang].notBest}`:'•');
-  return `<div class="explainItem ${ok?'green':(chosen?'red':'')}"><b>${label}: ${T(o[0])}</b><br>${T(o[2])}</div>`;
- }).join('')+`</div>`;
-}
-function pickStandard(type,i){
- const optionSet=current[type].options, data=optionSet[i], ok=data[1];
- const area=document.querySelector(`[data-step="${type}"]`);
- area.querySelectorAll('.option').forEach((b,idx)=>{
-   b.disabled=true;
-   if(optionSet[idx][1]) b.classList.add('correct');
-   else if(idx===i) b.classList.add('wrong');
-   else b.classList.add('notchosen');
- });
- const fb=document.getElementById(type+'Feedback');
- fb.className='feedback show '+(ok?'green':'red');
- fb.innerHTML=(ok?'✅ ':'⚠️ ')+T(data[2])+explainAll(optionSet,i);
- area.querySelector('.nextBtn').classList.remove('hidden');
+function startLab(){lab.classList.remove('hidden');showStep(0)}
+function showStep(n){step=n;[...document.querySelectorAll('[data-step]')].forEach((s,i)=>s.classList.toggle('hidden',i!==n));dots.innerHTML=[...document.querySelectorAll('[data-step]')].map((_,i)=>`<span class="dot ${i<=n?'on':''}"></span>`).join('');let pct=Math.round(n/5*100);sideBar.style.width=pct+'%';scoreText.textContent=pct+'%'}
+function nextStep(){showStep(Math.min(step+1,5))}
+function prevStep(){showStep(Math.max(step-1,0))}
+function toggleHint(id){document.getElementById(id).classList.toggle('show')}
+function renderOptions(elId, opts, type){document.getElementById(elId).innerHTML=opts.map((o,i)=>`<button class="option" onclick="pick('${type}',${i})">${o[0]}</button>`).join('')}
+function renderAllOptions(){renderOptions('quickOptions',t().quickOptions,'quick');renderOptions('trapOptions',t().trapOptions,'trap');renderOptions('nearOptions',t().nearOptions,'near')}
+function cards(opts, selected){return `<div class="coachGrid">`+opts.map((o,i)=>{let ok=o[1], chosen=i===selected;let cls=ok?'green':(chosen?'red':'');let label=ok?'✅ '+t().correct:(chosen?'⚠️ '+t().notBest:'•');return `<div class="coachCard ${cls}"><b>${label}: ${o[0]}</b>${o[2]}</div>`}).join('')+`</div>`}
+function pick(type,i){
+ const opts=t()[type+'Options']; const ok=opts[i][1]; const area = type==='quick'?quickOptions:type==='trap'?trapOptions:nearOptions; const fb = type==='quick'?quickFeedback:type==='trap'?trapFeedback:nearFeedback;
+ [...area.querySelectorAll('.option')].forEach((b,idx)=>{b.disabled=true;if(opts[idx][1])b.classList.add('correct');else if(idx===i)b.classList.add('wrong');else b.classList.add('notchosen')});
+ fb.className='feedback show '+(ok?'green':'red'); fb.innerHTML=`<b>${ok?'✅':'⚠️'} ${opts[i][2]}</b>`+cards(opts,i);
+ fb.closest('.card').querySelector('.nextBtn').classList.remove('hidden');
 }
 function renderScenario(){
- const s=current.scenario.steps[scenarioStep];
- scenarioQ.textContent=T(s.q);
- scenarioOptions.innerHTML=s.options.map((o,i)=>`<button class="option" onclick="pickScenario(${i})">${T(o[0])}</button>`).join('');
- scenarioFeedback.className='feedback';
- scenarioFeedback.innerHTML='';
+ const s=t().scenario[scenarioStep]; if(!s)return;
+ scenarioQ.textContent=s.q; scenarioHint.textContent=s.hint; scenarioHint.classList.remove('show');
+ scenarioOptions.innerHTML=s.opts.map((o,i)=>`<button class="option" onclick="pickScenario(${i})">${o[0]}</button>`).join('');
+ scenarioFeedback.className='feedback'; scenarioFeedback.innerHTML=''; scenarioContinue.classList.add('hidden'); next4.classList.add('hidden');
 }
 function pickScenario(i){
- const s=current.scenario.steps[scenarioStep], ok=s.options[i][1];
- document.querySelectorAll('#scenarioOptions .option').forEach((b,idx)=>{
-   b.disabled=true;
-   if(s.options[idx][1]) b.classList.add('correct');
-   else if(idx===i) b.classList.add('wrong');
-   else b.classList.add('notchosen');
- });
- scenarioFeedback.className='feedback show '+(ok?'green':'red');
- scenarioFeedback.innerHTML=(ok?'✅ ':'⚠️ ')+T(s.fb)+explainAll(s.options,i);
- // FIX: no automatic jump. The learner reads the feedback, then controls the next move.
- if(scenarioStep < current.scenario.steps.length - 1){
-   document.getElementById('scenarioContinue').classList.remove('hidden');
- } else {
-   document.querySelector('[data-step="scenario"] .nextBtn').classList.remove('hidden');
- }
+ const s=t().scenario[scenarioStep]; const opts=s.opts; const ok=opts[i][1];
+ [...scenarioOptions.querySelectorAll('.option')].forEach((b,idx)=>{b.disabled=true;if(opts[idx][1])b.classList.add('correct');else if(idx===i)b.classList.add('wrong');else b.classList.add('notchosen')});
+ scenarioFeedback.className='feedback show '+(ok?'green':'red'); scenarioFeedback.innerHTML=`<b>${ok?'✅':'⚠️'} ${opts[i][2]}</b>`+cards(opts,i);
+ if(scenarioStep < t().scenario.length-1) scenarioContinue.classList.remove('hidden'); else next4.classList.remove('hidden');
 }
-function continueScenario(){
- if(scenarioStep < current.scenario.steps.length - 1){
-   scenarioStep++;
-   renderScenario();
- }
-}
-function checkRewrite(){
- const txt=rewriteBox.value.toLowerCase();
- const ok=current.rewrite.keywords.some(w=>txt.includes(w));
- rewriteFeedback.className='feedback show '+(ok?'green':'red');
- rewriteFeedback.innerHTML= ok ? '✅ '+T(current.rewrite.good) : '⚠️ '+(lang==='en'?'Add the key discrimination: ':'Agrega la discriminación clave: ')+current.rewrite.keywords.slice(0,6).join(', ')+'.';
- if(ok) document.querySelector('[data-step="rewrite"] .nextBtn').classList.remove('hidden');
-}
-function examMode(){exam.classList.remove('hidden'); examIndex=0; examScore=0; renderExam(); window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});}
-function renderExam(){
- const q=current.exam[examIndex];
- examTitle.textContent=(lang==='en'?'Question ':'Pregunta ')+(examIndex+1)+' '+(lang==='en'?'of':'de')+' '+current.exam.length;
- examPrompt.textContent=T(q.p);
- examOptions.innerHTML=q.a.map((x,i)=>`<button class="option" onclick="pickExam(${i})">${String.fromCharCode(65+i)}. ${T(x)}</button>`).join('');
- examFeedback.className='feedback'; examFeedback.innerHTML=''; examNext.classList.add('hidden');
-}
-function examExplainAll(q, selectedIndex){
- return `<div class="explainList">`+q.a.map((a,i)=>{
-  const ok=i===q.c, chosen=i===selectedIndex;
-  const label=ok?`✅ ${UI[lang].correct}`:(chosen?`⚠️ ${UI[lang].notBest}`:'•');
-  return `<div class="explainItem ${ok?'green':(chosen?'red':'')}"><b>${label}: ${T(a)}</b></div>`;
- }).join('')+`</div>`;
-}
-function pickExam(i){
- const q=current.exam[examIndex], ok=i===q.c;
- if(ok) examScore++;
- document.querySelectorAll('#examOptions .option').forEach((b,idx)=>{b.disabled=true;if(idx===q.c)b.classList.add('correct');else if(idx===i)b.classList.add('wrong');else b.classList.add('notchosen')});
- examFeedback.className='feedback show '+(ok?'green':'red');
- examFeedback.innerHTML=(ok?'✅ ':'⚠️ ')+T(q.e)+examExplainAll(q,i);
- examNext.classList.remove('hidden');
-}
-function nextExam(){
- examIndex++;
- if(examIndex<current.exam.length) renderExam();
- else{
-  examTitle.textContent=lang==='en'?'Exam Reality Complete':'Modo Realidad del Examen completado';
-  examPrompt.textContent=(lang==='en'?'Score: ':'Puntuación: ')+`${examScore}/${current.exam.length}`;
-  examOptions.innerHTML='';
-  examFeedback.className='feedback show green';
-  examFeedback.innerHTML=lang==='en'?'Mastery target: learner can discriminate the concept in scenarios, reject traps, and choose the BEST exam answer.':'Meta de dominio: el estudiante puede discriminar el concepto en escenarios, rechazar trampas y escoger la MEJOR respuesta del examen.';
-  examNext.classList.add('hidden');
- }
-}
-init();
+function continueScenario(){scenarioStep++; renderScenario()}
+function resetAll(){location.reload()}
+renderAllOptions(); renderScenario();
 </script>
 </body>
 </html>
