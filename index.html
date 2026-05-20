@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>BCBA Study Hub — Micro-Lesson Engine v27 FULL</title>
+<title>BCBA Study Hub — Micro-Lesson + Content Mastery Engine v29</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -208,6 +208,23 @@ aside{width:300px}
 .concept-contrast-table td:first-child{border-left:1px solid var(--border-soft);border-radius:10px 0 0 10px;font-weight:900;color:var(--green-dark)}
 .concept-contrast-table td:last-child{border-right:1px solid var(--border-soft);border-radius:0 10px 10px 0}
 .philo-badge{display:inline-flex;border-radius:999px;background:var(--green-light);color:var(--green-dark);font-size:10px;font-weight:900;padding:4px 8px;margin:2px 4px 2px 0}
+
+
+/* v29 Content Mastery Engine */
+.cme-reference-strip{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 16px}
+.cme-ref{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:6px 10px;font-size:10px;font-weight:900;color:var(--ink-mid);text-transform:uppercase;letter-spacing:.04em}
+.cme-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin:16px 0;box-shadow:var(--shadow-sm)}
+.cme-card.master{background:linear-gradient(135deg,var(--green-light),var(--white));border-color:var(--green-mid)}
+.cme-title{font-family:var(--font-display);font-size:22px;font-weight:900;color:var(--ink);line-height:1.2;margin-bottom:8px}
+.cme-text{font-size:14px;line-height:1.85;color:var(--ink-mid);font-weight:650}
+.cme-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.cme-mini{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-md);padding:14px}
+.cme-mini h4{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--green);font-weight:900;margin-bottom:8px}
+.cme-mini p{font-size:13px;line-height:1.7;color:var(--ink-mid);font-weight:650}
+.cme-chain{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.cme-chain-item{background:rgba(255,255,255,.78);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;line-height:1.65;color:var(--ink-mid);font-weight:700}
+.cme-tag{display:inline-flex;border-radius:999px;background:var(--blue-light);border:1px solid var(--blue-border);color:var(--blue);font-size:10px;font-weight:900;padding:4px 8px;margin:3px 4px 3px 0;text-transform:uppercase;letter-spacing:.04em}
+@media(max-width:820px){.cme-grid{grid-template-columns:1fr}}
 
 </style>
 </head>
@@ -1309,6 +1326,30 @@ function deepFallbackLearn(dom,task){
       quick_check_es:{q:'Un BCBA observa que los gritos ocurren más cuando comienza el trabajo independiente, pero aún no ha cambiado variables. ¿Qué meta está mejor representada?',options:{A:'Prediction',B:'Control',C:'Punishment'},correct:'A',rationale:'El BCBA identificó un patrón que permite anticipar cuándo es probable la conducta. Aún no manipuló una variable, por eso no es control.'}
     };
   }
+  if(task.id==='A.3'){
+    return {
+      hook_en:'If a client says “I hit him because I was angry,” how would a radical behaviorist analyze that statement?',
+      hook_es:'Si un cliente dice “le pegué porque estaba enojado”, ¿cómo analizaría esa frase un radical behaviorist?',
+      plain_en:'Radical behaviorism is the philosophy of behavior analysis that includes all behavior, both public behavior and private events such as thinking, feeling, and sensing. It does not deny emotions or thoughts. Instead, it treats them as behavior that also occurs in relation to environmental variables and learning history. A radical behaviorist avoids using private events as final explanations for public behavior. The goal is to identify functional relations that can guide effective action.',
+      plain_es:'El radical behaviorism es la filosofía del análisis de conducta que incluye toda la conducta, tanto conducta pública como eventos privados como pensar, sentir y percibir. No niega emociones ni pensamientos. Los trata como conducta que también ocurre en relación con variables ambientales e historia de aprendizaje. Un radical behaviorist evita usar eventos privados como explicaciones finales de la conducta pública. La meta es identificar relaciones funcionales que guíen acciones efectivas.',
+      official_en:'Task A.3 requires the learner to describe and explain behavior from the perspective of radical behaviorism. This means explaining behavior, including private events, through natural science, environmental relations, selection by consequences, and learning history rather than mentalistic or circular explanations.',
+      official_es:'La tarea A.3 requiere describir y explicar conducta desde la perspectiva del radical behaviorism. Esto significa explicar la conducta, incluyendo eventos privados, mediante ciencia natural, relaciones ambientales, selección por consecuencias e historia de aprendizaje, no mediante explicaciones mentalistas o circulares.',
+      example_en:'A learner says, “I did not complete the worksheet because I felt anxious.” A radical behaviorist does not deny the anxiety. The BCBA treats the report of anxiety as behavior and still investigates task difficulty, prior reinforcement for escape, available support, prompts, and consequences for task completion or avoidance.',
+      example_es:'Un estudiante dice: “No completé la hoja porque me sentí ansioso.” Un radical behaviorist no niega la ansiedad. El BCBA trata el reporte de ansiedad como conducta y aun así investiga dificultad de la tarea, reinforcement previo por escape, apoyo disponible, prompts y consecuencias por completar o evitar la tarea.',
+      comparison_en:[{label:'Radical behaviorism',meaning:'Includes public and private events in a science of behavior.',example:'Thoughts and feelings are behavior to be analyzed.'},{label:'Mentalism',meaning:'Uses internal states as causes that stop the analysis.',example:'“He aggressed because he is angry.”'},{label:'Methodological behaviorism',meaning:'Focuses mainly on publicly observable behavior.',example:'Private events are often excluded from scientific analysis.'}],
+      comparison_es:[{label:'Radical behaviorism',meaning:'Incluye eventos públicos y privados en una ciencia de la conducta.',example:'Pensamientos y sentimientos son conducta que debe analizarse.'},{label:'Mentalism',meaning:'Usa estados internos como causas que detienen el análisis.',example:'“Agredió porque está enojado.”'},{label:'Methodological behaviorism',meaning:'Se enfoca principalmente en conducta públicamente observable.',example:'Los eventos privados suelen excluirse del análisis científico.'}],
+      trap_en:'Common trap: believing radical behaviorism ignores emotions. It does not. It accepts private events but does not use them as independent causes that replace environmental analysis.',
+      trap_es:'Trampa común: creer que radical behaviorism ignora emociones. No las ignora. Acepta eventos privados, pero no los usa como causas independientes que sustituyen el análisis ambiental.',
+      strategy_en:'When you see thoughts, feelings, motivation, or emotion in an exam stem, ask: is the answer treating them as final causes, or analyzing them as behavior related to environmental variables?',
+      strategy_es:'Cuando veas pensamientos, sentimientos, motivación o emoción en una pregunta, pregunta: ¿la respuesta los trata como causas finales o los analiza como conducta relacionada con variables ambientales?',
+      memory_en:'Private events are real behavior, not final explanations.',
+      memory_es:'Los eventos privados son conducta real, no explicaciones finales.',
+      key_points_en:['Radical behaviorism includes private events.','It rejects mentalistic explanations that stop functional analysis.','A BCBA still looks for environmental variables and learning history.'],
+      key_points_es:['Radical behaviorism incluye eventos privados.','Rechaza explicaciones mentalistas que detienen el análisis funcional.','Un BCBA sigue buscando variables ambientales e historia de aprendizaje.'],
+      quick_check_en:{q:'Which statement best reflects radical behaviorism?',options:{A:'Private events are real behavior, but they should not replace analysis of environmental variables.',B:'Thoughts and feelings do not exist and should be ignored.',C:'Behavior is caused by internal personality traits.'},correct:'A',rationale:'Radical behaviorism includes private events but explains behavior through behavioral principles and environmental relations.'},
+      quick_check_es:{q:'¿Qué enunciado refleja mejor el radical behaviorism?',options:{A:'Los eventos privados son conducta real, pero no deben reemplazar el análisis de variables ambientales.',B:'Los pensamientos y sentimientos no existen y deben ignorarse.',C:'La conducta es causada por rasgos internos de personalidad.'},correct:'A',rationale:'Radical behaviorism incluye eventos privados, pero explica la conducta mediante principios conductuales y relaciones ambientales.'}
+    };
+  }
   return {
     hook_en:`Why does ${task.id} matter for real BCBA decision making?`,
     hook_es:`¿Por qué ${task.id} importa para tomar decisiones reales como BCBA?`,
@@ -1335,6 +1376,84 @@ function deepFallbackLearn(dom,task){
 // Helper — get the right language field from bilingual content
 function lc(content,field){const direct=content[field+'_'+lang]; if(direct)return direct; const en=content[field+'_en']||content[field]||''; return lang==='es'?translateLocalText(en):en;}
 function lcArr(content,field){const direct=content[field+'_'+lang]; if(direct)return direct; const en=content[field+'_en']||content[field]||[]; return lang==='es'&&Array.isArray(en)?en.map(x=>translateLocalText(x)):en;}
+
+/* v29 Content Mastery Engine
+   Purpose: the Learn Mode must work like a real ABA study encyclopedia, not a generic quiz explanation.
+   Each task can now carry source-informed content: Cooper-style conceptual explanation, clinical application,
+   non-examples, exam traps, and concept discrimination. This first implementation fully upgrades A.3. */
+const TASK_LIBRARY={
+  'A.3':{
+    references:['BACB 6th Edition TCO — A.3','Cooper, Heron & Heward — Applied Behavior Analysis','Skinner — Radical Behaviorism'],
+    sourceNote_en:'Source-informed study synthesis. This lesson paraphrases standard behavior-analytic concepts; it does not reproduce copyrighted textbook text.',
+    sourceNote_es:'Síntesis de estudio basada en referencias reales. Esta lección parafrasea conceptos estándar del análisis de conducta; no reproduce texto con copyright.',
+    why_en:'A.3 matters because it teaches the philosophical lens behind every BCBA decision: behavior, including private events, is lawful and should be explained through environmental relations and learning history rather than mentalistic causes.',
+    why_es:'A.3 importa porque enseña el lente filosófico detrás de cada decisión de un BCBA: la conducta, incluyendo eventos privados, es ordenada y debe explicarse mediante relaciones ambientales e historia de aprendizaje, no mediante causas mentalistas.',
+    encyclopedia_en:[
+      {title:'What radical behaviorism actually says',body:'Radical behaviorism is the philosophy of behavior analysis associated with B. F. Skinner. It does not deny thoughts, feelings, or emotions. Instead, it treats them as behavior—private events that occur within the skin and are accessible primarily to the person experiencing them. The radical behaviorist position is “radical” because it includes all behavior, public and private, within a natural science of behavior.'},
+      {title:'Private events are real, but not independent causes',body:'A client may report “I felt anxious” before avoiding a task. Radical behaviorism accepts the private event as real, but it does not stop the analysis there. The BCBA still asks what environmental variables, motivating operations, reinforcement history, and current contingencies are related to both the private event and the public behavior.'},
+      {title:'Mentalism vs radical behaviorism',body:'Mentalism explains behavior by appealing to inner causes as if they are independent explanations: “He aggressed because he was angry.” Radical behaviorism may acknowledge anger as part of the behavioral event, but it searches for functional relations: What antecedents were present? What consequences followed aggression? What learning history made aggression likely in that context?'},
+      {title:'Why it matters clinically',body:'In practice, radical behaviorism protects the BCBA from circular explanations. Saying “she avoids work because she is unmotivated” does not identify variables to change. A radical behaviorist asks whether the task is difficult, reinforcement is weak, escape has been reinforced, prompts are absent, or competing reinforcers are present.'}
+    ],
+    encyclopedia_es:[
+      {title:'Qué dice realmente el radical behaviorism',body:'El radical behaviorism es la filosofía del análisis de conducta asociada con B. F. Skinner. No niega pensamientos, sentimientos ni emociones. Los trata como conducta: eventos privados que ocurren “dentro de la piel” y son accesibles principalmente para la persona que los experimenta. Es “radical” porque incluye toda la conducta, pública y privada, dentro de una ciencia natural de la conducta.'},
+      {title:'Los eventos privados son reales, pero no causas independientes',body:'Un cliente puede decir “me sentí ansioso” antes de evitar una tarea. El radical behaviorism acepta el evento privado como real, pero no detiene el análisis ahí. El BCBA sigue preguntando qué variables ambientales, motivating operations, historia de reinforcement y contingencias actuales están relacionadas tanto con el evento privado como con la conducta pública.'},
+      {title:'Mentalism vs radical behaviorism',body:'El mentalism explica la conducta usando causas internas como si fueran explicaciones independientes: “Agredió porque estaba enojado.” El radical behaviorism puede reconocer el enojo como parte del evento conductual, pero busca relaciones funcionales: ¿qué antecedentes estaban presentes?, ¿qué consecuencias siguieron a la agresión?, ¿qué historia de aprendizaje hizo probable esa conducta en ese contexto?'},
+      {title:'Por qué importa clínicamente',body:'En la práctica, el radical behaviorism protege al BCBA de explicaciones circulares. Decir “ella evita el trabajo porque no está motivada” no identifica variables que se puedan cambiar. Un radical behaviorist pregunta si la tarea es difícil, si el reinforcement es débil, si el escape ha sido reforzado, si faltan prompts o si hay reforzadores competidores.'}
+    ],
+    nonExamples_en:[
+      {label:'Not radical behaviorism',body:'“He hits because he has anger inside him.” This treats anger as the cause and stops the analysis.'},
+      {label:'Not radical behaviorism',body:'“Private events do not exist, so ignore emotions.” Radical behaviorism does not deny private events.'},
+      {label:'Not radical behaviorism',body:'“We cannot study thoughts because they are private.” Radical behaviorism includes private events but studies them through behavioral principles.'}
+    ],
+    nonExamples_es:[
+      {label:'No es radical behaviorism',body:'“Él pega porque tiene enojo dentro.” Esto trata el enojo como causa y detiene el análisis.'},
+      {label:'No es radical behaviorism',body:'“Los eventos privados no existen, así que ignora las emociones.” El radical behaviorism no niega eventos privados.'},
+      {label:'No es radical behaviorism',body:'“No podemos estudiar pensamientos porque son privados.” El radical behaviorism incluye eventos privados, pero los analiza mediante principios conductuales.'}
+    ],
+    examTraps_en:[
+      'Trap 1: Thinking radical behaviorism ignores feelings. Correct: it includes feelings as private behavior.',
+      'Trap 2: Treating private events as independent causes. Correct: analyze environmental variables and learning history.',
+      'Trap 3: Confusing radical behaviorism with methodological behaviorism. Correct: methodological behaviorism focuses on publicly observable events; radical behaviorism includes private events.'
+    ],
+    examTraps_es:[
+      'Trampa 1: Pensar que radical behaviorism ignora sentimientos. Correcto: incluye sentimientos como conducta privada.',
+      'Trampa 2: Tratar eventos privados como causas independientes. Correcto: analiza variables ambientales e historia de aprendizaje.',
+      'Trampa 3: Confundir radical behaviorism con methodological behaviorism. Correcto: methodological behaviorism se enfoca en eventos públicamente observables; radical behaviorism incluye eventos privados.'
+    ],
+    discrimination_en:[
+      {label:'Radical behaviorism',meaning:'Includes public and private events as behavior and explains them through behavioral principles.',example:'“Anxiety is real, but we still analyze antecedents, consequences, and learning history.”'},
+      {label:'Methodological behaviorism',meaning:'Limits science mainly to publicly observable behavior.',example:'“Only what observers can directly see should be included.”'},
+      {label:'Mentalism',meaning:'Uses inner states as explanatory causes without identifying functional relations.',example:'“He ran away because he is oppositional.”'}
+    ],
+    discrimination_es:[
+      {label:'Radical behaviorism',meaning:'Incluye eventos públicos y privados como conducta y los explica mediante principios conductuales.',example:'“La ansiedad es real, pero aun así analizamos antecedentes, consecuencias e historia de aprendizaje.”'},
+      {label:'Methodological behaviorism',meaning:'Limita la ciencia principalmente a conducta públicamente observable.',example:'“Solo lo que otros pueden ver directamente debe incluirse.”'},
+      {label:'Mentalism',meaning:'Usa estados internos como causas explicativas sin identificar relaciones funcionales.',example:'“Se escapó porque es oposicionista.”'}
+    ]
+  }
+};
+function taskLibraryEntry(task){return (TASK_LIBRARY&&TASK_LIBRARY[task.id])||null;}
+function libField(lib,field){if(!lib)return null;return lib[field+'_'+lang]||lib[field+'_en']||lib[field]||null;}
+function contentMasteryHtml(task){
+  const lib=taskLibraryEntry(task); if(!lib)return '';
+  const refs=(lib.references||[]).map(r=>`<span class="cme-ref">📚 ${r}</span>`).join('');
+  const enc=libField(lib,'encyclopedia')||[];
+  const non=libField(lib,'nonExamples')||[];
+  const traps=libField(lib,'examTraps')||[];
+  const disc=libField(lib,'discrimination')||[];
+  return `<div class="cme-card master">
+    <div class="deep-label">📚 ${lang==='es'?'Content Mastery Engine':'Content Mastery Engine'}</div>
+    <div class="cme-title">${lang==='es'?'Enciclopedia aplicada del task':'Applied Task Encyclopedia'}</div>
+    <div class="cme-text">${libField(lib,'why')||''}</div>
+    <div class="cme-reference-strip">${refs}</div>
+    <div class="cme-text" style="font-size:12px;color:var(--ink-soft)">${libField(lib,'sourceNote')||''}</div>
+  </div>
+  ${enc.map(x=>`<div class="cme-card"><div class="cme-title">${x.title}</div><div class="cme-text">${x.body}</div></div>`).join('')}
+  ${disc.length?`<div class="cme-card"><div class="deep-label">🧭 ${lang==='es'?'Discriminación conceptual':'Concept Discrimination'}</div><div class="cme-grid">${disc.map(x=>`<div class="cme-mini"><h4>${x.label}</h4><p><strong>${lang==='es'?'Significa':'Means'}:</strong> ${x.meaning}</p><p style="margin-top:6px"><strong>${lang==='es'?'Ejemplo':'Example'}:</strong> ${x.example}</p></div>`).join('')}</div></div>`:''}
+  ${non.length?`<div class="cme-card"><div class="deep-label">🚫 ${lang==='es'?'Non-examples / Qué NO es':'Non-Examples'}</div><div class="cme-chain">${non.map(x=>`<div class="cme-chain-item"><span class="cme-tag">${x.label}</span><br>${x.body}</div>`).join('')}</div></div>`:''}
+  ${traps.length?`<div class="cme-card"><div class="deep-label">⚠️ ${lang==='es'?'Trampas reales del examen':'Real Exam Traps'}</div><div class="cme-chain">${traps.map(x=>`<div class="cme-chain-item">${x}</div>`).join('')}</div></div>`:''}`;
+}
+
 
 async function generateQuestion(target){
   const dom=DOMAINS.find(d=>d.id===target.domain)||DOMAINS[1];
@@ -1619,6 +1738,7 @@ function getTaskSubskills(task){
   const make=(key,en,es,plain_en,plain_es,examples_en,examples_es)=>({key,en,es,plain_en,plain_es,examples_en,examples_es});
   const exact={
     'A.1':[make('description','Description','Description','Observe, define, and measure what behavior occurs without interpretation.','Observar, definir y medir qué conducta ocurre sin interpretación.','Operational definitions, counts, duration, direct observation.','Definiciones operacionales, conteos, duración, observación directa.'),make('prediction','Prediction','Prediction','Identify reliable patterns that tell when behavior is more or less likely.','Identificar patrones confiables que indican cuándo la conducta es más o menos probable.','Behavior occurs more during transitions or difficult tasks.','La conducta ocurre más durante transiciones o tareas difíciles.'),make('control','Control','Control','Demonstrate that changing environmental variables changes behavior.','Demostrar que cambiar variables ambientales cambia la conducta.','Intervention changes behavior only when the variable is changed.','La intervención cambia la conducta solo cuando cambia la variable.')],
+    'A.3':[make('radical-behaviorism-core','Radical behaviorism','Radical behaviorism','The philosophy of behavior analysis that includes public behavior and private events within a natural science of behavior.','La filosofía del análisis de conducta que incluye conducta pública y eventos privados dentro de una ciencia natural de la conducta.','A BCBA explains avoidance by analyzing contingencies while also accepting the client’s report of anxiety as behavior.','Un BCBA explica la evitación analizando contingencias y aceptando el reporte de ansiedad del cliente como conducta.'),make('private-events','Private events','Eventos privados','Thoughts, feelings, and sensations that are accessible primarily to the person experiencing them.','Pensamientos, sentimientos y sensaciones accesibles principalmente para la persona que los experimenta.','A client saying “I feel nervous” is reporting a private event.','Un cliente diciendo “me siento nervioso” reporta un evento privado.'),make('mentalism','Mentalism','Mentalism','Explaining behavior by using inner states as independent causes, without identifying functional relations.','Explicar conducta usando estados internos como causas independientes, sin identificar relaciones funcionales.','“He screamed because he was frustrated” stops the analysis instead of identifying antecedents and consequences.','“Gritó porque estaba frustrado” detiene el análisis en vez de identificar antecedentes y consecuencias.'),make('environmental-explanation','Environmental explanation','Explicación ambiental','Explaining behavior by identifying relations among antecedents, consequences, motivating operations, and learning history.','Explicar conducta identificando relaciones entre antecedentes, consecuencias, motivating operations e historia de aprendizaje.','Screaming is more likely during difficult tasks and produces escape from demands.','Gritar es más probable durante tareas difíciles y produce escape de demandas.'),make('methodological-vs-radical','Methodological vs radical behaviorism','Methodological vs radical behaviorism','Methodological behaviorism limits science mainly to public observation; radical behaviorism includes private events as behavior.','Methodological behaviorism limita la ciencia principalmente a observación pública; radical behaviorism incluye eventos privados como conducta.','A radical behaviorist may study reports of pain without treating pain as an independent cause.','Un radical behaviorist puede estudiar reportes de dolor sin tratar el dolor como causa independiente.')],
     'B.1':[make('behavior','Behavior','Behavior','A larger class or set of actions of an organism; behavior is what a person does that can be observed and measured.','Una clase o conjunto más amplio de acciones de un organismo; conducta es lo que una persona hace y puede observarse y medirse.','During independent work, hand raising is recorded as a behavior to increase.','Durante trabajo independiente, levantar la mano se registra como conducta a aumentar.'),make('response','Response','Response','One specific instance or occurrence of behavior.','Una instancia u ocurrencia específica de conducta.','The student raised his hand one time after the teacher asked a question.','El estudiante levantó la mano una vez después de que la maestra hizo una pregunta.'),make('response-class','Response class','Response class','A group of responses that look different but serve the same function or produce the same effect.','Un grupo de respuestas que pueden verse diferentes pero tienen la misma función o producen el mismo efecto.','Saying “help,” raising a hand, or handing a help card all produce teacher assistance.','Decir “ayuda,” levantar la mano o entregar una tarjeta de ayuda producen asistencia de la maestra.')],
     'A.2':[make('selectionism','Selectionism','Selectionism','Behavior is selected by consequences across phylogeny, ontogeny, and culture.','La conducta es seleccionada por consecuencias a nivel filogenético, ontogenético y cultural.','Reinforced responses are more likely in the future.','Las respuestas reforzadas son más probables en el futuro.'),make('determinism','Determinism','Determinism','Behavior occurs because of lawful variables, not accident or free-floating causes.','La conducta ocurre por variables ordenadas, no por accidente o causas vagas.','Look for environmental relations, not “random behavior.”','Busca relaciones ambientales, no “conducta aleatoria”.'),make('empiricism','Empiricism','Empiricism','Decisions are based on objective observation and data.','Las decisiones se basan en observación objetiva y datos.','Graph data before changing treatment.','Graficar datos antes de cambiar tratamiento.'),make('experimentation','Experimentation','Experimentation','Functional relations are tested by manipulating variables and measuring behavior change.','Las relaciones funcionales se prueban manipulando variables y midiendo cambios en la conducta.','Change one treatment variable and observe whether behavior changes.','Cambiar una variable del tratamiento y observar si la conducta cambia.'),make('replication','Replication','Replication','Scientific confidence increases when findings are repeated across sessions, people, behaviors, or settings.','La confianza científica aumenta cuando los hallazgos se repiten entre sesiones, personas, conductas o ambientes.','The same intervention effect appears across three classrooms.','El mismo efecto de intervención aparece en tres salones.'),make('parsimony','Parsimony','Parsimony','Rule out simple explanations before complex ones.','Descartar explicaciones simples antes de complejas.','Check task difficulty before assuming trauma or personality.','Revisar dificultad de tarea antes de asumir trauma o personalidad.'),make('philosophic-doubt','Philosophic doubt','Philosophic doubt','Scientific conclusions remain open to revision when new evidence appears.','Las conclusiones científicas permanecen abiertas a revisión cuando aparece nueva evidencia.','A BCBA updates a hypothesis after new data contradict the original explanation.','Un BCBA actualiza una hipótesis después de que nuevos datos contradicen la explicación original.'),make('pragmatism','Pragmatism','Pragmatism','Value explanations by their usefulness in producing effective action.','Valorar explicaciones por su utilidad para producir acción efectiva.','Keep procedures that work and revise those that do not.','Mantener procedimientos que funcionan y revisar los que no.')],
     'B.4':[make('positive-reinforcement','Positive reinforcement','Positive reinforcement','A stimulus is added after behavior and behavior increases.','Se añade un estímulo después de la conducta y la conducta aumenta.','Praise or tokens after work completion increase work completion.','Elogios o fichas después de completar trabajo aumentan completar trabajo.'),make('negative-reinforcement','Negative reinforcement','Negative reinforcement','A stimulus is removed, reduced, or avoided after behavior and behavior increases.','Un estímulo se elimina, reduce o evita después de la conducta y la conducta aumenta.','Break request removes work and appropriate requesting increases.','Pedir descanso retira trabajo y aumenta pedir descanso apropiadamente.'),make('escape','Escape','Escape','Behavior terminates an aversive event already present.','La conducta termina un evento aversivo ya presente.','Demand is present, behavior occurs, demand is removed.','La demanda está presente, ocurre conducta, se retira la demanda.'),make('avoidance','Avoidance','Avoidance','Behavior prevents or postpones an aversive event before it occurs.','La conducta previene o pospone un evento aversivo antes de ocurrir.','Request happens before hard work begins and postpones it.','La petición ocurre antes de comenzar trabajo difícil y lo pospone.')],
@@ -1865,6 +1985,7 @@ async function renderStudy(){
     }
     return topbar()+`<div class="learn-wrap"><div class="deep-learn-card">
       ${taskFocusBox()}
+      ${contentMasteryHtml(task)}
       <div class="deep-section green"><div class="deep-label">🧠 ${lang==='es'?'Explicación clara':'Plain-English Understanding'}</div><div class="deep-title">${lang==='es'?'Qué significa realmente':'What this really means'}</div><div class="deep-text">${lc(c,'plain')||lc(c,'def')}</div></div>
       <div class="deep-section white"><div class="deep-label">📘 ${lang==='es'?'Lenguaje oficial BACB':'Official BACB Language'}</div><div class="deep-text">${lc(c,'official')||lc(c,'def')}</div></div>
       ${comparisonHtml(c['comparison_'+lang]||c.comparison_en||c.comparison||[])}
